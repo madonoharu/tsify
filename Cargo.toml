@@ -1,0 +1,27 @@
+[package]
+name = "tsify"
+version = "0.1.0"
+edition = "2021"
+authors = ["Madono Haru <madonoharu@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "Tsify is a library for generating TypeScript definitions from rust code."
+repository = "https://github.com/madonoharu/tsify"
+homepage = "https://github.com/madonoharu/tsify"
+keywords = ["wasm", "wasm-bindgen", "typescript"]
+categories = ["wasm"]
+
+[dependencies]
+tsify-macros = { path = "tsify-macros", version = "0.1.0" }
+
+[dev-dependencies]
+macrotest = "1.0.8"
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = "1.0.79"
+wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
+
+[features]
+default = ["wasm-bindgen-impl"]
+wasm-bindgen-impl = ["tsify-macros/wasm-bindgen-impl"]
+
+[workspace]
+members = ["tsify-macros"]

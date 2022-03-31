@@ -1,6 +1,6 @@
 # Tsify
 
-Tsify is a library for generating TypeScript definitions from rust code.
+Tsify is a library for generating TypeScript definitions from Rust code.
 
 Using this with [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) will automatically output the types to `.d.ts`.
 
@@ -122,6 +122,25 @@ Generated type:
 
 ```ts
 export type Optional = { a?: number; b?: string; c?: number };
+```
+
+## Type Aliases
+
+```rust
+use tsify::{tsify, Tsify};
+
+#[derive(Tsify)]
+struct Foo<T>(T);
+
+#[tsify]
+type Bar = Foo<i32>;
+```
+
+Generated type:
+
+```ts
+export type Foo<T> = T;
+export type Bar = Foo<number>;
 ```
 
 ## Crate Features

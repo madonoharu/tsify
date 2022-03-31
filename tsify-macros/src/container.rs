@@ -1,46 +1,43 @@
-use std::cell::RefCell;
-
 use darling::FromDeriveInput;
 use serde_derive_internals::{ast, ast::Container as SerdeContainer, attr};
 
-use crate::attrs::TsifyContainerAttars;
+use crate::{attrs::TsifyContainerAttars, ctxt::Ctxt};
 
 fn syn_errors_into_darling_error(errors: Vec<syn::Error>) -> darling::Error {
     let errors = errors.into_iter().map(darling::Error::from).collect();
     darling::Error::multiple(errors)
 }
 pub struct Container<'a> {
+    pub ctxt: Ctxt,
     pub attrs: TsifyContainerAttars,
     pub serde_container: SerdeContainer<'a>,
-    errors: RefCell<Option<Vec<darling::Error>>>,
 }
 
 impl<'a> Container<'a> {
     pub fn new(serde_container: SerdeContainer<'a>) -> Self {
         let input = &serde_container.original;
         let attrs = TsifyContainerAttars::from_derive_input(input);
-        let mut errors = Vec::new();
+        let ctxt = Ctxt::new();
 
         let attrs = match attrs {
             Ok(attrs) => attrs,
             Err(err) => {
-                errors.push(err);
+                ctxt.darling_error(err);
                 Default::default()
             }
         };
 
         Self {
-            errors: RefCell::new(Some(errors)),
+            ctxt,
             attrs,
             serde_container,
         }
     }
 
     pub fn from_derive_input(input: &'a syn::DeriveInput) -> Result<Self, darling::Error> {
-        use serde_derive_internals::{Ctxt, Derive};
-
-        let cx = Ctxt::new();
-        let serde_cont = SerdeContainer::from_ast(&cx, input, Derive::Serialize);
+        let cx = serde_derive_internals::Ctxt::new();
+        let serde_cont =
+            SerdeContainer::from_ast(&cx, input, serde_derive_internals::Derive::Serialize);
 
         match serde_cont {
             Some(serde_container) => {
@@ -80,23 +77,10 @@ impl<'a> Container<'a> {
     }
 
     pub fn darling_error(&self, err: darling::Error) {
-        self.errors.borrow_mut().as_mut().unwrap().push(err)
+        self.ctxt.darling_error(err)
     }
 
     pub fn check(self) -> Result<(), darling::Error> {
-        let errors = self.errors.take().unwrap();
-
-        match errors.len() {
-            0 => Ok(()),
-            _ => Err(darling::Error::multiple(errors)),
-        }
-    }
-}
-
-impl Drop for Container<'_> {
-    fn drop(&mut self) {
-        if !std::thread::panicking() && self.errors.borrow().is_some() {
-            panic!("forgot to check for errors");
-        }
+        self.ctxt.check()
     }
 }

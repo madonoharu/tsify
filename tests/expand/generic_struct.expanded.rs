@@ -4,44 +4,35 @@ pub struct GenericStruct<T> {
     x: T,
 }
 #[automatically_derived]
-impl<T> Tsify for GenericStruct<T> {
-    const DECL: &'static str = "export type GenericStruct<T> = { x: T };";
-}
-#[automatically_derived]
 const _: () = {
+    extern crate serde as _serde;
     use wasm_bindgen::{
         convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
         describe::WasmDescribe,
         prelude::*,
     };
+    #[wasm_bindgen]
+    extern "C" {
+        #[wasm_bindgen(typescript_type = "GenericStruct")]
+        pub type JsType;
+    }
+    impl<T> Tsify for GenericStruct<T> {
+        type JsType = JsType;
+        const DECL: &'static str = "export type GenericStruct<T> = { x: T };";
+    }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export type GenericStruct<T> = { x: T };";
     impl<T> WasmDescribe for GenericStruct<T> {
+        #[inline]
         fn describe() {
-            use wasm_bindgen::describe::*;
-            inform(NAMED_EXTERNREF);
-            inform(13u32);
-            inform(71u32);
-            inform(101u32);
-            inform(110u32);
-            inform(101u32);
-            inform(114u32);
-            inform(105u32);
-            inform(99u32);
-            inform(83u32);
-            inform(116u32);
-            inform(114u32);
-            inform(117u32);
-            inform(99u32);
-            inform(116u32);
+            <Self as Tsify>::JsType::describe()
         }
     }
-    extern crate serde as _serde;
     impl<T> IntoWasmAbi for GenericStruct<T>
     where
         Self: _serde::Serialize,
     {
-        type Abi = <JsValue as IntoWasmAbi>::Abi;
+        type Abi = <<Self as Tsify>::JsType as IntoWasmAbi>::Abi;
         #[inline]
         fn into_abi(self) -> Self::Abi {
             JsValue::from_serde(&self).unwrap_throw().into_abi()
@@ -53,7 +44,7 @@ const _: () = {
     {
         #[inline]
         fn none() -> Self::Abi {
-            0
+            <<Self as Tsify>::JsType as OptionIntoWasmAbi>::none()
         }
     }
     impl<T> FromWasmAbi for GenericStruct<T>
@@ -72,16 +63,12 @@ const _: () = {
     {
         #[inline]
         fn is_none(abi: &Self::Abi) -> bool {
-            *abi == 0
+            <<Self as Tsify>::JsType as OptionFromWasmAbi>::is_none(abi)
         }
     }
 };
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct GenericNewtype<T>(T);
-#[automatically_derived]
-impl<T> Tsify for GenericNewtype<T> {
-    const DECL: &'static str = "export type GenericNewtype<T> = T;";
-}
 #[automatically_derived]
 const _: () = {
     use wasm_bindgen::{
@@ -89,27 +76,21 @@ const _: () = {
         describe::WasmDescribe,
         prelude::*,
     };
+    #[wasm_bindgen]
+    extern "C" {
+        #[wasm_bindgen(typescript_type = "GenericNewtype")]
+        pub type JsType;
+    }
+    impl<T> Tsify for GenericNewtype<T> {
+        type JsType = JsType;
+        const DECL: &'static str = "export type GenericNewtype<T> = T;";
+    }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export type GenericNewtype<T> = T;";
     impl<T> WasmDescribe for GenericNewtype<T> {
+        #[inline]
         fn describe() {
-            use wasm_bindgen::describe::*;
-            inform(NAMED_EXTERNREF);
-            inform(14u32);
-            inform(71u32);
-            inform(101u32);
-            inform(110u32);
-            inform(101u32);
-            inform(114u32);
-            inform(105u32);
-            inform(99u32);
-            inform(78u32);
-            inform(101u32);
-            inform(119u32);
-            inform(116u32);
-            inform(121u32);
-            inform(112u32);
-            inform(101u32);
+            <Self as Tsify>::JsType::describe()
         }
     }
     extern crate serde as _serde;
@@ -117,7 +98,7 @@ const _: () = {
     where
         Self: _serde::Serialize,
     {
-        type Abi = <JsValue as IntoWasmAbi>::Abi;
+        type Abi = <<Self as Tsify>::JsType as IntoWasmAbi>::Abi;
         #[inline]
         fn into_abi(self) -> Self::Abi {
             JsValue::from_serde(&self).unwrap_throw().into_abi()
@@ -129,7 +110,7 @@ const _: () = {
     {
         #[inline]
         fn none() -> Self::Abi {
-            0
+            <<Self as Tsify>::JsType as OptionIntoWasmAbi>::none()
         }
     }
     impl<T> FromWasmAbi for GenericNewtype<T>
@@ -148,7 +129,7 @@ const _: () = {
     {
         #[inline]
         fn is_none(abi: &Self::Abi) -> bool {
-            *abi == 0
+            <<Self as Tsify>::JsType as OptionFromWasmAbi>::is_none(abi)
         }
     }
 };

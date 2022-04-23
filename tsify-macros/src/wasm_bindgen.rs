@@ -19,16 +19,11 @@ pub fn expand(cont: &Container, decl: TsTypeAliasDecl) -> TokenStream {
     let wasm_abi = attrs.into_wasm_abi || attrs.from_wasm_abi;
 
     let wasm_describe = wasm_abi.then(|| {
-        let typescript_type_len = decl.id.len() as u32;
-        let typescript_type_chars = decl.id.chars().map(|c| c as u32);
-
         quote! {
             impl #impl_generics WasmDescribe for #ident #ty_generics #where_clause {
+                #[inline]
                 fn describe() {
-                    use wasm_bindgen::describe::*;
-                    inform(NAMED_EXTERNREF);
-                    inform(#typescript_type_len);
-                    #(inform(#typescript_type_chars);)*
+                    <Self as Tsify>::JsType::describe()
                 }
             }
         }
@@ -45,18 +40,31 @@ pub fn expand(cont: &Container, decl: TsTypeAliasDecl) -> TokenStream {
     let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
     let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
 
+    let typescript_type = decl.id.to_string();
+
     quote! {
         #[automatically_derived]
         const _: () = {
+            #use_serde
             use wasm_bindgen::{
                 convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
                 describe::WasmDescribe,
                 prelude::*,
             };
 
+            #[wasm_bindgen]
+            extern "C" {
+                #[wasm_bindgen(typescript_type = #typescript_type)]
+                pub type JsType;
+            }
+
+            impl #impl_generics Tsify for #ident #ty_generics #where_clause {
+                type JsType = JsType;
+                const DECL: &'static str = #decl_str;
+            }
+
             #typescript_custom_section
             #wasm_describe
-            #use_serde
             #into_wasm_abi
             #from_wasm_abi
         };
@@ -77,7 +85,8 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
 
     quote! {
         impl #impl_generics IntoWasmAbi for #ident #ty_generics #where_clause {
-            type Abi = <JsValue as IntoWasmAbi>::Abi;
+            type Abi = <<Self as Tsify>::JsType as IntoWasmAbi>::Abi;
+
             #[inline]
             fn into_abi(self) -> Self::Abi {
                 JsValue::from_serde(&self).unwrap_throw().into_abi()
@@ -87,7 +96,7 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
         impl #impl_generics OptionIntoWasmAbi for #ident #ty_generics #where_clause {
             #[inline]
             fn none() -> Self::Abi {
-                0
+                <<Self as Tsify>::JsType as OptionIntoWasmAbi>::none()
             }
         }
     }
@@ -109,6 +118,7 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
     quote! {
         impl #impl_generics FromWasmAbi for #ident #ty_generics #where_clause {
             type Abi = <JsValue as FromWasmAbi>::Abi;
+
             #[inline]
             unsafe fn from_abi(js: Self::Abi) -> Self {
                 JsValue::from_abi(js).into_serde().unwrap_throw()
@@ -117,7 +127,9 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
 
         impl #impl_generics OptionFromWasmAbi for #ident #ty_generics #where_clause {
             #[inline]
-            fn is_none(abi: &Self::Abi) -> bool { *abi == 0 }
+            fn is_none(abi: &Self::Abi) -> bool {
+                <<Self as Tsify>::JsType as OptionFromWasmAbi>::is_none(abi)
+            }
         }
     }
 }

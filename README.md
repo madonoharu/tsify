@@ -127,12 +127,12 @@ export type Optional = { a?: number; b?: string; c?: number };
 ## Type Aliases
 
 ```rust
-use tsify::{tsify, Tsify};
+use tsify::{declare, Tsify};
 
 #[derive(Tsify)]
 struct Foo<T>(T);
 
-#[tsify]
+#[declare]
 type Bar = Foo<i32>;
 ```
 

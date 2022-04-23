@@ -9,7 +9,7 @@ mod wasm_bindgen;
 
 use syn::{parse_macro_input, DeriveInput};
 
-fn tsify_impl(
+fn declare_impl(
     args: proc_macro2::TokenStream,
     item: syn::Item,
 ) -> darling::Result<proc_macro2::TokenStream> {
@@ -18,21 +18,21 @@ fn tsify_impl(
         syn::Item::Enum(item) => derive::expand_by_attr(args, item.into()),
         syn::Item::Struct(item) => derive::expand_by_attr(args, item.into()),
         _ => Err(darling::Error::custom(
-            "#[tsify] can only be applied to a struct, enum, or type alias.",
+            "#[declare] can only be applied to a struct, enum, or type alias.",
         )
         .with_span(&args)),
     }
 }
 
 #[proc_macro_attribute]
-pub fn tsify(
+pub fn declare(
     args: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let item: syn::Item = parse_macro_input!(item);
     let args = proc_macro2::TokenStream::from(args);
 
-    tsify_impl(args, item)
+    declare_impl(args, item)
         .unwrap_or_else(|err| err.write_errors())
         .into()
 }

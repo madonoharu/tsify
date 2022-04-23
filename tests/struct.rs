@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use indoc::indoc;
 use tsify::Tsify;
 
 #[test]
@@ -7,7 +8,7 @@ fn test_unit() {
     #[derive(Tsify)]
     struct Unit;
 
-    assert_eq!("export type Unit = null;", Unit::DECL);
+    assert_eq!(Unit::DECL, "export type Unit = null;");
 }
 
 #[test]
@@ -19,8 +20,13 @@ fn test_named_fields() {
     }
 
     assert_eq!(
-        r#"export type A = { a: [number, number]; b: string };"#,
-        A::DECL
+        A::DECL,
+        indoc! {"
+            export interface A {
+                a: [number, number];
+                b: string;
+            }"
+        }
     );
 }
 
@@ -29,7 +35,7 @@ fn test_newtype_struct() {
     #[derive(Tsify)]
     struct Newtype(i32);
 
-    assert_eq!("export type Newtype = number;", Newtype::DECL);
+    assert_eq!(Newtype::DECL, "export type Newtype = number;");
 }
 
 #[test]
@@ -39,8 +45,8 @@ fn test_tuple_struct() {
     #[derive(Tsify)]
     struct EmptyTuple();
 
-    assert_eq!("export type Tuple = [number, string];", Tuple::DECL);
-    assert_eq!("export type EmptyTuple = [];", EmptyTuple::DECL);
+    assert_eq!(Tuple::DECL, "export type Tuple = [number, string];");
+    assert_eq!(EmptyTuple::DECL, "export type EmptyTuple = [];");
 }
 
 #[test]
@@ -55,7 +61,14 @@ fn test_nested_struct() {
         a: A,
     }
 
-    assert_eq!("export type B = { a: A };", B::DECL);
+    assert_eq!(
+        B::DECL,
+        indoc! {"
+            export interface B {
+                a: A;
+            }"
+        }
+    );
 }
 
 #[test]
@@ -69,8 +82,13 @@ fn test_struct_with_borrowed_fields() {
     }
 
     assert_eq!(
-        "export type Borrow = { raw: string; cow: string };",
-        Borrow::DECL
+        Borrow::DECL,
+        indoc! {"
+            export interface Borrow {
+                raw: string;
+                cow: string;
+            }"
+        }
     );
 }
 
@@ -85,6 +103,12 @@ fn test_tagged_struct() {
 
     assert_eq!(
         TaggedStruct::DECL,
-        "export type TaggedStruct = { type: \"TaggedStruct\"; x: number; y: number };"
+        indoc! {r#"
+            export interface TaggedStruct {
+                type: "TaggedStruct";
+                x: number;
+                y: number;
+            }"#
+        }
     );
 }

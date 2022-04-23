@@ -454,23 +454,27 @@ fn is_js_ident(string: &String) -> bool {
     !string.contains("-")
 }
 
+impl Display for TsTypeElement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let key = &self.key;
+        let type_ann = &self.type_ann;
+
+        let optional_ann = if self.optional { "?" } else { "" };
+
+        if is_js_ident(key) {
+            write!(f, "{key}{optional_ann}: {type_ann}")
+        } else {
+            write!(f, "\"{key}\"{optional_ann}: {type_ann}")
+        }
+    }
+}
+
 impl Display for TsTypeLit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let members = self
             .members
             .iter()
-            .map(|elem| {
-                let key = &elem.key;
-                let type_ann = &elem.type_ann;
-
-                let optional_ann = if elem.optional { "?" } else { "" };
-
-                if is_js_ident(key) {
-                    format!("{key}{optional_ann}: {type_ann}")
-                } else {
-                    format!("\"{key}\"{optional_ann}: {type_ann}")
-                }
-            })
+            .map(|elem| elem.to_string())
             .collect::<Vec<_>>()
             .join("; ");
 
@@ -579,25 +583,6 @@ impl Display for TsType {
 
             TsType::Override(ty) => f.write_str(ty),
         }
-    }
-}
-
-pub struct TsTypeAliasDecl {
-    pub id: String,
-    pub type_params: Vec<String>,
-    pub type_ann: TsType,
-}
-
-impl Display for TsTypeAliasDecl {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let right = if self.type_params.is_empty() {
-            self.id.clone()
-        } else {
-            let type_params = self.type_params.join(", ");
-            format!("{}<{}>", self.id, type_params)
-        };
-
-        write!(f, "export type {} = {};", right, self.type_ann)
     }
 }
 

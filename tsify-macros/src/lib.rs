@@ -1,6 +1,7 @@
 mod attrs;
 mod container;
 mod ctxt;
+mod decl;
 mod derive;
 mod parser;
 mod type_alias;

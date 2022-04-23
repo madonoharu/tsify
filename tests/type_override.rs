@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use indoc::indoc;
 use tsify::Tsify;
 
 struct Unsupported;
@@ -20,7 +21,13 @@ fn test_struct_with_type_override() {
 
     assert_eq!(
         Struct::DECL,
-        "export type Struct = { a: number; b: 0 | 1 | 2; c: string | null };"
+        indoc! {r#"
+            export interface Struct {
+                a: number;
+                b: 0 | 1 | 2;
+                c: string | null;
+            }"#
+        }
     );
 
     assert_eq!(Newtype::DECL, "export type Newtype = string | null;");

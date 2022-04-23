@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use indoc::indoc;
 use tsify::Tsify;
 
 #[test]
@@ -14,24 +15,30 @@ fn test_generic_struct() {
     }
 
     assert_eq!(
-        "export type GenericStruct<A, B, D> = { a: A; b: B; d: D };",
-        GenericStruct::<(), (), (), ()>::DECL
+        GenericStruct::<(), (), (), ()>::DECL,
+        indoc! {"
+            export interface GenericStruct<A, B, D> {
+                a: A;
+                b: B;
+                d: D;
+            }"
+        }
     );
 
     #[derive(Tsify)]
     pub struct GenericNewtype<T>(T);
 
     assert_eq!(
-        "export type GenericNewtype<T> = T;",
-        GenericNewtype::<()>::DECL
+        GenericNewtype::<()>::DECL,
+        "export type GenericNewtype<T> = T;"
     );
 
     #[derive(Tsify)]
     pub struct GenericTuple<'a, A, B, C, D>(A, #[serde(skip)] &'a B, C, D);
 
     assert_eq!(
-        "export type GenericTuple<A, C, D> = [A, C, D];",
-        GenericTuple::<(), (), (), ()>::DECL
+        GenericTuple::<(), (), (), ()>::DECL,
+        "export type GenericTuple<A, C, D> = [A, C, D];"
     );
 }
 
@@ -46,7 +53,7 @@ fn test_generic_enum() {
     }
 
     assert_eq!(
-        r#"export type GenericEnum<T, U> = "Unit" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };"#,
-        GenericEnum::<(), ()>::DECL
+        GenericEnum::<(), ()>::DECL,
+        r#"export type GenericEnum<T, U> = "Unit" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };"#
     );
 }

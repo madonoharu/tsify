@@ -2,9 +2,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse_quote;
 
-use crate::{container::Container, typescript::TsTypeAliasDecl};
+use crate::{container::Container, decl::Decl};
 
-pub fn expand(cont: &Container, decl: TsTypeAliasDecl) -> TokenStream {
+pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let attrs = &cont.attrs;
     let ident = cont.ident();
 
@@ -40,7 +40,7 @@ pub fn expand(cont: &Container, decl: TsTypeAliasDecl) -> TokenStream {
     let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
     let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
 
-    let typescript_type = decl.id.to_string();
+    let typescript_type = decl.id();
 
     quote! {
         #[automatically_derived]

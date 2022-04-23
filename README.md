@@ -56,7 +56,10 @@ export function into_js(): Point;
  * @param {Point} point
  */
 export function from_js(point: Point): void;
-export type Point = { x: number; y: number };
+export interface Point {
+  x: number;
+  y: number;
+}
 ```
 
 ## Attributes
@@ -101,7 +104,9 @@ pub struct Foo {
 Generated type:
 
 ```ts
-export type Foo = { x: 0 | 1 | 2 };
+export interface Foo {
+  x: 0 | 1 | 2;
+}
 ```
 
 ## Optional Properties
@@ -121,7 +126,11 @@ struct Optional {
 Generated type:
 
 ```ts
-export type Optional = { a?: number; b?: string; c?: number };
+export interface Optional {
+  a?: number;
+  b?: string;
+  c?: number;
+}
 ```
 
 ## Type Aliases

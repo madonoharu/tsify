@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use indoc::indoc;
 use tsify::Tsify;
 
 #[test]
@@ -24,11 +25,23 @@ fn test_optional() {
 
     assert_eq!(
         Optional::DECL,
-        "export type Optional = { a?: number; b?: string; c?: number; d: string };"
+        indoc! {"
+            export interface Optional {
+                a?: number;
+                b?: string;
+                c?: number;
+                d: string;
+            }"
+        }
     );
 
     assert_eq!(
         OptionalAll::DECL,
-        "export type OptionalAll = { a?: number; b?: number };"
-    )
+        indoc! {"
+            export interface OptionalAll {
+                a?: number;
+                b?: number;
+            }"
+        }
+    );
 }

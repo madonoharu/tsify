@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use indoc::indoc;
 use tsify::Tsify;
 
 #[test]
@@ -15,12 +16,19 @@ fn test_skip() {
         d: i32,
     }
 
-    assert_eq!("export type Struct = { a: number };", Struct::DECL);
+    assert_eq!(
+        Struct::DECL,
+        indoc! {"
+            export interface Struct {
+                a: number;
+            }"
+        }
+    );
 
     #[derive(Tsify)]
     struct Tuple(#[serde(skip)] String, i32);
 
-    assert_eq!("export type Tuple = [number];", Tuple::DECL);
+    assert_eq!(Tuple::DECL, "export type Tuple = [number];");
 
     #[derive(Tsify)]
     enum Enum {
@@ -33,5 +41,5 @@ fn test_skip() {
         D,
     }
 
-    assert_eq!(r#"export type Enum = "D";"#, Enum::DECL);
+    assert_eq!(Enum::DECL, r#"export type Enum = "D";"#);
 }

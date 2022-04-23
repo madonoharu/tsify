@@ -1,10 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::{
-    ctxt::Ctxt,
-    typescript::{TsType, TsTypeAliasDecl},
-};
+use crate::{ctxt::Ctxt, decl::TsTypeAliasDecl, typescript::TsType};
 
 pub fn expend(item: syn::ItemType) -> darling::Result<TokenStream> {
     let ctxt = Ctxt::new();

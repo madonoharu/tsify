@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use indoc::indoc;
 use tsify::Tsify;
 
 #[test]
@@ -13,8 +14,13 @@ fn test_rename() {
     }
 
     assert_eq!(
-        "export type RenamedStruct = { X: number; Y: number };",
-        RenamedStruct::DECL
+        RenamedStruct::DECL,
+        indoc! {"
+            export interface RenamedStruct {
+                X: number;
+                Y: number;
+            }"
+        }
     );
 
     #[derive(Tsify)]
@@ -88,12 +94,24 @@ fn test_rename_all() {
     );
 
     assert_eq!(expected, Enum::DECL);
+
     assert_eq!(
-        "export type PascalCase = { Foo: boolean; FooBar: boolean };",
-        PascalCase::DECL
+        PascalCase::DECL,
+        indoc! {"
+            export interface PascalCase {
+                Foo: boolean;
+                FooBar: boolean;
+            }"
+        }
     );
+
     assert_eq!(
-        r#"export type ScreamingKebab = { FOO: boolean; "FOO-BAR": boolean };"#,
-        ScreamingKebab::DECL
-    )
+        ScreamingKebab::DECL,
+        indoc! {r#"
+            export interface ScreamingKebab {
+                FOO: boolean;
+                "FOO-BAR": boolean;
+            }"#
+        }
+    );
 }

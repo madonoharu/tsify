@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use serde_derive_internals::{
     ast::{Data, Field, Style, Variant},
     attr::TagType,
@@ -6,8 +8,33 @@ use serde_derive_internals::{
 use crate::{
     attrs::TsifyFieldAttrs,
     container::Container,
-    typescript::{TsType, TsTypeAliasDecl, TsTypeElement, TsTypeLit},
+    decl::{Decl, TsInterfaceDecl, TsTypeAliasDecl},
+    typescript::{TsType, TsTypeElement, TsTypeLit},
 };
+
+enum ParsedFields {
+    Named(Vec<TsTypeElement>, Vec<TsType>),
+    Unnamed(Vec<TsType>),
+    Transparent(TsType),
+}
+
+impl From<ParsedFields> for TsType {
+    fn from(fields: ParsedFields) -> Self {
+        match fields {
+            ParsedFields::Named(members, extends) => {
+                let type_lit = TsType::from(TsTypeLit { members });
+
+                if extends.is_empty() {
+                    type_lit
+                } else {
+                    type_lit.and(TsType::Intersection(extends))
+                }
+            }
+            ParsedFields::Unnamed(elems) => TsType::Tuple(elems),
+            ParsedFields::Transparent(ty) => ty,
+        }
+    }
+}
 
 enum FieldsStyle {
     Named,
@@ -24,16 +51,18 @@ impl<'a> Parser<'a> {
         Self { container }
     }
 
-    pub fn parse(&self) -> TsTypeAliasDecl {
-        let cont = &self.container;
-        let type_ann = match cont.serde_data() {
+    pub fn parse(&self) -> Decl {
+        match self.container.serde_data() {
             Data::Struct(style, ref fields) => self.parse_struct(*style, fields),
             Data::Enum(ref variants) => self.parse_enum(variants),
-        };
+        }
+    }
 
+    fn create_type_alias_decl(&self, type_ann: TsType) -> Decl {
         let type_ref_names = type_ann.type_ref_names();
 
-        let relevant_type_params = cont
+        let relevant_type_params = self
+            .container
             .generics()
             .type_params()
             .into_iter()
@@ -41,30 +70,101 @@ impl<'a> Parser<'a> {
             .filter(|t| type_ref_names.contains(t))
             .collect::<Vec<_>>();
 
-        TsTypeAliasDecl {
-            id: cont.name(),
+        Decl::TsTypeAlias(TsTypeAliasDecl {
+            id: self.container.name(),
             type_params: relevant_type_params,
             type_ann,
-        }
+        })
     }
 
-    fn parse_struct(&self, style: Style, fields: &Vec<Field>) -> TsType {
-        let type_ann = self.parse_fields(style, fields);
+    fn create_interface_decl(&self, members: Vec<TsTypeElement>, extends: Vec<TsType>) -> Decl {
+        let mut type_ref_names: HashSet<&String> = HashSet::new();
+        members.iter().for_each(|member| {
+            type_ref_names.extend(member.type_ann.type_ref_names());
+        });
+        extends.iter().for_each(|ty| {
+            type_ref_names.extend(ty.type_ref_names());
+        });
+
+        let relevant_type_params = self
+            .container
+            .generics()
+            .type_params()
+            .into_iter()
+            .map(|p| p.ident.to_string())
+            .filter(|t| type_ref_names.contains(t))
+            .collect::<Vec<_>>();
+
+        Decl::TsInterface(TsInterfaceDecl {
+            id: self.container.name(),
+            type_params: relevant_type_params,
+            extends,
+            body: members,
+        })
+    }
+
+    fn parse_struct(&self, style: Style, fields: &Vec<Field>) -> Decl {
+        let parsed_fields = self.parse_fields(style, fields);
         let tag_type = self.container.serde_attrs().tag();
-        let name = self.container.ident().to_string();
 
-        match tag_type {
-            TagType::Internal { .. } => type_ann.with_tag_type(name, style, tag_type),
-            _ => type_ann,
+        match (tag_type, parsed_fields) {
+            (TagType::Internal { tag }, ParsedFields::Named(members, extends)) => {
+                let name = self.container.name();
+
+                let tag_field = TsTypeElement {
+                    key: tag.clone(),
+                    type_ann: TsType::Lit(name),
+                    optional: false,
+                };
+
+                let mut vec = Vec::with_capacity(members.len() + 1);
+                vec.push(tag_field);
+                vec.extend(members);
+
+                self.create_interface_decl(vec, extends)
+            }
+            (_, ParsedFields::Named(members, extends)) => {
+                self.create_interface_decl(members, extends)
+            }
+            (_, parsed_fields) => self.create_type_alias_decl(parsed_fields.into()),
         }
     }
 
-    fn parse_fields(&self, style: Style, fields: &Vec<Field>) -> TsType {
+    fn parse_fields(&self, style: Style, fields: &Vec<Field>) -> ParsedFields {
+        let style = match style {
+            Style::Struct => FieldsStyle::Named,
+            Style::Newtype => return ParsedFields::Transparent(self.parse_field(&fields[0]).0),
+            Style::Tuple => FieldsStyle::Unnamed,
+            Style::Unit => return ParsedFields::Transparent(TsType::NULL),
+        };
+
+        let fields = fields
+            .iter()
+            .filter(|field| {
+                !field.attrs.skip_serializing()
+                    && !field.attrs.skip_deserializing()
+                    && !is_phantom(field.ty)
+            })
+            .collect::<Vec<_>>();
+
+        if fields.len() == 1 && self.container.transparent() {
+            return ParsedFields::Transparent(self.parse_field(&fields[0]).0);
+        }
+
         match style {
-            Style::Struct => self.parse_struct_or_tuple(FieldsStyle::Named, fields),
-            Style::Newtype => self.parse_field(&fields[0]).0,
-            Style::Tuple => self.parse_struct_or_tuple(FieldsStyle::Unnamed, fields),
-            Style::Unit => TsType::NULL,
+            FieldsStyle::Named => {
+                let (members, flatten_fields) = self.parse_named_fields(fields);
+
+                ParsedFields::Named(members, flatten_fields)
+            }
+            FieldsStyle::Unnamed => {
+                let elems = fields
+                    .into_iter()
+                    .map(|field| self.parse_field(field).0)
+                    .collect();
+
+                ParsedFields::Unnamed(elems)
+            }
         }
     }
 
@@ -95,80 +195,51 @@ impl<'a> Parser<'a> {
         (type_ann, Some(ts_attrs))
     }
 
-    fn parse_struct_or_tuple(&self, style: FieldsStyle, fields: &Vec<Field>) -> TsType {
-        let fields = fields
-            .iter()
-            .filter(|field| {
-                !field.attrs.skip_serializing()
-                    && !field.attrs.skip_deserializing()
-                    && !is_phantom(field.ty)
-            })
-            .collect::<Vec<_>>();
+    fn parse_named_fields(&self, fields: Vec<&Field>) -> (Vec<TsTypeElement>, Vec<TsType>) {
+        let (flatten_fields, members): (Vec<_>, Vec<_>) =
+            fields.into_iter().partition(|field| field.attrs.flatten());
 
-        if fields.len() == 1 && self.container.transparent() {
-            return self.parse_field(&fields[0]).0;
-        }
+        let members = members
+            .into_iter()
+            .map(|field| {
+                let key = field.attrs.name().serialize_name();
+                let (type_ann, field_attrs) = self.parse_field(field);
 
-        match style {
-            FieldsStyle::Named => {
-                let (flatten_fields, members): (Vec<_>, Vec<_>) =
-                    fields.into_iter().partition(|field| field.attrs.flatten());
+                let optional = !self.container.serde_attrs().default().is_none()
+                    || field_attrs.map_or(false, |attrs| attrs.optional);
 
-                let members = members
-                    .into_iter()
-                    .map(|field| {
-                        let key = field.attrs.name().serialize_name();
-                        let (type_ann, field_attrs) = self.parse_field(field);
-
-                        let optional = !self.container.serde_attrs().default().is_none()
-                            || field_attrs.map_or(false, |attrs| attrs.optional);
-
-                        TsTypeElement {
-                            key,
-                            type_ann,
-                            optional,
-                        }
-                    })
-                    .collect();
-
-                let type_lit = TsType::from(TsTypeLit { members });
-
-                if flatten_fields.is_empty() {
-                    type_lit
-                } else {
-                    let flatten_fields = flatten_fields
-                        .into_iter()
-                        .map(|field| self.parse_field(field).0)
-                        .collect();
-                    type_lit.and(TsType::Intersection(flatten_fields))
+                TsTypeElement {
+                    key,
+                    type_ann,
+                    optional,
                 }
-            }
-            FieldsStyle::Unnamed => {
-                let elems = fields
-                    .into_iter()
-                    .map(|field| self.parse_field(field).0)
-                    .collect();
+            })
+            .collect();
 
-                TsType::Tuple(elems)
-            }
-        }
+        let flatten_fields = flatten_fields
+            .into_iter()
+            .map(|field| self.parse_field(field).0)
+            .collect();
+
+        (members, flatten_fields)
     }
 
-    fn parse_enum(&self, variants: &Vec<Variant>) -> TsType {
+    fn parse_enum(&self, variants: &Vec<Variant>) -> Decl {
         let variants = variants
             .iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| self.parse_variant(variant))
             .collect::<Vec<_>>();
 
-        TsType::Union(variants)
+        let type_ann = TsType::Union(variants);
+        self.create_type_alias_decl(type_ann)
     }
 
     fn parse_variant(&self, variant: &Variant) -> TsType {
         let tag_type = self.container.serde_attrs().tag();
         let name = variant.attrs.name().serialize_name();
         let style = variant.style;
-        let type_ann = self.parse_fields(style, &variant.fields);
+        let type_ann: TsType = self.parse_fields(style, &variant.fields).into();
         type_ann.with_tag_type(name, style, tag_type)
     }
 }

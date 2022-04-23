@@ -71,6 +71,7 @@ const _: () = {
 pub struct GenericNewtype<T>(T);
 #[automatically_derived]
 const _: () = {
+    extern crate serde as _serde;
     use wasm_bindgen::{
         convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
         describe::WasmDescribe,
@@ -93,7 +94,6 @@ const _: () = {
             <Self as Tsify>::JsType::describe()
         }
     }
-    extern crate serde as _serde;
     impl<T> IntoWasmAbi for GenericNewtype<T>
     where
         Self: _serde::Serialize,

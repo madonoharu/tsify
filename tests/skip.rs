@@ -41,5 +41,13 @@ fn test_skip() {
         D,
     }
 
-    assert_eq!(Enum::DECL, r#"export type Enum = "D";"#);
+    let expected = concat!(
+        r#"declare namespace Enum {"#, "\n",
+        r#"    export type EnumD = "D";"#, "\n",
+        r#"}"#, "\n",
+        r#""#, "\n",
+        r#"export type Enum = Enum.EnumD;"#
+    );
+    
+    assert_eq!(Enum::DECL, expected);
 }

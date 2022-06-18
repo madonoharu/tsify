@@ -52,8 +52,16 @@ fn test_generic_enum() {
         Map { x: T, y: U },
     }
 
-    assert_eq!(
-        GenericEnum::<(), ()>::DECL,
-        r#"export type GenericEnum<T, U> = "Unit" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };"#
+    let expected = concat!(
+        r#"declare namespace GenericEnum {"#, "\n",
+        r#"    export type GenericEnumUnit = "Unit";"#, "\n",
+        r#"    export type GenericEnumNewType<T> = { NewType: T };"#, "\n",
+        r#"    export type GenericEnumSeq<T, U> = { Seq: [T, U] };"#, "\n",
+        r#"    export type GenericEnumMap<T, U> = { Map: { x: T; y: U } };"#, "\n",
+        r#"}"#, "\n",
+        r#""#, "\n",
+        r#"export type GenericEnum<T, U> = GenericEnum.GenericEnumUnit | GenericEnum.GenericEnumNewType<T> | GenericEnum.GenericEnumSeq<T, U> | GenericEnum.GenericEnumMap<T, U>;"#
     );
+
+    assert_eq!(GenericEnum::<(), ()>::DECL, expected);
 }

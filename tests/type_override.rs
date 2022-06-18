@@ -51,10 +51,13 @@ fn test_enum_with_type_override() {
     }
 
     let expected = concat!(
-        "export type Enum =",
-        " { Struct: { x: `tpl_lit_${string}`; y: 0 | 1 | 2 } }",
-        " | { Tuple: [`tpl_lit_${string}`, 0 | 1 | 2] }",
-        " | { Newtype: number };",
+        r#"declare namespace Enum {"#, "\n",
+        r#"    export type EnumStruct = { Struct: { x: `tpl_lit_${string}`; y: 0 | 1 | 2 } };"#, "\n",
+        r#"    export type EnumTuple = { Tuple: [`tpl_lit_${string}`, 0 | 1 | 2] };"#, "\n",
+        r#"    export type EnumNewtype = { Newtype: number };"#, "\n",
+        r#"}"#, "\n",
+        r#""#, "\n",
+        r#"export type Enum = Enum.EnumStruct | Enum.EnumTuple | Enum.EnumNewtype;"#
     );
 
     assert_eq!(Enum::DECL, expected);

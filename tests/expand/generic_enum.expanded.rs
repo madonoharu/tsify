@@ -21,10 +21,10 @@ const _: () = {
     }
     impl<T, U> Tsify for GenericEnum<T, U> {
         type JsType = JsType;
-        const DECL : & 'static str = "export type GenericEnum<T, U> = \"Unit\" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };" ;
+        const DECL : & 'static str = "declare namespace GenericEnum {\n    export type GenericEnumUnit = \"Unit\";\n    export type GenericEnumNewType<T> = { NewType: T };\n    export type GenericEnumSeq<T, U> = { Seq: [T, U] };\n    export type GenericEnumMap<T, U> = { Map: { x: T; y: U } };\n}\n\nexport type GenericEnum<T, U> = GenericEnum.GenericEnumUnit | GenericEnum.GenericEnumNewType<T> | GenericEnum.GenericEnumSeq<T, U> | GenericEnum.GenericEnumMap<T, U>;" ;
     }
     #[wasm_bindgen(typescript_custom_section)]
-    const TS_APPEND_CONTENT : & 'static str = "export type GenericEnum<T, U> = \"Unit\" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };" ;
+    const TS_APPEND_CONTENT : & 'static str = "declare namespace GenericEnum {\n    export type GenericEnumUnit = \"Unit\";\n    export type GenericEnumNewType<T> = { NewType: T };\n    export type GenericEnumSeq<T, U> = { Seq: [T, U] };\n    export type GenericEnumMap<T, U> = { Map: { x: T; y: U } };\n}\n\nexport type GenericEnum<T, U> = GenericEnum.GenericEnumUnit | GenericEnum.GenericEnumNewType<T> | GenericEnum.GenericEnumSeq<T, U> | GenericEnum.GenericEnumMap<T, U>;" ;
     impl<T, U> WasmDescribe for GenericEnum<T, U> {
         #[inline]
         fn describe() {

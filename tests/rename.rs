@@ -36,13 +36,16 @@ fn test_rename() {
     }
 
     let expected = concat!(
-        r#"export type RenamedEnum ="#,
-        r#" { X: boolean }"#,
-        r#" | { Y: number }"#,
-        r#" | { Z: string };"#
+        r#"declare namespace RenamedEnum {"#, "\n",
+        r#"    export type X = { X: boolean };"#, "\n",
+        r#"    export type Y = { Y: number };"#, "\n",
+        r#"    export type Z = { Z: string };"#, "\n",
+        r#"}"#, "\n",
+        r#""#, "\n",
+        r#"export type RenamedEnum = RenamedEnum.X | RenamedEnum.Y | RenamedEnum.Z;"#
     );
 
-    assert_eq!(expected, RenamedEnum::DECL);
+    assert_eq!(RenamedEnum::DECL, expected);
 }
 
 #[test]
@@ -86,11 +89,14 @@ fn test_rename_all() {
     }
 
     let expected = concat!(
-        "export type Enum = ",
-        "{ snake_case: { foo: boolean; foo_bar: boolean } }",
-        " | { camel_case: { foo: boolean; fooBar: boolean } }",
-        " | { kebab_case: { foo: boolean; \"foo-bar\": boolean } }",
-        " | { screaming_snake_case: { FOO: boolean; FOO_BAR: boolean } };"
+        r#"declare namespace Enum {"#, "\n",
+        r#"    export type snake_case = { snake_case: { foo: boolean; foo_bar: boolean } };"#, "\n",
+        r#"    export type camel_case = { camel_case: { foo: boolean; fooBar: boolean } };"#, "\n",
+        r#"    export type kebab_case = { kebab_case: { foo: boolean; "foo-bar": boolean } };"#, "\n",
+        r#"    export type screaming_snake_case = { screaming_snake_case: { FOO: boolean; FOO_BAR: boolean } };"#, "\n",
+        r#"}"#, "\n",
+        r#""#, "\n",
+        r#"export type Enum = Enum.snake_case | Enum.camel_case | Enum.kebab_case | Enum.screaming_snake_case;"#
     );
 
     assert_eq!(expected, Enum::DECL);

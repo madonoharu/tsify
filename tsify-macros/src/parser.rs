@@ -11,6 +11,7 @@ use crate::{
     decl::{Decl, TsInterfaceDecl, TsTypeAliasDecl},
     typescript::{TsType, TsTypeElement, TsTypeLit},
 };
+use crate::decl::TsEnumDecl;
 
 enum ParsedFields {
     Named(Vec<TsTypeElement>, Vec<TsType>),
@@ -56,6 +57,27 @@ impl<'a> Parser<'a> {
             Data::Struct(style, ref fields) => self.parse_struct(*style, fields),
             Data::Enum(ref variants) => self.parse_enum(variants),
         }
+    }
+
+    fn create_enum_decl(&self, body: Vec<TsTypeAliasDecl>) -> Decl {
+        let type_ref_names = body.iter()
+            .flat_map(|type_alias| type_alias.type_ann.type_ref_names())
+            .collect::<HashSet<_>>();
+
+        let relevant_type_params = self
+            .container
+            .generics()
+            .type_params()
+            .into_iter()
+            .map(|p| p.ident.to_string())
+            .filter(|t| type_ref_names.contains(t))
+            .collect::<Vec<_>>();
+
+        Decl::TsEnum(TsEnumDecl {
+            id: self.container.name(),
+            type_params: relevant_type_params,
+            body,
+        })
     }
 
     fn create_type_alias_decl(&self, type_ann: TsType) -> Decl {
@@ -225,14 +247,22 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_enum(&self, variants: &Vec<Variant>) -> Decl {
-        let variants = variants
+        let type_alias = variants
             .iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
-            .map(|variant| self.parse_variant(variant))
+            .map(|variant| {
+                let decl = self.create_type_alias_decl(self.parse_variant(variant));
+                if let Decl::TsTypeAlias(mut type_alias) = decl {
+                    type_alias.id = variant.attrs.name().serialize_name();
+
+                    type_alias
+                } else {
+                    panic!();
+                }
+            })
             .collect::<Vec<_>>();
 
-        let type_ann = TsType::Union(variants);
-        self.create_type_alias_decl(type_ann)
+        self.create_enum_decl(type_alias)
     }
 
     fn parse_variant(&self, variant: &Variant) -> TsType {

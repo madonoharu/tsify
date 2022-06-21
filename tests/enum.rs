@@ -20,7 +20,7 @@ fn test_externally_tagged_enum() {
     }
 
     let expected = concat!(
-        r#"export type __ExternalFoo = Foo;"#, "\n",
+        r#"type __ExternalFoo = Foo;"#, "\n",
         r#"declare namespace External {"#, "\n",
         r#"    export type Struct = { Struct: { x: string; y: number } };"#, "\n",
         r#"    export type EmptyStruct = { EmptyStruct: {} };"#, "\n",
@@ -48,7 +48,7 @@ fn test_internally_tagged_enum() {
     }
 
     let expected = concat!(
-        r#"export type __InternalFoo = Foo;"#, "\n",
+        r#"type __InternalFoo = Foo;"#, "\n",
         r#"declare namespace Internal {"#, "\n",
         r#"    export type Struct = { t: "Struct"; x: string; y: number };"#, "\n",
         r#"    export type EmptyStruct = { t: "EmptyStruct" };"#, "\n",
@@ -76,7 +76,7 @@ fn test_adjacently_tagged_enum() {
     }
 
     let expected = concat!(
-        r#"export type __AdjacentFoo = Foo;"#, "\n",
+        r#"type __AdjacentFoo = Foo;"#, "\n",
         r#"declare namespace Adjacent {"#, "\n",
         r#"    export type Struct = { t: "Struct"; c: { x: string; y: number } };"#, "\n",
         r#"    export type EmptyStruct = { t: "EmptyStruct"; c: {} };"#, "\n",
@@ -106,7 +106,7 @@ fn test_untagged_enum() {
     }
 
     let expected = concat!(
-        r#"export type __UntaggedFoo = Foo;"#, "\n",
+        r#"type __UntaggedFoo = Foo;"#, "\n",
         r#"declare namespace Untagged {"#, "\n",
         r#"    export type Struct = { x: string; y: number };"#, "\n",
         r#"    export type EmptyStruct = {};"#, "\n",
@@ -136,7 +136,7 @@ fn test_module_reimport_enum() {
     }
 
     let expected = concat!(
-    r#"export type __InternalFoo = Foo;"#, "\n",
+    r#"type __InternalFoo = Foo;"#, "\n",
     r#"declare namespace Internal {"#, "\n",
     r#"    export type Struct = { Struct: { x: string; y: number } };"#, "\n",
     r#"    export type EmptyStruct = { EmptyStruct: {} };"#, "\n",

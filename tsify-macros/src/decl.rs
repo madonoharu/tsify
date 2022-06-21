@@ -5,6 +5,7 @@ use crate::typescript::{TsType, TsTypeElement};
 #[derive(Clone)]
 pub struct TsTypeAliasDecl {
     pub id: String,
+    pub export: bool,
     pub type_params: Vec<String>,
     pub type_ann: TsType,
 }
@@ -18,7 +19,10 @@ impl Display for TsTypeAliasDecl {
             format!("{}<{}>", self.id, type_params)
         };
 
-        write!(f, "export type {} = {};", right, self.type_ann)
+        if self.export {
+            write!(f, "export ")?;
+        }
+        write!(f, "type {} = {};", right, self.type_ann)
     }
 }
 
@@ -86,6 +90,7 @@ impl Display for TsEnumDecl {
                     type_args.iter().for_each(|t| t.type_refs(&mut alias_type_params));
                     TsTypeAliasDecl {
                         id: format!("__{}{}", self.id, name),
+                        export: false,
                         type_params: self.type_params.iter().filter(|tp| alias_type_params
                             .iter()
                             .any(|atp| &atp.0 == *tp))
@@ -115,6 +120,7 @@ impl Display for TsEnumDecl {
                 .map(|elem| {
                     TsTypeAliasDecl {
                         id: elem.id.clone(),
+                        export: true,
                         type_params: elem.type_params.clone(),
                         type_ann: elem.type_ann.clone().prefix_type_refs(
                             &prefix,
@@ -133,6 +139,7 @@ impl Display for TsEnumDecl {
 
         TsTypeAliasDecl {
             id: self.id.clone(),
+            export: true,
             type_params: self.type_params.clone(),
             type_ann: TsType::Union(
                 self.body

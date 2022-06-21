@@ -10,6 +10,7 @@ pub fn expend(item: syn::ItemType) -> darling::Result<TokenStream> {
 
     let decl = TsTypeAliasDecl {
         id: item.ident.to_string(),
+        export: true,
         type_params: item
             .generics
             .type_params()

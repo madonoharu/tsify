@@ -72,7 +72,7 @@ pub struct TsEnumDecl {
 
 impl Display for TsEnumDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let type_refs = self
+        let mut type_refs = self
             .body
             .iter()
             .flat_map(|type_alias| {
@@ -99,6 +99,7 @@ impl Display for TsEnumDecl {
                 }).collect::<Vec<_>>()
             })
             .collect::<Vec<_>>();
+        type_refs.dedup_by_key(|type_ref| type_ref.id.clone());
         for type_ref in type_refs {
             write!(f, "{}\n", type_ref)?;
         }

@@ -6,7 +6,6 @@ use serde_derive_internals::ast::Field;
 pub struct TsifyContainerAttars {
     pub into_wasm_abi: bool,
     pub from_wasm_abi: bool,
-    pub enum_reimport_module: bool,
 }
 
 #[derive(Debug, Default, FromField)]

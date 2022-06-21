@@ -75,7 +75,6 @@ impl<'a> Parser<'a> {
 
         Decl::TsEnum(TsEnumDecl {
             id: self.container.name(),
-            reimport: self.container.attrs.enum_reimport_module,
             type_params: relevant_type_params,
             body,
         })
@@ -254,15 +253,7 @@ impl<'a> Parser<'a> {
             .map(|variant| {
                 let decl = self.create_type_alias_decl(self.parse_variant(variant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
-                    if self.container.attrs.enum_reimport_module {
-                        type_alias.id = variant.attrs.name().serialize_name();
-                    } else {
-                        type_alias.id = format!(
-                            "{}{}",
-                            self.container.name(),
-                            variant.attrs.name().serialize_name()
-                        );
-                    }
+                    type_alias.id = variant.attrs.name().serialize_name();
 
                     type_alias
                 } else {

@@ -66,42 +66,59 @@ impl Display for TsInterfaceDecl {
 
 pub struct TsEnumDecl {
     pub id: String,
-    pub reimport: bool,
     pub type_params: Vec<String>,
     pub body: Vec<TsTypeAliasDecl>,
 }
 
 impl Display for TsEnumDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.reimport {
-            write!(
-                f,
-                "import type * as {}_Module from \"./{}\";\n",
-                self.id,
-                std::env::var("CARGO_PKG_NAME").unwrap(),
-            )?;
+        let type_refs = self
+            .body
+            .iter()
+            .flat_map(|type_alias| {
+                let mut type_refs = Vec::new();
+                type_alias.type_ann.type_refs(&mut type_refs);
+
+                type_refs.iter().filter(|(name, _)| {
+                    !self.type_params.contains(name)
+                }).map(|(name, type_args)| {
+                    let mut alias_type_params = Vec::new();
+                    type_args.iter().for_each(|t| t.type_refs(&mut alias_type_params));
+                    TsTypeAliasDecl {
+                        id: format!("__{}{}", self.id, name),
+                        type_params: self.type_params.iter().filter(|tp| alias_type_params
+                            .iter()
+                            .any(|atp| &atp.0 == *tp))
+                            .map(|tp| tp.clone())
+                            .collect(),
+                        type_ann: TsType::Ref {
+                            name: name.clone(),
+                            type_params: type_args.clone()
+                        }
+                    }
+                }).collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        for type_ref in type_refs {
+            write!(f, "{}\n", type_ref)?;
         }
         write!(f, "declare namespace {}", self.id)?;
 
         if self.body.is_empty() {
             write!(f, " {{}}")?;
         } else {
-            let prefix = format!("{}_Module.", self.id);
+            let prefix = format!("__{}", self.id);
             let members = self
                 .body
                 .iter()
                 .map(|elem| {
-                    if self.reimport {
-                        TsTypeAliasDecl {
-                            id: elem.id.clone(),
-                            type_params: elem.type_params.clone(),
-                            type_ann: elem.type_ann.clone().prefix_type_refs(
-                                &prefix,
-                                &self.type_params,
-                            ),
-                        }
-                    } else {
-                        elem.clone()
+                    TsTypeAliasDecl {
+                        id: elem.id.clone(),
+                        type_params: elem.type_params.clone(),
+                        type_ann: elem.type_ann.clone().prefix_type_refs(
+                            &prefix,
+                            &self.type_params,
+                        ),
                     }
                 })
                 .map(|elem| format!("\n    {elem}"))

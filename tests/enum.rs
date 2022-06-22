@@ -20,7 +20,7 @@ fn test_externally_tagged_enum() {
     }
 
     let expected = concat!(
-        r#"export type __ExternalFoo = Foo;"#, "\n",
+        r#"type __ExternalFoo = Foo;"#, "\n",
         r#"declare namespace External {"#, "\n",
         r#"    export type Struct = { Struct: { x: string; y: number } };"#, "\n",
         r#"    export type EmptyStruct = { EmptyStruct: {} };"#, "\n",
@@ -48,7 +48,7 @@ fn test_internally_tagged_enum() {
     }
 
     let expected = concat!(
-        r#"export type __InternalFoo = Foo;"#, "\n",
+        r#"type __InternalFoo = Foo;"#, "\n",
         r#"declare namespace Internal {"#, "\n",
         r#"    export type Struct = { t: "Struct"; x: string; y: number };"#, "\n",
         r#"    export type EmptyStruct = { t: "EmptyStruct" };"#, "\n",
@@ -76,7 +76,7 @@ fn test_adjacently_tagged_enum() {
     }
 
     let expected = concat!(
-        r#"export type __AdjacentFoo = Foo;"#, "\n",
+        r#"type __AdjacentFoo = Foo;"#, "\n",
         r#"declare namespace Adjacent {"#, "\n",
         r#"    export type Struct = { t: "Struct"; c: { x: string; y: number } };"#, "\n",
         r#"    export type EmptyStruct = { t: "EmptyStruct"; c: {} };"#, "\n",
@@ -106,7 +106,7 @@ fn test_untagged_enum() {
     }
 
     let expected = concat!(
-        r#"export type __UntaggedFoo = Foo;"#, "\n",
+        r#"type __UntaggedFoo = Foo;"#, "\n",
         r#"declare namespace Untagged {"#, "\n",
         r#"    export type Struct = { x: string; y: number };"#, "\n",
         r#"    export type EmptyStruct = {};"#, "\n",
@@ -131,24 +131,87 @@ fn test_module_reimport_enum() {
         Tuple(i32, String),
         EmptyTuple(),
         Newtype(Foo),
+        Newtype2(Foo),
         Unit,
     }
 
     let expected = concat!(
-        r#"export type __InternalFoo = Foo;"#, "\n",
-        r#"declare namespace Internal {"#, "\n",
-        r#"    export type Struct = { Struct: { x: string; y: number } };"#, "\n",
-        r#"    export type EmptyStruct = { EmptyStruct: {} };"#, "\n",
-        r#"    export type Tuple = { Tuple: [number, string] };"#, "\n",
-        r#"    export type EmptyTuple = { EmptyTuple: [] };"#, "\n",
-        r#"    export type Newtype = { Newtype: __InternalFoo };"#, "\n",
-        r#"    export type Unit = "Unit";"#, "\n",
-        r#"}"#, "\n",
-        r#""#, "\n",
-        r#"export type Internal = Internal.Struct "#,
-        r#"| Internal.EmptyStruct | Internal.Tuple "#,
-        r#"| Internal.EmptyTuple | Internal.Newtype "#,
-        r#"| Internal.Unit;"#,
+    r#"type __InternalFoo = Foo;"#, "\n",
+    r#"declare namespace Internal {"#, "\n",
+    r#"    export type Struct = { Struct: { x: string; y: number } };"#, "\n",
+    r#"    export type EmptyStruct = { EmptyStruct: {} };"#, "\n",
+    r#"    export type Tuple = { Tuple: [number, string] };"#, "\n",
+    r#"    export type EmptyTuple = { EmptyTuple: [] };"#, "\n",
+    r#"    export type Newtype = { Newtype: __InternalFoo };"#, "\n",
+    r#"    export type Newtype2 = { Newtype2: __InternalFoo };"#, "\n",
+    r#"    export type Unit = "Unit";"#, "\n",
+    r#"}"#, "\n",
+    r#""#, "\n",
+    r#"export type Internal = Internal.Struct "#,
+    r#"| Internal.EmptyStruct | Internal.Tuple "#,
+    r#"| Internal.EmptyTuple | Internal.Newtype "#,
+    r#"| Internal.Newtype2 | Internal.Unit;"#,
+    );
+
+    assert_eq!(expected, Internal::DECL);
+}
+
+#[test]
+fn test_module_template_enum() {
+    struct Test<T> {
+        inner: T
+    }
+
+    #[derive(Tsify)]
+    enum Internal<T> {
+        Newtype(Test<T>),
+        NewtypeF(Test<Foo>),
+        NewtypeL(Test<Foo>),
+        Unit,
+    }
+
+    let expected = concat!(
+    r#"type __InternalFoo = Foo;"#, "\n",
+    r#"type __InternalTest<A> = Test<A>;"#, "\n",
+    r#"declare namespace Internal {"#, "\n",
+    r#"    export type Newtype<T> = { Newtype: __InternalTest<T> };"#, "\n",
+    r#"    export type NewtypeF = { NewtypeF: __InternalTest<__InternalFoo> };"#, "\n",
+    r#"    export type NewtypeL = { NewtypeL: __InternalTest<__InternalFoo> };"#, "\n",
+    r#"    export type Unit = "Unit";"#, "\n",
+    r#"}"#, "\n",
+    r#""#, "\n",
+    r#"export type Internal<T> = Internal.Newtype<T> | Internal.NewtypeF | Internal.NewtypeL | Internal.Unit;"#,
+    );
+
+    assert_eq!(expected, Internal::<Foo>::DECL);
+}
+
+
+struct Test<T> {
+    inner: T
+}
+
+#[test]
+fn test_module_template_enum_inner() {
+    struct Test<T> {
+        inner: T
+    }
+
+    #[derive(Tsify)]
+    enum Internal {
+        Newtype(Test<Foo>),
+        Unit,
+    }
+
+    let expected = concat!(
+    r#"type __InternalFoo = Foo;"#, "\n",
+    r#"type __InternalTest<A> = Test<A>;"#, "\n",
+    r#"declare namespace Internal {"#, "\n",
+    r#"    export type Newtype = { Newtype: __InternalTest<__InternalFoo> };"#, "\n",
+    r#"    export type Unit = "Unit";"#, "\n",
+    r#"}"#, "\n",
+    r#""#, "\n",
+    r#"export type Internal = Internal.Newtype | Internal.Unit;"#,
     );
 
     assert_eq!(expected, Internal::DECL);

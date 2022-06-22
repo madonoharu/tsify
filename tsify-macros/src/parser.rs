@@ -94,6 +94,7 @@ impl<'a> Parser<'a> {
 
         Decl::TsTypeAlias(TsTypeAliasDecl {
             id: self.container.name(),
+            export: true,
             type_params: relevant_type_params,
             type_ann,
         })

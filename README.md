@@ -133,6 +133,44 @@ export interface Optional {
 }
 ```
 
+## Enum
+
+```rust
+use tsify::Tsify;
+
+#[derive(Tsify)]
+enum Color {
+    Red,
+    Blue,
+    Green,
+    Rgb(u8, u8, u8),
+    Hsv {
+        hue: f64,
+        saturation: f64,
+        value: f64,
+    },
+}
+```
+
+Generated type:
+
+```ts
+declare namespace Color {
+  export type Red = "Red";
+  export type Blue = "Blue";
+  export type Green = "Green";
+  export type Rgb = { Rgb: [number, number, number] };
+  export type Hsv = { Hsv: { hue: number; saturation: number; value: number } };
+}
+
+export type Color =
+  | Color.Red
+  | Color.Blue
+  | Color.Green
+  | Color.Rgb
+  | Color.Hsv;
+```
+
 ## Type Aliases
 
 ```rust

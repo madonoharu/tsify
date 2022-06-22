@@ -166,19 +166,21 @@ fn test_module_template_enum() {
     enum Internal<T> {
         Newtype(Test<T>),
         NewtypeF(Test<Foo>),
+        NewtypeL(Test<Foo>),
         Unit,
     }
 
     let expected = concat!(
-    r#"type __InternalTest<A> = Test<A>;"#, "\n",
     r#"type __InternalFoo = Foo;"#, "\n",
+    r#"type __InternalTest<A> = Test<A>;"#, "\n",
     r#"declare namespace Internal {"#, "\n",
     r#"    export type Newtype<T> = { Newtype: __InternalTest<T> };"#, "\n",
     r#"    export type NewtypeF = { NewtypeF: __InternalTest<__InternalFoo> };"#, "\n",
+    r#"    export type NewtypeL = { NewtypeL: __InternalTest<__InternalFoo> };"#, "\n",
     r#"    export type Unit = "Unit";"#, "\n",
     r#"}"#, "\n",
     r#""#, "\n",
-    r#"export type Internal<T> = Internal.Newtype<T> | Internal.NewtypeF | Internal.Unit;"#,
+    r#"export type Internal<T> = Internal.Newtype<T> | Internal.NewtypeF | Internal.NewtypeL | Internal.Unit;"#,
     );
 
     assert_eq!(expected, Internal::<Foo>::DECL);
@@ -202,8 +204,8 @@ fn test_module_template_enum_inner() {
     }
 
     let expected = concat!(
-    r#"type __InternalTest<A> = Test<A>;"#, "\n",
     r#"type __InternalFoo = Foo;"#, "\n",
+    r#"type __InternalTest<A> = Test<A>;"#, "\n",
     r#"declare namespace Internal {"#, "\n",
     r#"    export type Newtype = { Newtype: __InternalTest<__InternalFoo> };"#, "\n",
     r#"    export type Unit = "Unit";"#, "\n",

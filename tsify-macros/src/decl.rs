@@ -182,6 +182,7 @@ impl Display for TsEnumDecl {
                 }).collect::<Vec<_>>()
             })
             .collect::<Vec<_>>();
+        type_refs.sort_by_key(|type_ref| type_ref.id.clone());
         type_refs.dedup_by_key(|type_ref| type_ref.id.clone());
         for type_ref in type_refs {
             write!(f, "{}\n", type_ref)?;

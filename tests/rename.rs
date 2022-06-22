@@ -35,15 +35,16 @@ fn test_rename() {
         D(i32),
     }
 
-    let expected = concat!(
-        r#"declare namespace RenamedEnum {"#, "\n",
-        r#"    export type X = { X: boolean };"#, "\n",
-        r#"    export type Y = { Y: number };"#, "\n",
-        r#"    export type Z = { Z: string };"#, "\n",
-        r#"}"#, "\n",
-        r#""#, "\n",
-        r#"export type RenamedEnum = RenamedEnum.X | RenamedEnum.Y | RenamedEnum.Z;"#
-    );
+    let expected = indoc! {r#"
+        declare namespace RenamedEnum {
+            export type X = { X: boolean };
+            export type Y = { Y: number };
+            export type Z = { Z: string };
+        }
+
+        export type RenamedEnum = RenamedEnum.X | RenamedEnum.Y | RenamedEnum.Z;"#
+
+    };
 
     assert_eq!(RenamedEnum::DECL, expected);
 }
@@ -88,18 +89,18 @@ fn test_rename_all() {
         foo_bar: bool,
     }
 
-    let expected = concat!(
-        r#"declare namespace Enum {"#, "\n",
-        r#"    export type snake_case = { snake_case: { foo: boolean; foo_bar: boolean } };"#, "\n",
-        r#"    export type camel_case = { camel_case: { foo: boolean; fooBar: boolean } };"#, "\n",
-        r#"    export type kebab_case = { kebab_case: { foo: boolean; "foo-bar": boolean } };"#, "\n",
-        r#"    export type screaming_snake_case = { screaming_snake_case: { FOO: boolean; FOO_BAR: boolean } };"#, "\n",
-        r#"}"#, "\n",
-        r#""#, "\n",
-        r#"export type Enum = Enum.snake_case | Enum.camel_case | Enum.kebab_case | Enum.screaming_snake_case;"#
-    );
+    let expected = indoc! {r#"
+        declare namespace Enum {
+            export type snake_case = { snake_case: { foo: boolean; foo_bar: boolean } };
+            export type camel_case = { camel_case: { foo: boolean; fooBar: boolean } };
+            export type kebab_case = { kebab_case: { foo: boolean; "foo-bar": boolean } };
+            export type screaming_snake_case = { screaming_snake_case: { FOO: boolean; FOO_BAR: boolean } };
+        }
+        
+        export type Enum = Enum.snake_case | Enum.camel_case | Enum.kebab_case | Enum.screaming_snake_case;"#
+    };
 
-    assert_eq!(expected, Enum::DECL);
+    assert_eq!(Enum::DECL, expected);
 
     assert_eq!(
         PascalCase::DECL,

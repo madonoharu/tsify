@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use indoc::indoc;
 use tsify::Tsify;
 
 struct Foo {
@@ -19,21 +20,21 @@ fn test_externally_tagged_enum() {
         Unit,
     }
 
-    let expected = concat!(
-        r#"type __ExternalFoo = Foo;"#, "\n",
-        r#"declare namespace External {"#, "\n",
-        r#"    export type Struct = { Struct: { x: string; y: number } };"#, "\n",
-        r#"    export type EmptyStruct = { EmptyStruct: {} };"#, "\n",
-        r#"    export type Tuple = { Tuple: [number, string] };"#, "\n",
-        r#"    export type EmptyTuple = { EmptyTuple: [] };"#, "\n",
-        r#"    export type Newtype = { Newtype: __ExternalFoo };"#, "\n",
-        r#"    export type Unit = "Unit";"#, "\n",
-        r#"}"#, "\n",
-        r#""#, "\n",
-        r#"export type External = External.Struct | External.EmptyStruct | External.Tuple | External.EmptyTuple | External.Newtype | External.Unit;"#,
-    );
+    let expected = indoc! {r#"
+        type __ExternalFoo = Foo;
+        declare namespace External {
+            export type Struct = { Struct: { x: string; y: number } };
+            export type EmptyStruct = { EmptyStruct: {} };
+            export type Tuple = { Tuple: [number, string] };
+            export type EmptyTuple = { EmptyTuple: [] };
+            export type Newtype = { Newtype: __ExternalFoo };
+            export type Unit = "Unit";
+        }
+        
+        export type External = External.Struct | External.EmptyStruct | External.Tuple | External.EmptyTuple | External.Newtype | External.Unit;"#
+    };
 
-    assert_eq!(expected, External::DECL);
+    assert_eq!(External::DECL, expected);
 }
 
 #[test]
@@ -47,19 +48,19 @@ fn test_internally_tagged_enum() {
         Unit,
     }
 
-    let expected = concat!(
-        r#"type __InternalFoo = Foo;"#, "\n",
-        r#"declare namespace Internal {"#, "\n",
-        r#"    export type Struct = { t: "Struct"; x: string; y: number };"#, "\n",
-        r#"    export type EmptyStruct = { t: "EmptyStruct" };"#, "\n",
-        r#"    export type Newtype = { t: "Newtype" } & __InternalFoo;"#, "\n",
-        r#"    export type Unit = { t: "Unit" };"#, "\n",
-        r#"}"#, "\n",
-        r#""#, "\n",
-        r#"export type Internal = Internal.Struct | Internal.EmptyStruct | Internal.Newtype | Internal.Unit;"#,
-    );
+    let expected = indoc! {r#"
+        type __InternalFoo = Foo;
+        declare namespace Internal {
+            export type Struct = { t: "Struct"; x: string; y: number };
+            export type EmptyStruct = { t: "EmptyStruct" };
+            export type Newtype = { t: "Newtype" } & __InternalFoo;
+            export type Unit = { t: "Unit" };
+        }
+        
+        export type Internal = Internal.Struct | Internal.EmptyStruct | Internal.Newtype | Internal.Unit;"#
+    };
 
-    assert_eq!(expected, Internal::DECL);
+    assert_eq!(Internal::DECL, expected);
 }
 
 #[test]
@@ -75,21 +76,21 @@ fn test_adjacently_tagged_enum() {
         Unit,
     }
 
-    let expected = concat!(
-        r#"type __AdjacentFoo = Foo;"#, "\n",
-        r#"declare namespace Adjacent {"#, "\n",
-        r#"    export type Struct = { t: "Struct"; c: { x: string; y: number } };"#, "\n",
-        r#"    export type EmptyStruct = { t: "EmptyStruct"; c: {} };"#, "\n",
-        r#"    export type Tuple = { t: "Tuple"; c: [number, string] };"#, "\n",
-        r#"    export type EmptyTuple = { t: "EmptyTuple"; c: [] };"#, "\n",
-        r#"    export type Newtype = { t: "Newtype"; c: __AdjacentFoo };"#, "\n",
-        r#"    export type Unit = { t: "Unit"; c: null };"#, "\n",
-        r#"}"#, "\n",
-        r#""#, "\n",
-        r#"export type Adjacent = Adjacent.Struct | Adjacent.EmptyStruct | Adjacent.Tuple | Adjacent.EmptyTuple | Adjacent.Newtype | Adjacent.Unit;"#,
-    );
+    let expected = indoc! {r#"
+        type __AdjacentFoo = Foo;
+        declare namespace Adjacent {
+            export type Struct = { t: "Struct"; c: { x: string; y: number } };
+            export type EmptyStruct = { t: "EmptyStruct"; c: {} };
+            export type Tuple = { t: "Tuple"; c: [number, string] };
+            export type EmptyTuple = { t: "EmptyTuple"; c: [] };
+            export type Newtype = { t: "Newtype"; c: __AdjacentFoo };
+            export type Unit = { t: "Unit"; c: null };
+        }
+    
+        export type Adjacent = Adjacent.Struct | Adjacent.EmptyStruct | Adjacent.Tuple | Adjacent.EmptyTuple | Adjacent.Newtype | Adjacent.Unit;"#
+    };
 
-    assert_eq!(expected, Adjacent::DECL);
+    assert_eq!(Adjacent::DECL, expected);
 }
 
 #[test]
@@ -105,21 +106,21 @@ fn test_untagged_enum() {
         Unit,
     }
 
-    let expected = concat!(
-        r#"type __UntaggedFoo = Foo;"#, "\n",
-        r#"declare namespace Untagged {"#, "\n",
-        r#"    export type Struct = { x: string; y: number };"#, "\n",
-        r#"    export type EmptyStruct = {};"#, "\n",
-        r#"    export type Tuple = [number, string];"#, "\n",
-        r#"    export type EmptyTuple = [];"#, "\n",
-        r#"    export type Newtype = __UntaggedFoo;"#, "\n",
-        r#"    export type Unit = null;"#, "\n",
-        r#"}"#, "\n",
-        r#""#, "\n",
-        r#"export type Untagged = Untagged.Struct | Untagged.EmptyStruct | Untagged.Tuple | Untagged.EmptyTuple | Untagged.Newtype | Untagged.Unit;"#,
-    );
+    let expected = indoc! {r#"
+        type __UntaggedFoo = Foo;
+        declare namespace Untagged {
+            export type Struct = { x: string; y: number };
+            export type EmptyStruct = {};
+            export type Tuple = [number, string];
+            export type EmptyTuple = [];
+            export type Newtype = __UntaggedFoo;
+            export type Unit = null;
+        }
+    
+        export type Untagged = Untagged.Struct | Untagged.EmptyStruct | Untagged.Tuple | Untagged.EmptyTuple | Untagged.Newtype | Untagged.Unit;"#
+    };
 
-    assert_eq!(expected, Untagged::DECL);
+    assert_eq!(Untagged::DECL, expected);
 }
 
 #[test]
@@ -135,31 +136,28 @@ fn test_module_reimport_enum() {
         Unit,
     }
 
-    let expected = concat!(
-    r#"type __InternalFoo = Foo;"#, "\n",
-    r#"declare namespace Internal {"#, "\n",
-    r#"    export type Struct = { Struct: { x: string; y: number } };"#, "\n",
-    r#"    export type EmptyStruct = { EmptyStruct: {} };"#, "\n",
-    r#"    export type Tuple = { Tuple: [number, string] };"#, "\n",
-    r#"    export type EmptyTuple = { EmptyTuple: [] };"#, "\n",
-    r#"    export type Newtype = { Newtype: __InternalFoo };"#, "\n",
-    r#"    export type Newtype2 = { Newtype2: __InternalFoo };"#, "\n",
-    r#"    export type Unit = "Unit";"#, "\n",
-    r#"}"#, "\n",
-    r#""#, "\n",
-    r#"export type Internal = Internal.Struct "#,
-    r#"| Internal.EmptyStruct | Internal.Tuple "#,
-    r#"| Internal.EmptyTuple | Internal.Newtype "#,
-    r#"| Internal.Newtype2 | Internal.Unit;"#,
-    );
+    let expected = indoc! {r#"
+        type __InternalFoo = Foo;
+        declare namespace Internal {
+            export type Struct = { Struct: { x: string; y: number } };
+            export type EmptyStruct = { EmptyStruct: {} };
+            export type Tuple = { Tuple: [number, string] };
+            export type EmptyTuple = { EmptyTuple: [] };
+            export type Newtype = { Newtype: __InternalFoo };
+            export type Newtype2 = { Newtype2: __InternalFoo };
+            export type Unit = "Unit";
+        }
 
-    assert_eq!(expected, Internal::DECL);
+        export type Internal = Internal.Struct | Internal.EmptyStruct | Internal.Tuple | Internal.EmptyTuple | Internal.Newtype | Internal.Newtype2 | Internal.Unit;"#
+    };
+
+    assert_eq!(Internal::DECL, expected);
 }
 
 #[test]
 fn test_module_template_enum() {
     struct Test<T> {
-        inner: T
+        inner: T,
     }
 
     #[derive(Tsify)]
@@ -169,32 +167,30 @@ fn test_module_template_enum() {
         NewtypeL(Test<Foo>),
         Unit,
     }
+    let expected = indoc! {r#"
+        type __InternalFoo = Foo;
+        type __InternalTest<A> = Test<A>;
+        declare namespace Internal {
+            export type Newtype<T> = { Newtype: __InternalTest<T> };
+            export type NewtypeF = { NewtypeF: __InternalTest<__InternalFoo> };
+            export type NewtypeL = { NewtypeL: __InternalTest<__InternalFoo> };
+            export type Unit = "Unit";
+        }
 
-    let expected = concat!(
-    r#"type __InternalFoo = Foo;"#, "\n",
-    r#"type __InternalTest<A> = Test<A>;"#, "\n",
-    r#"declare namespace Internal {"#, "\n",
-    r#"    export type Newtype<T> = { Newtype: __InternalTest<T> };"#, "\n",
-    r#"    export type NewtypeF = { NewtypeF: __InternalTest<__InternalFoo> };"#, "\n",
-    r#"    export type NewtypeL = { NewtypeL: __InternalTest<__InternalFoo> };"#, "\n",
-    r#"    export type Unit = "Unit";"#, "\n",
-    r#"}"#, "\n",
-    r#""#, "\n",
-    r#"export type Internal<T> = Internal.Newtype<T> | Internal.NewtypeF | Internal.NewtypeL | Internal.Unit;"#,
-    );
+        export type Internal<T> = Internal.Newtype<T> | Internal.NewtypeF | Internal.NewtypeL | Internal.Unit;"#
+    };
 
     assert_eq!(expected, Internal::<Foo>::DECL);
 }
 
-
 struct Test<T> {
-    inner: T
+    inner: T,
 }
 
 #[test]
 fn test_module_template_enum_inner() {
     struct Test<T> {
-        inner: T
+        inner: T,
     }
 
     #[derive(Tsify)]
@@ -203,16 +199,16 @@ fn test_module_template_enum_inner() {
         Unit,
     }
 
-    let expected = concat!(
-    r#"type __InternalFoo = Foo;"#, "\n",
-    r#"type __InternalTest<A> = Test<A>;"#, "\n",
-    r#"declare namespace Internal {"#, "\n",
-    r#"    export type Newtype = { Newtype: __InternalTest<__InternalFoo> };"#, "\n",
-    r#"    export type Unit = "Unit";"#, "\n",
-    r#"}"#, "\n",
-    r#""#, "\n",
-    r#"export type Internal = Internal.Newtype | Internal.Unit;"#,
-    );
+    let expected = indoc! {r#"
+        type __InternalFoo = Foo;
+        type __InternalTest<A> = Test<A>;
+        declare namespace Internal {
+            export type Newtype = { Newtype: __InternalTest<__InternalFoo> };
+            export type Unit = "Unit";
+        }
+    
+        export type Internal = Internal.Newtype | Internal.Unit;"#
+    };
 
-    assert_eq!(expected, Internal::DECL);
+    assert_eq!(Internal::DECL, expected);
 }

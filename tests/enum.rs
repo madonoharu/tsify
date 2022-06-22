@@ -155,3 +155,62 @@ fn test_module_reimport_enum() {
 
     assert_eq!(expected, Internal::DECL);
 }
+
+#[test]
+fn test_module_template_enum() {
+    struct Test<T> {
+        inner: T
+    }
+
+    #[derive(Tsify)]
+    enum Internal<T> {
+        Newtype(Test<T>),
+        NewtypeF(Test<Foo>),
+        Unit,
+    }
+
+    let expected = concat!(
+    r#"type __InternalTest<A> = Test<A>;"#, "\n",
+    r#"type __InternalFoo = Foo;"#, "\n",
+    r#"declare namespace Internal {"#, "\n",
+    r#"    export type Newtype<T> = { Newtype: __InternalTest<T> };"#, "\n",
+    r#"    export type NewtypeF = { NewtypeF: __InternalTest<__InternalFoo> };"#, "\n",
+    r#"    export type Unit = "Unit";"#, "\n",
+    r#"}"#, "\n",
+    r#""#, "\n",
+    r#"export type Internal<T> = Internal.Newtype<T> | Internal.NewtypeF | Internal.Unit;"#,
+    );
+
+    assert_eq!(expected, Internal::<Foo>::DECL);
+}
+
+
+struct Test<T> {
+    inner: T
+}
+
+#[test]
+fn test_module_template_enum_inner() {
+    struct Test<T> {
+        inner: T
+    }
+
+    #[derive(Tsify)]
+    enum Internal {
+        Newtype(Test<Foo>),
+        Unit,
+    }
+
+    let expected = concat!(
+    r#"type __InternalTest<A> = Test<A>;"#, "\n",
+    r#"type __InternalFoo = Foo;"#, "\n",
+    r#"declare namespace Internal {"#, "\n",
+    r#"    export type Newtype = { Newtype: __InternalTest<__InternalFoo> };"#, "\n",
+    r#"    export type Unit = "Unit";"#, "\n",
+    r#"}"#, "\n",
+    r#""#, "\n",
+    r#"export type Internal = Internal.Newtype | Internal.Unit;"#,
+    );
+
+    assert_eq!(expected, Internal::DECL);
+}

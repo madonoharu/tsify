@@ -20,10 +20,6 @@ impl TsifyFieldAttrs {
     pub fn from_serde_field(field: &Field) -> darling::Result<Self> {
         let mut attrs = Self::from_field(&field.original)?;
 
-        if !field.attrs.default().is_none() {
-            attrs.optional = true;
-        }
-
         if let Some(expr) = field.attrs.skip_serializing_if() {
             let path = expr
                 .path

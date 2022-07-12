@@ -441,10 +441,9 @@ impl TsType {
         match self {
             TsType::Array(t) => TsType::Array(Box::new(t.prefix_type_refs(prefix, exceptions))),
             TsType::Tuple(tv) => TsType::Tuple(
-                tv
-                    .iter()
+                tv.iter()
                     .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
-                    .collect()
+                    .collect(),
             ),
             TsType::Option(t) => TsType::Option(Box::new(t.prefix_type_refs(prefix, exceptions))),
             TsType::Ref { name, type_params } => {
@@ -466,38 +465,33 @@ impl TsType {
                     }
                 }
             }
-            TsType::Fn { params, type_ann } => {
-                TsType::Fn {
-                    params: params
-                        .iter()
-                        .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
-                        .collect(),
-                    type_ann: Box::new(type_ann.prefix_type_refs(prefix, exceptions)),
-                }
-            }
-            TsType::TypeLit(lit) => {
-                TsType::TypeLit(TsTypeLit {
-                    members: lit.members
-                        .iter()
-                        .map(|t| TsTypeElement {
-                            key: t.key.clone(),
-                            optional: t.optional,
-                            type_ann: t.type_ann.clone().prefix_type_refs(prefix, exceptions),
-                        })
-                        .collect(),
-                })
-            }
-            TsType::Intersection(tv) => TsType::Intersection(
-                tv
+            TsType::Fn { params, type_ann } => TsType::Fn {
+                params: params
                     .iter()
                     .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
-                    .collect()
+                    .collect(),
+                type_ann: Box::new(type_ann.prefix_type_refs(prefix, exceptions)),
+            },
+            TsType::TypeLit(lit) => TsType::TypeLit(TsTypeLit {
+                members: lit
+                    .members
+                    .iter()
+                    .map(|t| TsTypeElement {
+                        key: t.key.clone(),
+                        optional: t.optional,
+                        type_ann: t.type_ann.clone().prefix_type_refs(prefix, exceptions),
+                    })
+                    .collect(),
+            }),
+            TsType::Intersection(tv) => TsType::Intersection(
+                tv.iter()
+                    .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
+                    .collect(),
             ),
             TsType::Union(tv) => TsType::Union(
-                tv
-                    .iter()
+                tv.iter()
                     .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
-                    .collect()
+                    .collect(),
             ),
             _ => self,
         }
@@ -506,24 +500,24 @@ impl TsType {
     pub fn type_refs(&self, type_refs: &mut Vec<(String, Vec<TsType>)>) {
         match self {
             TsType::Array(t) | TsType::Option(t) => t.type_refs(type_refs),
-            TsType::Tuple(tv) | TsType::Union(tv) | TsType::Intersection(tv) => tv.iter().for_each(|t| t.type_refs(type_refs)),
+            TsType::Tuple(tv) | TsType::Union(tv) | TsType::Intersection(tv) => {
+                tv.iter().for_each(|t| t.type_refs(type_refs))
+            }
             TsType::Ref { name, type_params } => {
                 type_refs.push((name.clone(), type_params.clone()));
-                type_params.iter()
-                    .for_each(|t| t.clone().type_refs(type_refs));
-            },
-            TsType::Fn { params, type_ann } => {
-                params.iter()
-                    .for_each(|t| t.clone().type_refs(type_refs));
-                type_ann.type_refs(type_refs);
-            },
-            TsType::TypeLit(lit) => {
-                lit.members
+                type_params
                     .iter()
-                    .for_each(|t| {
-                        t.type_ann.type_refs(type_refs);
-                    });
-            },
+                    .for_each(|t| t.clone().type_refs(type_refs));
+            }
+            TsType::Fn { params, type_ann } => {
+                params.iter().for_each(|t| t.clone().type_refs(type_refs));
+                type_ann.type_refs(type_refs);
+            }
+            TsType::TypeLit(lit) => {
+                lit.members.iter().for_each(|t| {
+                    t.type_ann.type_refs(type_refs);
+                });
+            }
             _ => {}
         }
     }

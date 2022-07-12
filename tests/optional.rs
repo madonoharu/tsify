@@ -13,7 +13,8 @@ fn test_optional() {
         b: Option<String>,
         #[serde(default)]
         c: i32,
-        d: String,
+        #[serde(default)]
+        d: Option<String>,
     }
 
     #[derive(Tsify)]
@@ -21,6 +22,7 @@ fn test_optional() {
     struct OptionalAll {
         a: i32,
         b: i32,
+        c: Option<i32>,
     }
 
     assert_eq!(
@@ -30,7 +32,7 @@ fn test_optional() {
                 a?: number;
                 b?: string;
                 c?: number;
-                d: string;
+                d?: string | null;
             }"
         }
     );
@@ -41,6 +43,7 @@ fn test_optional() {
             export interface OptionalAll {
                 a?: number;
                 b?: number;
+                c?: number | null;
             }"
         }
     );

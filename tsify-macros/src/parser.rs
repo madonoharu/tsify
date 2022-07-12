@@ -8,10 +8,9 @@ use serde_derive_internals::{
 use crate::{
     attrs::TsifyFieldAttrs,
     container::Container,
-    decl::{Decl, TsInterfaceDecl, TsTypeAliasDecl},
+    decl::{Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl},
     typescript::{TsType, TsTypeElement, TsTypeLit},
 };
-use crate::decl::TsEnumDecl;
 
 enum ParsedFields {
     Named(Vec<TsTypeElement>, Vec<TsType>),
@@ -60,7 +59,8 @@ impl<'a> Parser<'a> {
     }
 
     fn create_enum_decl(&self, body: Vec<TsTypeAliasDecl>) -> Decl {
-        let type_ref_names = body.iter()
+        let type_ref_names = body
+            .iter()
             .flat_map(|type_alias| type_alias.type_ann.type_ref_names())
             .collect::<HashSet<_>>();
 
@@ -206,15 +206,6 @@ impl<'a> Parser<'a> {
 
         let type_ann = TsType::from(field.ty);
 
-        let type_ann = if ts_attrs.optional {
-            match type_ann {
-                TsType::Option(t) => *t,
-                _ => type_ann,
-            }
-        } else {
-            type_ann
-        };
-
         (type_ann, Some(ts_attrs))
     }
 
@@ -228,13 +219,23 @@ impl<'a> Parser<'a> {
                 let key = field.attrs.name().serialize_name();
                 let (type_ann, field_attrs) = self.parse_field(field);
 
-                let optional = !self.container.serde_attrs().default().is_none()
-                    || field_attrs.map_or(false, |attrs| attrs.optional);
+                let optional = field_attrs.map_or(false, |attrs| attrs.optional);
+                let default_is_none = self.container.serde_attrs().default().is_none()
+                    && field.attrs.default().is_none();
+
+                let type_ann = if optional {
+                    match type_ann {
+                        TsType::Option(t) => *t,
+                        _ => type_ann,
+                    }
+                } else {
+                    type_ann
+                };
 
                 TsTypeElement {
                     key,
                     type_ann,
-                    optional,
+                    optional: optional || !default_is_none,
                 }
             })
             .collect();

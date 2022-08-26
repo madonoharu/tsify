@@ -69,7 +69,7 @@ impl<'a> Container<'a> {
     }
 
     pub fn generics(&self) -> &syn::Generics {
-        &self.serde_container.generics
+        self.serde_container.generics
     }
 
     pub fn serde_data(&self) -> &ast::Data {

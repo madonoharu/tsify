@@ -190,7 +190,7 @@ impl TsType {
             }
 
             Tuple(TypeTuple { elems, .. }) => {
-                if elems.len() == 0 {
+                if elems.is_empty() {
                     TsType::NULL
                 } else {
                     let elems = elems.iter().map(Self::from_syn_type).collect();
@@ -264,11 +264,11 @@ impl TsType {
             "bool" => Self::BOOLEAN,
 
             "Box" | "Cow" | "Rc" | "Arc" | "Cell" | "RefCell" if args.len() == 1 => {
-                Self::from_syn_type(&args[0])
+                Self::from_syn_type(args[0])
             }
 
             "Vec" | "VecDeque" | "LinkedList" if args.len() == 1 => {
-                let elem = Self::from_syn_type(&args[0]);
+                let elem = Self::from_syn_type(args[0]);
                 Self::Array(Box::new(elem))
             }
 
@@ -282,15 +282,15 @@ impl TsType {
             }
 
             "HashSet" | "BTreeSet" if args.len() == 1 => {
-                let elem = Self::from_syn_type(&args[0]);
+                let elem = Self::from_syn_type(args[0]);
                 Self::Array(Box::new(elem))
             }
 
-            "Option" if args.len() == 1 => Self::Option(Box::new(Self::from_syn_type(&args[0]))),
+            "Option" if args.len() == 1 => Self::Option(Box::new(Self::from_syn_type(args[0]))),
 
             "Result" if args.len() == 2 => {
-                let arg0 = Self::from_syn_type(&args[0]);
-                let arg1 = Self::from_syn_type(&args[1]);
+                let arg0 = Self::from_syn_type(args[0]);
+                let arg1 = Self::from_syn_type(args[1]);
 
                 let ok = type_lit! { Ok: arg0 };
                 let err = type_lit! { Err: arg1 };
@@ -309,7 +309,7 @@ impl TsType {
             },
 
             "Range" | "RangeInclusive" => {
-                let start = Self::from_syn_type(&args[0]);
+                let start = Self::from_syn_type(args[0]);
                 let end = start.clone();
 
                 type_lit! {
@@ -319,9 +319,9 @@ impl TsType {
             }
 
             "Fn" | "FnOnce" | "FnMut" => {
-                let params = args.iter().map(|arg| Self::from_syn_type(arg)).collect();
+                let params = args.into_iter().map(Self::from_syn_type).collect();
                 let type_ann = output
-                    .map(|t| Self::from_syn_type(&t))
+                    .map(Self::from_syn_type)
                     .unwrap_or_else(|| TsType::VOID);
 
                 Self::Fn {
@@ -330,7 +330,7 @@ impl TsType {
                 }
             }
             _ => {
-                let type_params = args.iter().map(|arg| Self::from_syn_type(arg)).collect();
+                let type_params = args.into_iter().map(Self::from_syn_type).collect();
                 Self::Ref { name, type_params }
             }
         }
@@ -535,8 +535,8 @@ fn parse_len(expr: &syn::Expr) -> Option<usize> {
     }
 }
 
-fn is_js_ident(string: &String) -> bool {
-    !string.contains("-")
+fn is_js_ident(string: &str) -> bool {
+    !string.contains('-')
 }
 
 impl Display for TsTypeElement {
@@ -563,7 +563,7 @@ impl Display for TsTypeLit {
             .collect::<Vec<_>>()
             .join("; ");
 
-        if members.len() == 0 {
+        if members.is_empty() {
             write!(f, "{{}}")
         } else {
             write!(f, "{{ {members} }}")
@@ -657,7 +657,7 @@ impl Display for TsType {
                 let types = types
                     .iter()
                     .map(|ty| match ty {
-                        TsType::Intersection(_) => format!("({})", ty.to_string()),
+                        TsType::Intersection(_) => format!("({ty})"),
                         _ => ty.to_string(),
                     })
                     .collect::<Vec<_>>()

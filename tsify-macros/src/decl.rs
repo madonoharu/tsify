@@ -76,8 +76,8 @@ pub struct TsEnumDecl {
 }
 
 static TPARAMS: [char; 26] = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+    'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 ];
 fn tparam(i: usize) -> String {
     let mut s = String::new();
@@ -87,70 +87,72 @@ fn tparam(i: usize) -> String {
         if i < TPARAMS.len() {
             return s;
         }
-        i = i / TPARAMS.len();
+        i /= TPARAMS.len();
     }
 }
 
 impl TsEnumDecl {
     fn replace_type_params(ts_type: TsType, type_args: &mut Vec<String>) -> TsType {
         match ts_type {
-            TsType::Ref { name, type_params } => {
-                TsType::Ref {
-                    name,
-                    type_params: type_params.iter()
-                        .map(|_| {
-                            let name = tparam(type_args.len());
-                            type_args.push(name.clone());
-                            TsType::Ref {
-                                name,
-                                type_params: Vec::new(),
-                            }
-                        })
-                        .collect(),
-                }
+            TsType::Ref { name, type_params } => TsType::Ref {
+                name,
+                type_params: type_params
+                    .iter()
+                    .map(|_| {
+                        let name = tparam(type_args.len());
+                        type_args.push(name.clone());
+                        TsType::Ref {
+                            name,
+                            type_params: Vec::new(),
+                        }
+                    })
+                    .collect(),
             },
-            TsType::Array(t) => TsType::Array(Box::new(TsEnumDecl::replace_type_params(t.deref().clone(), type_args))),
+            TsType::Array(t) => TsType::Array(Box::new(TsEnumDecl::replace_type_params(
+                t.deref().clone(),
+                type_args,
+            ))),
             TsType::Tuple(tv) => TsType::Tuple(
-                tv
-                    .iter()
+                tv.iter()
                     .map(|t| TsEnumDecl::replace_type_params(t.clone(), type_args))
-                    .collect()
+                    .collect(),
             ),
-            TsType::Option(t) => TsType::Option(Box::new(TsEnumDecl::replace_type_params(t.deref().clone(), type_args))),
-            TsType::Fn { params, type_ann } => {
-                TsType::Fn {
-                    params: params
-                        .iter()
-                        .map(|t| TsEnumDecl::replace_type_params(t.clone(), type_args))
-                        .collect(),
-                    type_ann: Box::new(TsEnumDecl::replace_type_params(type_ann.deref().clone(), type_args)),
-                }
-            }
-            TsType::TypeLit(lit) => {
-                TsType::TypeLit(TsTypeLit {
-                    members: lit.members
-                        .iter()
-                        .map(|t| TsTypeElement {
-                            key: t.key.clone(),
-                            optional: t.optional,
-                            type_ann: TsEnumDecl::replace_type_params(t.type_ann.clone(), type_args),
-                        })
-                        .collect(),
-                })
-            }
-            TsType::Intersection(tv) => TsType::Intersection(
-                tv
+            TsType::Option(t) => TsType::Option(Box::new(TsEnumDecl::replace_type_params(
+                t.deref().clone(),
+                type_args,
+            ))),
+            TsType::Fn { params, type_ann } => TsType::Fn {
+                params: params
                     .iter()
                     .map(|t| TsEnumDecl::replace_type_params(t.clone(), type_args))
-                    .collect()
+                    .collect(),
+                type_ann: Box::new(TsEnumDecl::replace_type_params(
+                    type_ann.deref().clone(),
+                    type_args,
+                )),
+            },
+            TsType::TypeLit(lit) => TsType::TypeLit(TsTypeLit {
+                members: lit
+                    .members
+                    .iter()
+                    .map(|t| TsTypeElement {
+                        key: t.key.clone(),
+                        optional: t.optional,
+                        type_ann: TsEnumDecl::replace_type_params(t.type_ann.clone(), type_args),
+                    })
+                    .collect(),
+            }),
+            TsType::Intersection(tv) => TsType::Intersection(
+                tv.iter()
+                    .map(|t| TsEnumDecl::replace_type_params(t.clone(), type_args))
+                    .collect(),
             ),
             TsType::Union(tv) => TsType::Union(
-                tv
-                    .iter()
+                tv.iter()
                     .map(|t| TsEnumDecl::replace_type_params(t.clone(), type_args))
-                    .collect()
+                    .collect(),
             ),
-            _ => ts_type
+            _ => ts_type,
         }
     }
 }
@@ -164,28 +166,33 @@ impl Display for TsEnumDecl {
                 let mut type_refs = Vec::new();
                 type_alias.type_ann.type_refs(&mut type_refs);
 
-                type_refs.iter().filter(|(name, _)| {
-                    !self.type_params.contains(name)
-                }).map(|(name, type_args)| {
-                    let mut type_refs = Vec::new();
-                    let ts_type = TsEnumDecl::replace_type_params(TsType::Ref {
-                        name: name.clone(),
-                        type_params: type_args.clone()
-                    }, &mut type_refs);
+                type_refs
+                    .iter()
+                    .filter(|(name, _)| !self.type_params.contains(name))
+                    .map(|(name, type_args)| {
+                        let mut type_refs = Vec::new();
+                        let ts_type = TsEnumDecl::replace_type_params(
+                            TsType::Ref {
+                                name: name.clone(),
+                                type_params: type_args.clone(),
+                            },
+                            &mut type_refs,
+                        );
 
-                    TsTypeAliasDecl {
-                        id: format!("__{}{}", self.id, name),
-                        export: false,
-                        type_params: type_refs,
-                        type_ann: ts_type,
-                    }
-                }).collect::<Vec<_>>()
+                        TsTypeAliasDecl {
+                            id: format!("__{}{}", self.id, name),
+                            export: false,
+                            type_params: type_refs,
+                            type_ann: ts_type,
+                        }
+                    })
+                    .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>();
         type_refs.sort_by_key(|type_ref| type_ref.id.clone());
         type_refs.dedup_by_key(|type_ref| type_ref.id.clone());
         for type_ref in type_refs {
-            write!(f, "{}\n", type_ref)?;
+            writeln!(f, "{}", type_ref)?;
         }
         write!(f, "declare namespace {}", self.id)?;
 
@@ -196,16 +203,14 @@ impl Display for TsEnumDecl {
             let members = self
                 .body
                 .iter()
-                .map(|elem| {
-                    TsTypeAliasDecl {
-                        id: elem.id.clone(),
-                        export: true,
-                        type_params: elem.type_params.clone(),
-                        type_ann: elem.type_ann.clone().prefix_type_refs(
-                            &prefix,
-                            &self.type_params,
-                        ),
-                    }
+                .map(|elem| TsTypeAliasDecl {
+                    id: elem.id.clone(),
+                    export: true,
+                    type_params: elem.type_params.clone(),
+                    type_ann: elem
+                        .type_ann
+                        .clone()
+                        .prefix_type_refs(&prefix, &self.type_params),
                 })
                 .map(|elem| format!("\n    {elem}"))
                 .collect::<Vec<_>>()
@@ -228,12 +233,16 @@ impl Display for TsEnumDecl {
                         type_params: elem
                             .type_params
                             .iter()
-                            .map(|param| TsType::Ref { name: param.clone(), type_params: Vec::new() })
-                            .collect()
+                            .map(|param| TsType::Ref {
+                                name: param.clone(),
+                                type_params: Vec::new(),
+                            })
+                            .collect(),
                     })
-                    .collect()
+                    .collect(),
             ),
-        }.fmt(f)
+        }
+        .fmt(f)
     }
 }
 

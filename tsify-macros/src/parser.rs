@@ -126,7 +126,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_struct(&self, style: Style, fields: &Vec<Field>) -> Decl {
+    fn parse_struct(&self, style: Style, fields: &[Field]) -> Decl {
         let parsed_fields = self.parse_fields(style, fields);
         let tag_type = self.container.serde_attrs().tag();
 
@@ -153,7 +153,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_fields(&self, style: Style, fields: &Vec<Field>) -> ParsedFields {
+    fn parse_fields(&self, style: Style, fields: &[Field]) -> ParsedFields {
         let style = match style {
             Style::Struct => FieldsStyle::Named,
             Style::Newtype => return ParsedFields::Transparent(self.parse_field(&fields[0]).0),
@@ -171,7 +171,7 @@ impl<'a> Parser<'a> {
             .collect::<Vec<_>>();
 
         if fields.len() == 1 && self.container.transparent() {
-            return ParsedFields::Transparent(self.parse_field(&fields[0]).0);
+            return ParsedFields::Transparent(self.parse_field(fields[0]).0);
         }
 
         match style {
@@ -248,7 +248,7 @@ impl<'a> Parser<'a> {
         (members, flatten_fields)
     }
 
-    fn parse_enum(&self, variants: &Vec<Variant>) -> Decl {
+    fn parse_enum(&self, variants: &[Variant]) -> Decl {
         let type_alias = variants
             .iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())

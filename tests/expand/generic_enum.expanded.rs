@@ -11,8 +11,7 @@ const _: () = {
     extern crate serde as _serde;
     use wasm_bindgen::{
         convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
-        describe::WasmDescribe,
-        prelude::*,
+        describe::WasmDescribe, prelude::*,
     };
     #[wasm_bindgen]
     extern "C" {
@@ -21,10 +20,10 @@ const _: () = {
     }
     impl<T, U> Tsify for GenericEnum<T, U> {
         type JsType = JsType;
-        const DECL : & 'static str = "declare namespace GenericEnum {\n    export type Unit = \"Unit\";\n    export type NewType<T> = { NewType: T };\n    export type Seq<T, U> = { Seq: [T, U] };\n    export type Map<T, U> = { Map: { x: T; y: U } };\n}\n\nexport type GenericEnum<T, U> = GenericEnum.Unit | GenericEnum.NewType<T> | GenericEnum.Seq<T, U> | GenericEnum.Map<T, U>;" ;
+        const DECL: &'static str = "declare namespace GenericEnum {\n    export type Unit = \"Unit\";\n    export type NewType<T> = { NewType: T };\n    export type Seq<T, U> = { Seq: [T, U] };\n    export type Map<T, U> = { Map: { x: T; y: U } };\n}\n\nexport type GenericEnum<T, U> = GenericEnum.Unit | GenericEnum.NewType<T> | GenericEnum.Seq<T, U> | GenericEnum.Map<T, U>;";
     }
     #[wasm_bindgen(typescript_custom_section)]
-    const TS_APPEND_CONTENT : & 'static str = "declare namespace GenericEnum {\n    export type Unit = \"Unit\";\n    export type NewType<T> = { NewType: T };\n    export type Seq<T, U> = { Seq: [T, U] };\n    export type Map<T, U> = { Map: { x: T; y: U } };\n}\n\nexport type GenericEnum<T, U> = GenericEnum.Unit | GenericEnum.NewType<T> | GenericEnum.Seq<T, U> | GenericEnum.Map<T, U>;" ;
+    const TS_APPEND_CONTENT: &'static str = "declare namespace GenericEnum {\n    export type Unit = \"Unit\";\n    export type NewType<T> = { NewType: T };\n    export type Seq<T, U> = { Seq: [T, U] };\n    export type Map<T, U> = { Map: { x: T; y: U } };\n}\n\nexport type GenericEnum<T, U> = GenericEnum.Unit | GenericEnum.NewType<T> | GenericEnum.Seq<T, U> | GenericEnum.Map<T, U>;";
     impl<T, U> WasmDescribe for GenericEnum<T, U> {
         #[inline]
         fn describe() {

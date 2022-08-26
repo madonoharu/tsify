@@ -8,8 +8,7 @@ const _: () = {
     extern crate serde as _serde;
     use wasm_bindgen::{
         convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
-        describe::WasmDescribe,
-        prelude::*,
+        describe::WasmDescribe, prelude::*,
     };
     #[wasm_bindgen]
     extern "C" {
@@ -74,8 +73,7 @@ const _: () = {
     extern crate serde as _serde;
     use wasm_bindgen::{
         convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
-        describe::WasmDescribe,
-        prelude::*,
+        describe::WasmDescribe, prelude::*,
     };
     #[wasm_bindgen]
     extern "C" {

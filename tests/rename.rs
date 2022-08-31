@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use tsify::Tsify;
 
 #[test]
@@ -36,13 +37,7 @@ fn test_rename() {
     }
 
     let expected = indoc! {r#"
-        declare namespace RenamedEnum {
-            export type X = { X: boolean };
-            export type Y = { Y: number };
-            export type Z = { Z: string };
-        }
-
-        export type RenamedEnum = RenamedEnum.X | RenamedEnum.Y | RenamedEnum.Z;"#
+        export type RenamedEnum = { X: boolean } | { Y: number } | { Z: string };"#
 
     };
 
@@ -51,8 +46,10 @@ fn test_rename() {
 
 #[test]
 fn test_rename_all() {
+    #[allow(clippy::enum_variant_names)]
     #[derive(Tsify)]
     #[serde(rename_all = "snake_case")]
+    #[tsify(namespace)]
     enum Enum {
         SnakeCase {
             foo: bool,
@@ -97,7 +94,7 @@ fn test_rename_all() {
             export type screaming_snake_case = { screaming_snake_case: { FOO: boolean; FOO_BAR: boolean } };
         }
         
-        export type Enum = Enum.snake_case | Enum.camel_case | Enum.kebab_case | Enum.screaming_snake_case;"#
+        export type Enum = { snake_case: { foo: boolean; foo_bar: boolean } } | { camel_case: { foo: boolean; fooBar: boolean } } | { kebab_case: { foo: boolean; "foo-bar": boolean } } | { screaming_snake_case: { FOO: boolean; FOO_BAR: boolean } };"#
     };
 
     assert_eq!(Enum::DECL, expected);

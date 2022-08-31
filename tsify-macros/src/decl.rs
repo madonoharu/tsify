@@ -72,22 +72,24 @@ impl Display for TsInterfaceDecl {
 pub struct TsEnumDecl {
     pub id: String,
     pub type_params: Vec<String>,
-    pub body: Vec<TsTypeAliasDecl>,
+    pub members: Vec<TsTypeAliasDecl>,
+    pub namespace: bool,
 }
 
-static TPARAMS: [char; 26] = [
+const ALPHABET_UPPER: [char; 26] = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
     'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 ];
+
 fn tparam(i: usize) -> String {
     let mut s = String::new();
     let mut i = i;
     loop {
-        s.push(TPARAMS[i % TPARAMS.len()]);
-        if i < TPARAMS.len() {
+        s.push(ALPHABET_UPPER[i % ALPHABET_UPPER.len()]);
+        if i < ALPHABET_UPPER.len() {
             return s;
         }
-        i /= TPARAMS.len();
+        i /= ALPHABET_UPPER.len();
     }
 }
 
@@ -159,86 +161,78 @@ impl TsEnumDecl {
 
 impl Display for TsEnumDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut type_refs = self
-            .body
-            .iter()
-            .flat_map(|type_alias| {
-                let mut type_refs = Vec::new();
-                type_alias.type_ann.type_refs(&mut type_refs);
-
-                type_refs
-                    .iter()
-                    .filter(|(name, _)| !self.type_params.contains(name))
-                    .map(|(name, type_args)| {
-                        let mut type_refs = Vec::new();
-                        let ts_type = TsEnumDecl::replace_type_params(
-                            TsType::Ref {
-                                name: name.clone(),
-                                type_params: type_args.clone(),
-                            },
-                            &mut type_refs,
-                        );
-
-                        TsTypeAliasDecl {
-                            id: format!("__{}{}", self.id, name),
-                            export: false,
-                            type_params: type_refs,
-                            type_ann: ts_type,
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
-        type_refs.sort_by_key(|type_ref| type_ref.id.clone());
-        type_refs.dedup_by_key(|type_ref| type_ref.id.clone());
-        for type_ref in type_refs {
-            writeln!(f, "{}", type_ref)?;
-        }
-        write!(f, "declare namespace {}", self.id)?;
-
-        if self.body.is_empty() {
-            write!(f, " {{}}")?;
-        } else {
-            let prefix = format!("__{}", self.id);
-            let members = self
-                .body
+        if self.namespace {
+            let mut type_refs = self
+                .members
                 .iter()
-                .map(|elem| TsTypeAliasDecl {
-                    id: elem.id.clone(),
-                    export: true,
-                    type_params: elem.type_params.clone(),
-                    type_ann: elem
-                        .type_ann
-                        .clone()
-                        .prefix_type_refs(&prefix, &self.type_params),
+                .flat_map(|type_alias| {
+                    let mut type_refs = Vec::new();
+                    type_alias.type_ann.type_refs(&mut type_refs);
+
+                    type_refs
+                        .iter()
+                        .filter(|(name, _)| !self.type_params.contains(name))
+                        .map(|(name, type_args)| {
+                            let mut type_refs = Vec::new();
+                            let ts_type = TsEnumDecl::replace_type_params(
+                                TsType::Ref {
+                                    name: name.clone(),
+                                    type_params: type_args.clone(),
+                                },
+                                &mut type_refs,
+                            );
+
+                            TsTypeAliasDecl {
+                                id: format!("__{}{}", self.id, name),
+                                export: false,
+                                type_params: type_refs,
+                                type_ann: ts_type,
+                            }
+                        })
+                        .collect::<Vec<_>>()
                 })
-                .map(|elem| format!("\n    {elem}"))
-                .collect::<Vec<_>>()
-                .join("");
+                .collect::<Vec<_>>();
+            type_refs.sort_by_key(|type_ref| type_ref.id.clone());
+            type_refs.dedup_by_key(|type_ref| type_ref.id.clone());
+            for type_ref in type_refs {
+                writeln!(f, "{}", type_ref)?;
+            }
+            write!(f, "declare namespace {}", self.id)?;
 
-            write!(f, " {{{members}\n}}")?;
+            if self.members.is_empty() {
+                write!(f, " {{}}")?;
+            } else {
+                let prefix = format!("__{}", self.id);
+                let members = self
+                    .members
+                    .iter()
+                    .map(|elem| TsTypeAliasDecl {
+                        id: elem.id.clone(),
+                        export: true,
+                        type_params: elem.type_params.clone(),
+                        type_ann: elem
+                            .type_ann
+                            .clone()
+                            .prefix_type_refs(&prefix, &self.type_params),
+                    })
+                    .map(|elem| format!("\n    {elem}"))
+                    .collect::<Vec<_>>()
+                    .join("");
+
+                write!(f, " {{{members}\n}}")?;
+            }
+
+            write!(f, "\n\n")?;
         }
-
-        write!(f, "\n\n")?;
 
         TsTypeAliasDecl {
             id: self.id.clone(),
             export: true,
             type_params: self.type_params.clone(),
             type_ann: TsType::Union(
-                self.body
+                self.members
                     .iter()
-                    .map(|elem| TsType::Ref {
-                        name: format!("{}.{}", self.id, elem.id),
-                        type_params: elem
-                            .type_params
-                            .iter()
-                            .map(|param| TsType::Ref {
-                                name: param.clone(),
-                                type_params: Vec::new(),
-                            })
-                            .collect(),
-                    })
+                    .map(|member| member.type_ann.clone())
                     .collect(),
             ),
         }
@@ -246,6 +240,7 @@ impl Display for TsEnumDecl {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 pub enum Decl {
     TsTypeAlias(TsTypeAliasDecl),
     TsInterface(TsInterfaceDecl),

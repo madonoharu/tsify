@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use tsify::Tsify;
 
 struct Unsupported;
@@ -51,13 +52,7 @@ fn test_enum_with_type_override() {
     }
 
     let expected = indoc! {r#"
-        declare namespace Enum {
-            export type Struct = { Struct: { x: `tpl_lit_${string}`; y: 0 | 1 | 2 } };
-            export type Tuple = { Tuple: [`tpl_lit_${string}`, 0 | 1 | 2] };
-            export type Newtype = { Newtype: number };
-        }
-
-        export type Enum = Enum.Struct | Enum.Tuple | Enum.Newtype;"#
+        export type Enum = { Struct: { x: `tpl_lit_${string}`; y: 0 | 1 | 2 } } | { Tuple: [`tpl_lit_${string}`, 0 | 1 | 2] } | { Newtype: number };"#
     };
 
     assert_eq!(Enum::DECL, expected);

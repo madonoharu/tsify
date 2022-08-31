@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use tsify::Tsify;
 
 #[test]
@@ -53,6 +54,24 @@ fn test_generic_enum() {
     }
 
     let expected = indoc! {r#"
+        export type GenericEnum<T, U> = "Unit" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };"#
+    };
+
+    assert_eq!(GenericEnum::<(), ()>::DECL, expected);
+}
+
+#[test]
+fn test_generic_enum_with_namespace() {
+    #[derive(Tsify)]
+    #[tsify(namespace)]
+    pub enum GenericEnum<T, U> {
+        Unit,
+        NewType(T),
+        Seq(T, U),
+        Map { x: T, y: U },
+    }
+
+    let expected = indoc! {r#"
         declare namespace GenericEnum {
             export type Unit = "Unit";
             export type NewType<T> = { NewType: T };
@@ -60,7 +79,7 @@ fn test_generic_enum() {
             export type Map<T, U> = { Map: { x: T; y: U } };
         }
         
-        export type GenericEnum<T, U> = GenericEnum.Unit | GenericEnum.NewType<T> | GenericEnum.Seq<T, U> | GenericEnum.Map<T, U>;"#
+        export type GenericEnum<T, U> = "Unit" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };"#
     };
 
     assert_eq!(GenericEnum::<(), ()>::DECL, expected);

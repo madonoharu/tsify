@@ -3,9 +3,39 @@ use serde_derive_internals::ast::Field;
 
 #[derive(Debug, Default, FromDeriveInput)]
 #[darling(attributes(tsify), default)]
+struct TsifyContainerAttarsDef {
+    into_wasm_abi: bool,
+    from_wasm_abi: bool,
+    namespace: bool,
+}
+
+#[derive(Debug, Default)]
 pub struct TsifyContainerAttars {
     pub into_wasm_abi: bool,
     pub from_wasm_abi: bool,
+    pub namespace: bool,
+}
+
+impl FromDeriveInput for TsifyContainerAttars {
+    fn from_derive_input(input: &syn::DeriveInput) -> darling::Result<Self> {
+        let TsifyContainerAttarsDef {
+            into_wasm_abi,
+            from_wasm_abi,
+            namespace,
+        } = TsifyContainerAttarsDef::from_derive_input(input)?;
+
+        if namespace && !matches!(input.data, syn::Data::Enum(_)) {
+            Err(darling::Error::custom(
+                "#[tsify(namespace)] can only be used on enums",
+            ))
+        } else {
+            Ok(Self {
+                into_wasm_abi,
+                from_wasm_abi,
+                namespace,
+            })
+        }
+    }
 }
 
 #[derive(Debug, Default, FromField)]

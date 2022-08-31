@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use tsify::Tsify;
 
 #[test]
@@ -31,6 +32,7 @@ fn test_skip() {
     assert_eq!(Tuple::DECL, "export type Tuple = [number];");
 
     #[derive(Tsify)]
+    #[tsify(namespace)]
     enum Enum {
         #[serde(skip)]
         A,
@@ -46,7 +48,7 @@ fn test_skip() {
             export type D = "D";
         }
         
-        export type Enum = Enum.D;"#
+        export type Enum = "D";"#
     };
 
     assert_eq!(Enum::DECL, expected);

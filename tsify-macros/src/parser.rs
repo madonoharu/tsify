@@ -58,44 +58,21 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn create_enum_decl(&self, body: Vec<TsTypeAliasDecl>) -> Decl {
-        let type_ref_names = body
-            .iter()
-            .flat_map(|type_alias| type_alias.type_ann.type_ref_names())
-            .collect::<HashSet<_>>();
-
-        let relevant_type_params = self
-            .container
+    fn create_relevant_type_params(&self, type_ref_names: HashSet<&String>) -> Vec<String> {
+        self.container
             .generics()
             .type_params()
             .into_iter()
             .map(|p| p.ident.to_string())
             .filter(|t| type_ref_names.contains(t))
-            .collect::<Vec<_>>();
-
-        Decl::TsEnum(TsEnumDecl {
-            id: self.container.name(),
-            type_params: relevant_type_params,
-            body,
-        })
+            .collect::<Vec<_>>()
     }
 
     fn create_type_alias_decl(&self, type_ann: TsType) -> Decl {
-        let type_ref_names = type_ann.type_ref_names();
-
-        let relevant_type_params = self
-            .container
-            .generics()
-            .type_params()
-            .into_iter()
-            .map(|p| p.ident.to_string())
-            .filter(|t| type_ref_names.contains(t))
-            .collect::<Vec<_>>();
-
         Decl::TsTypeAlias(TsTypeAliasDecl {
             id: self.container.name(),
             export: true,
-            type_params: relevant_type_params,
+            type_params: self.create_relevant_type_params(type_ann.type_ref_names()),
             type_ann,
         })
     }
@@ -109,18 +86,9 @@ impl<'a> Parser<'a> {
             type_ref_names.extend(ty.type_ref_names());
         });
 
-        let relevant_type_params = self
-            .container
-            .generics()
-            .type_params()
-            .into_iter()
-            .map(|p| p.ident.to_string())
-            .filter(|t| type_ref_names.contains(t))
-            .collect::<Vec<_>>();
-
         Decl::TsInterface(TsInterfaceDecl {
             id: self.container.name(),
-            type_params: relevant_type_params,
+            type_params: self.create_relevant_type_params(type_ref_names),
             extends,
             body: members,
         })
@@ -249,7 +217,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_enum(&self, variants: &[Variant]) -> Decl {
-        let type_alias = variants
+        let members = variants
             .iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
@@ -264,7 +232,19 @@ impl<'a> Parser<'a> {
             })
             .collect::<Vec<_>>();
 
-        self.create_enum_decl(type_alias)
+        let type_ref_names = members
+            .iter()
+            .flat_map(|type_alias| type_alias.type_ann.type_ref_names())
+            .collect::<HashSet<_>>();
+
+        let relevant_type_params = self.create_relevant_type_params(type_ref_names);
+
+        Decl::TsEnum(TsEnumDecl {
+            id: self.container.name(),
+            type_params: relevant_type_params,
+            members,
+            namespace: self.container.attrs.namespace,
+        })
     }
 
     fn parse_variant(&self, variant: &Variant) -> TsType {

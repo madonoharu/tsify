@@ -385,16 +385,20 @@ impl TsType {
                     optional: false,
                 };
 
-                let content_field = TsTypeElement {
-                    key: content.clone(),
-                    type_ann,
-                    optional: false,
-                };
+                if matches!(style, Style::Unit) {
+                    tag_field.into()
+                } else {
+                    let content_field = TsTypeElement {
+                        key: content.clone(),
+                        type_ann,
+                        optional: false,
+                    };
 
-                TsTypeLit {
-                    members: vec![tag_field, content_field],
+                    TsTypeLit {
+                        members: vec![tag_field, content_field],
+                    }
+                    .into()
                 }
-                .into()
             }
             TagType::None => type_ann,
         }

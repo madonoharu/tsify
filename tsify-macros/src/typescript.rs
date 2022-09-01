@@ -85,7 +85,10 @@ pub enum TsType {
     TypeLit(TsTypeLit),
     Intersection(Vec<Self>),
     Union(Vec<Self>),
-    Override(String),
+    Override {
+        type_override: String,
+        type_params: Vec<String>,
+    },
 }
 
 macro_rules! type_lit {
@@ -421,17 +424,19 @@ impl TsType {
             TsType::Intersection(tys) | TsType::Union(tys) => {
                 tys.iter().for_each(|t| t.visit(f));
             }
-            TsType::Keyword(_) | TsType::Lit(_) | TsType::Override(_) => (),
+            TsType::Keyword(_) | TsType::Lit(_) | TsType::Override { .. } => (),
         }
     }
 
     pub fn type_ref_names(&self) -> HashSet<&String> {
         let mut set: HashSet<&String> = HashSet::new();
 
-        self.visit(&mut |ty: &TsType| {
-            if let TsType::Ref { name, .. } = ty {
+        self.visit(&mut |ty: &TsType| match ty {
+            TsType::Ref { name, .. } => {
                 set.insert(name);
             }
+            TsType::Override { type_params, .. } => set.extend(type_params),
+            _ => (),
         });
 
         set
@@ -666,7 +671,7 @@ impl Display for TsType {
                 write!(f, "{types}")
             }
 
-            TsType::Override(ty) => f.write_str(ty),
+            TsType::Override { type_override, .. } => f.write_str(type_override),
         }
     }
 }

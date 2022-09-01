@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
             .into_iter()
             .map(|p| p.ident.to_string())
             .filter(|t| type_ref_names.contains(t))
-            .collect::<Vec<_>>()
+            .collect()
     }
 
     fn create_type_alias_decl(&self, type_ann: TsType) -> Decl {
@@ -168,13 +168,21 @@ impl<'a> Parser<'a> {
             }
         };
 
-        if let Some(t) = &ts_attrs.type_override {
-            return (TsType::Override(t.clone()), Some(ts_attrs));
-        }
-
         let type_ann = TsType::from(field.ty);
 
-        (type_ann, Some(ts_attrs))
+        if let Some(t) = &ts_attrs.type_override {
+            let type_ref_names = type_ann.type_ref_names();
+            let type_params = self.create_relevant_type_params(type_ref_names);
+            (
+                TsType::Override {
+                    type_override: t.clone(),
+                    type_params,
+                },
+                Some(ts_attrs),
+            )
+        } else {
+            (type_ann, Some(ts_attrs))
+        }
     }
 
     fn parse_named_fields(&self, fields: Vec<&Field>) -> (Vec<TsTypeElement>, Vec<TsType>) {

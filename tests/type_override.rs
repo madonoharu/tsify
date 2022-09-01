@@ -57,3 +57,20 @@ fn test_enum_with_type_override() {
 
     assert_eq!(Enum::DECL, expected);
 }
+
+#[test]
+fn test_generic_struct_with_type_override() {
+    #[derive(Tsify)]
+    pub struct Foo<T> {
+        #[tsify(type = "[T, ...T[]]")]
+        bar: Vec<T>,
+    }
+
+    let expected = indoc! {r#"
+        export interface Foo<T> {
+            bar: [T, ...T[]];
+        }"#
+    };
+
+    assert_eq!(Foo::<()>::DECL, expected);
+}

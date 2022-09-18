@@ -15,7 +15,7 @@ pub fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     let ident = cont.ident();
     let decl_str = decl.to_string();
 
-    let tokens = if cfg!(feature = "wasm-bindgen-impl") {
+    let tokens = if cfg!(feature = "wasm-bindgen") {
         wasm_bindgen::expand(&cont, decl)
     } else {
         quote! {

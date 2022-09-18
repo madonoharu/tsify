@@ -12,6 +12,7 @@ const _: () = {
         convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
         describe::WasmDescribe, prelude::*,
     };
+    use tsify::__rt::JsValueSerdeExt;
     #[wasm_bindgen]
     extern "C" {
         #[wasm_bindgen(typescript_type = "Borrow")]

@@ -51,6 +51,8 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
                 describe::WasmDescribe,
                 prelude::*,
             };
+            use tsify::__rt::JsValueSerdeExt;
+
 
             #[wasm_bindgen]
             extern "C" {

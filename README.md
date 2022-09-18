@@ -15,9 +15,9 @@ Click to show Cargo.toml.
 
 ```toml
 [dependencies]
-tsify = "0.3"
+tsify = "0.4.1"
 serde = { version = "1.0", features = ["derive"] }
-wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2" }
 ```
 
 </details>

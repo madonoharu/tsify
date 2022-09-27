@@ -8,11 +8,11 @@ struct Borrow<'a> {
 #[automatically_derived]
 const _: () = {
     extern crate serde as _serde;
+    use tsify::Tsify;
     use wasm_bindgen::{
         convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
         describe::WasmDescribe, prelude::*,
     };
-    use tsify::__rt::JsValueSerdeExt;
     #[wasm_bindgen]
     extern "C" {
         #[wasm_bindgen(typescript_type = "Borrow")]
@@ -34,10 +34,10 @@ const _: () = {
     where
         Self: _serde::Serialize,
     {
-        type Abi = <<Self as Tsify>::JsType as IntoWasmAbi>::Abi;
+        type Abi = <JsType as IntoWasmAbi>::Abi;
         #[inline]
         fn into_abi(self) -> Self::Abi {
-            JsValue::from_serde(&self).unwrap_throw().into_abi()
+            self.into_js().unwrap_throw().into_abi()
         }
     }
     impl<'a> OptionIntoWasmAbi for Borrow<'a>
@@ -46,17 +46,17 @@ const _: () = {
     {
         #[inline]
         fn none() -> Self::Abi {
-            <<Self as Tsify>::JsType as OptionIntoWasmAbi>::none()
+            <JsType as OptionIntoWasmAbi>::none()
         }
     }
     impl<'a> FromWasmAbi for Borrow<'a>
     where
         Self: _serde::de::DeserializeOwned,
     {
-        type Abi = <JsValue as FromWasmAbi>::Abi;
+        type Abi = <JsType as FromWasmAbi>::Abi;
         #[inline]
         unsafe fn from_abi(js: Self::Abi) -> Self {
-            JsValue::from_abi(js).into_serde().unwrap_throw()
+            Self::from_js(&JsType::from_abi(js)).unwrap_throw()
         }
     }
     impl<'a> OptionFromWasmAbi for Borrow<'a>
@@ -64,8 +64,8 @@ const _: () = {
         Self: _serde::de::DeserializeOwned,
     {
         #[inline]
-        fn is_none(abi: &Self::Abi) -> bool {
-            <<Self as Tsify>::JsType as OptionFromWasmAbi>::is_none(abi)
+        fn is_none(js: &Self::Abi) -> bool {
+            <JsType as OptionFromWasmAbi>::is_none(js)
         }
     }
 };

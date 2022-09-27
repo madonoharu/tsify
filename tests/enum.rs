@@ -167,8 +167,14 @@ fn test_untagged_enum() {
         Unit,
     }
 
-    let expected = indoc! {r#"
-        export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | null;"#
+    let expected = if cfg!(feature = "js") {
+        indoc! {r#"
+            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | undefined;"#
+        }
+    } else {
+        indoc! {r#"
+            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | null;"#
+        }
     };
 
     assert_eq!(Untagged::DECL, expected);
@@ -188,18 +194,34 @@ fn test_untagged_enum_with_namespace() {
         Unit,
     }
 
-    let expected = indoc! {r#"
-        type __UntaggedFoo = Foo;
-        declare namespace Untagged {
-            export type Struct = { x: string; y: number };
-            export type EmptyStruct = {};
-            export type Tuple = [number, string];
-            export type EmptyTuple = [];
-            export type Newtype = __UntaggedFoo;
-            export type Unit = null;
+    let expected = if cfg!(feature = "js") {
+        indoc! {r#"
+            type __UntaggedFoo = Foo;
+            declare namespace Untagged {
+                export type Struct = { x: string; y: number };
+                export type EmptyStruct = {};
+                export type Tuple = [number, string];
+                export type EmptyTuple = [];
+                export type Newtype = __UntaggedFoo;
+                export type Unit = undefined;
+            }
+        
+            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | undefined;"#
         }
-    
-        export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | null;"#
+    } else {
+        indoc! {r#"
+            type __UntaggedFoo = Foo;
+            declare namespace Untagged {
+                export type Struct = { x: string; y: number };
+                export type EmptyStruct = {};
+                export type Tuple = [number, string];
+                export type EmptyTuple = [];
+                export type Newtype = __UntaggedFoo;
+                export type Unit = null;
+            }
+        
+            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | null;"#
+        }
     };
 
     assert_eq!(Untagged::DECL, expected);

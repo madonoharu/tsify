@@ -126,7 +126,7 @@ impl<'a> Parser<'a> {
             Style::Struct => FieldsStyle::Named,
             Style::Newtype => return ParsedFields::Transparent(self.parse_field(&fields[0]).0),
             Style::Tuple => FieldsStyle::Unnamed,
-            Style::Unit => return ParsedFields::Transparent(TsType::NULL),
+            Style::Unit => return ParsedFields::Transparent(TsType::nullish()),
         };
 
         let fields = fields

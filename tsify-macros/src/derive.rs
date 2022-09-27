@@ -21,6 +21,7 @@ pub fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
         quote! {
             #[automatically_derived]
             const _: () = {
+                use tsify::Tsify;
                 impl #impl_generics Tsify for #ident #ty_generics #where_clause {
                     const DECL: &'static str = #decl_str;
                 }

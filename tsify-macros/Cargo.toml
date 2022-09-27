@@ -22,3 +22,5 @@ darling = "0.14"
 
 [features]
 wasm-bindgen = []
+js = []
+json = []

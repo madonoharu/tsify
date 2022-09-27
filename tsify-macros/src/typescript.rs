@@ -5,9 +5,11 @@ use serde_derive_internals::{ast::Style, attr::TagType};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TsKeywordTypeKind {
     Number,
+    Bigint,
     Boolean,
     String,
     Void,
+    Undefined,
     Null,
     Never,
 }
@@ -119,11 +121,21 @@ impl From<&syn::Type> for TsType {
 
 impl TsType {
     pub const NUMBER: TsType = TsType::Keyword(TsKeywordTypeKind::Number);
+    pub const BIGINT: TsType = TsType::Keyword(TsKeywordTypeKind::Bigint);
     pub const BOOLEAN: TsType = TsType::Keyword(TsKeywordTypeKind::Boolean);
     pub const STRING: TsType = TsType::Keyword(TsKeywordTypeKind::String);
     pub const VOID: TsType = TsType::Keyword(TsKeywordTypeKind::Void);
+    pub const UNDEFINED: TsType = TsType::Keyword(TsKeywordTypeKind::Undefined);
     pub const NULL: TsType = TsType::Keyword(TsKeywordTypeKind::Null);
     pub const NEVER: TsType = TsType::Keyword(TsKeywordTypeKind::Never);
+
+    pub const fn nullish() -> Self {
+        if cfg!(feature = "js") {
+            Self::UNDEFINED
+        } else {
+            Self::NULL
+        }
+    }
 
     pub fn and(self, other: Self) -> Self {
         match (self, other) {
@@ -194,7 +206,7 @@ impl TsType {
 
             Tuple(TypeTuple { elems, .. }) => {
                 if elems.is_empty() {
-                    TsType::NULL
+                    TsType::nullish()
                 } else {
                     let elems = elems.iter().map(Self::from_syn_type).collect();
                     Self::Tuple(elems)
@@ -259,8 +271,16 @@ impl TsType {
         };
 
         match name.as_str() {
-            "u8" | "u16" | "u32" | "u64" | "u128" | "usize" | "i8" | "i16" | "i32" | "i64"
-            | "i128" | "isize" | "f64" | "f32" => Self::NUMBER,
+            "u8" | "u16" | "u32" | "u64" | "usize" | "i8" | "i16" | "i32" | "i64" | "isize"
+            | "f64" | "f32" => Self::NUMBER,
+
+            "u128" | "i128" => {
+                if cfg!(feature = "js") {
+                    Self::BIGINT
+                } else {
+                    Self::NUMBER
+                }
+            }
 
             "String" | "str" | "char" | "Path" | "PathBuf" => Self::STRING,
 
@@ -278,10 +298,14 @@ impl TsType {
             "HashMap" | "BTreeMap" if args.len() == 2 => {
                 let type_params = args.iter().map(|arg| Self::from_syn_type(arg)).collect();
 
-                Self::Ref {
-                    name: "Record".to_string(),
-                    type_params,
+                let name = if cfg!(feature = "js") {
+                    "Map"
+                } else {
+                    "Record"
                 }
+                .to_string();
+
+                Self::Ref { name, type_params }
             }
 
             "HashSet" | "BTreeSet" if args.len() == 1 => {
@@ -355,8 +379,8 @@ impl TsType {
                     .into()
                 }
             }
-            TagType::Internal { tag } => match type_ann {
-                TsType::NULL => {
+            TagType::Internal { tag } => {
+                if type_ann == TsType::nullish() {
                     let tag_field: TsType = TsTypeElement {
                         key: tag.clone(),
                         type_ann: TsType::Lit(name),
@@ -365,9 +389,7 @@ impl TsType {
                     .into();
 
                     tag_field
-                }
-
-                _ => {
+                } else {
                     let tag_field: TsType = TsTypeElement {
                         key: tag.clone(),
                         type_ann: TsType::Lit(name),
@@ -377,7 +399,7 @@ impl TsType {
 
                     tag_field.and(type_ann)
                 }
-            },
+            }
             TagType::Adjacent { tag, content } => {
                 let tag_field = TsTypeElement {
                     key: tag.clone(),
@@ -632,7 +654,7 @@ impl Display for TsType {
             }
 
             TsType::Option(elem) => {
-                write!(f, "{elem} | null")
+                write!(f, "{elem} | {}", TsType::nullish())
             }
 
             TsType::TypeLit(type_lit) => {
@@ -695,25 +717,34 @@ mod tests {
       }
 
     #[test]
-    fn basic_types() {
-        assert_ts!((), "null");
+    fn test_basic_types() {
+        if cfg!(feature = "js") {
+            assert_ts!((), "undefined");
+            assert_ts!(u128 | i128, "bigint");
+            assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Map<string, number>");
+            assert_ts!(Option<i32>, "number | undefined");
+        } else {
+            assert_ts!((), "null");
+            assert_ts!(u128 | i128, "number");
+            assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Record<string, number>");
+            assert_ts!(Option<i32>, "number | null");
+        }
+
         assert_ts!(
-            u8 | u16 | u32 | u64 | u128 | usize | i8 | i16 | i32 | i64 | i128 | isize | f32 | f64,
+            u8 | u16 | u32 | u64 | usize | i8 | i16 | i32 | i64 | isize | f32 | f64,
             "number"
         );
         assert_ts!(String | str | char | Path | PathBuf, "string");
         assert_ts!(bool, "boolean");
         assert_ts!(Box<i32> | Rc<i32> | Arc<i32> | Cell<i32> | RefCell<i32> | Cow<'a, i32>, "number");
         assert_ts!(Vec<i32> | VecDeque<i32> | LinkedList<i32> | &'a [i32], "number[]");
-        assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Record<string, number>");
         assert_ts!(HashSet<i32> | BTreeSet<i32>, "number[]");
-        assert_ts!(Option<i32>, "number | null");
         assert_ts!(Result<i32, String>, "{ Ok: number } | { Err: string }");
         assert_ts!(dyn Fn(String, f64) | dyn FnOnce(String, f64) | dyn FnMut(String, f64), "(arg0: string, arg1: number) => void");
         assert_ts!(dyn Fn(String) -> i32 | dyn FnOnce(String) -> i32 | dyn FnMut(String) -> i32, "(arg0: string) => number");
 
         assert_ts!((i32), "number");
-        assert_ts!((i32, String, bool, ()), "[number, string, boolean, null]");
+        assert_ts!((i32, String, bool), "[number, string, boolean]");
 
         assert_ts!([i32; 4], "[number, number, number, number]");
         assert_ts!([i32; 16], format!("[{}]", ["number"; 16].join(", ")));

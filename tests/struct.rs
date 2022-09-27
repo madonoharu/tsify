@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::collections::HashMap;
+
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use tsify::Tsify;
@@ -9,26 +11,38 @@ fn test_unit() {
     #[derive(Tsify)]
     struct Unit;
 
-    assert_eq!(Unit::DECL, "export type Unit = null;");
+    if cfg!(feature = "js") {
+        assert_eq!(Unit::DECL, "export type Unit = undefined;");
+    } else {
+        assert_eq!(Unit::DECL, "export type Unit = null;");
+    };
 }
 
 #[test]
 fn test_named_fields() {
     #[derive(Tsify)]
     struct A {
-        a: (u8, u8),
-        b: String,
+        a: (usize, u64),
+        b: HashMap<String, i128>,
     }
 
-    assert_eq!(
-        A::DECL,
+    let expected = if cfg!(feature = "js") {
         indoc! {"
             export interface A {
                 a: [number, number];
-                b: string;
+                b: Map<string, bigint>;
             }"
         }
-    );
+    } else {
+        indoc! {"
+            export interface A {
+                a: [number, number];
+                b: Record<string, number>;
+            }"
+        }
+    };
+
+    assert_eq!(A::DECL, expected);
 }
 
 #[test]

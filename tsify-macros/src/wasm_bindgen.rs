@@ -46,12 +46,12 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
         #[automatically_derived]
         const _: () = {
             #use_serde
+            use tsify::Tsify;
             use wasm_bindgen::{
                 convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
                 describe::WasmDescribe,
                 prelude::*,
             };
-            use tsify::__rt::JsValueSerdeExt;
 
 
             #[wasm_bindgen]
@@ -87,18 +87,18 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
 
     quote! {
         impl #impl_generics IntoWasmAbi for #ident #ty_generics #where_clause {
-            type Abi = <<Self as Tsify>::JsType as IntoWasmAbi>::Abi;
+            type Abi = <JsType as IntoWasmAbi>::Abi;
 
             #[inline]
             fn into_abi(self) -> Self::Abi {
-                JsValue::from_serde(&self).unwrap_throw().into_abi()
+                self.into_js().unwrap_throw().into_abi()
             }
         }
 
         impl #impl_generics OptionIntoWasmAbi for #ident #ty_generics #where_clause {
             #[inline]
             fn none() -> Self::Abi {
-                <<Self as Tsify>::JsType as OptionIntoWasmAbi>::none()
+                <JsType as OptionIntoWasmAbi>::none()
             }
         }
     }
@@ -119,18 +119,18 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
 
     quote! {
         impl #impl_generics FromWasmAbi for #ident #ty_generics #where_clause {
-            type Abi = <JsValue as FromWasmAbi>::Abi;
+            type Abi = <JsType as FromWasmAbi>::Abi;
 
             #[inline]
             unsafe fn from_abi(js: Self::Abi) -> Self {
-                JsValue::from_abi(js).into_serde().unwrap_throw()
+                Self::from_js(&JsType::from_abi(js)).unwrap_throw()
             }
         }
 
         impl #impl_generics OptionFromWasmAbi for #ident #ty_generics #where_clause {
             #[inline]
-            fn is_none(abi: &Self::Abi) -> bool {
-                <<Self as Tsify>::JsType as OptionFromWasmAbi>::is_none(abi)
+            fn is_none(js: &Self::Abi) -> bool {
+                <JsType as OptionFromWasmAbi>::is_none(js)
             }
         }
     }

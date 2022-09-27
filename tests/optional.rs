@@ -26,26 +26,49 @@ fn test_optional() {
         c: Option<i32>,
     }
 
-    assert_eq!(
-        Optional::DECL,
-        indoc! {"
+    if cfg!(feature = "js") {
+        assert_eq!(
+            Optional::DECL,
+            indoc! {"
             export interface Optional {
                 a?: number;
                 b?: string;
                 c?: number;
-                d?: string | null;
+                d?: string | undefined;
             }"
-        }
-    );
-
-    assert_eq!(
-        OptionalAll::DECL,
-        indoc! {"
-            export interface OptionalAll {
-                a?: number;
-                b?: number;
-                c?: number | null;
-            }"
-        }
-    );
+            }
+        );
+        assert_eq!(
+            OptionalAll::DECL,
+            indoc! {"
+                export interface OptionalAll {
+                    a?: number;
+                    b?: number;
+                    c?: number | undefined;
+                }"
+            }
+        );
+    } else {
+        assert_eq!(
+            Optional::DECL,
+            indoc! {"
+                export interface Optional {
+                    a?: number;
+                    b?: string;
+                    c?: number;
+                    d?: string | null;
+                }"
+            }
+        );
+        assert_eq!(
+            OptionalAll::DECL,
+            indoc! {"
+                export interface OptionalAll {
+                    a?: number;
+                    b?: number;
+                    c?: number | null;
+                }"
+            }
+        );
+    }
 }

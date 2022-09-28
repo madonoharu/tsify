@@ -62,11 +62,18 @@ export interface Point {
 }
 ```
 
+This is the behavior due to [`typescript_custom_section`](https://rustwasm.github.io/docs/wasm-bindgen/reference/attributes/on-rust-exports/typescript_custom_section.html) and [`Rust Type conversions`](https://rustwasm.github.io/docs/wasm-bindgen/contributing/design/rust-type-conversions.html).
+
+## Crate Features
+
+- `json` (default) enables serialization through [`serde_json`](https://github.com/serde-rs/json).
+- `js` enables serialization through [`serde-wasm-bindgen`](https://github.com/cloudflare/serde-wasm-bindgen) and generates the appropriate types for it. This will be the default in future versions.
+
 ## Attributes
 
 Tsify container attributes
 
-- `into_wasm_abi` implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via JSON.
+- `into_wasm_abi` implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`.
 - `from_wasm_abi` implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above.
 - `namespace` generates a namespace for the enum variants.
 
@@ -217,10 +224,3 @@ Generated type:
 export type Foo<T> = T;
 export type Bar = Foo<number>;
 ```
-
-## Crate Features
-
-- `wasm-bindgen-impl` (default) Generate
-  [`typescript_custom_section`](https://rustwasm.github.io/docs/wasm-bindgen/reference/attributes/on-rust-exports/typescript_custom_section.html)
-  and
-  [`Rust Type conversions`](https://rustwasm.github.io/docs/wasm-bindgen/contributing/design/rust-type-conversions.html)

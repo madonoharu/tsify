@@ -28,3 +28,26 @@ fn test_flatten() {
         }
     );
 }
+
+#[test]
+fn test_flatten_option() {
+    #[derive(Tsify)]
+    struct A {
+        a: i32,
+        b: String,
+    }
+
+    #[derive(Tsify)]
+    struct B {
+        #[serde(flatten)]
+        extra: Option<A>,
+        c: i32,
+    }
+
+    assert_eq!(
+        B::DECL,
+        indoc! {"
+            export type B = { c: number } & (A | {});"
+        }
+    );
+}

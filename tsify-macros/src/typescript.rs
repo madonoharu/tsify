@@ -137,6 +137,14 @@ impl TsType {
         }
     }
 
+    pub const fn empty_type_lit() -> Self {
+        Self::TypeLit(TsTypeLit { members: vec![] })
+    }
+
+    pub fn is_ref(&self) -> bool {
+        matches!(self, Self::Ref { .. })
+    }
+
     pub fn and(self, other: Self) -> Self {
         match (self, other) {
             (TsType::TypeLit(x), TsType::TypeLit(y)) => x.and(y).into(),

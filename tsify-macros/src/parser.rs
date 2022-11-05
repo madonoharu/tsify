@@ -77,21 +77,39 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn create_interface_decl(&self, members: Vec<TsTypeElement>, extends: Vec<TsType>) -> Decl {
-        let mut type_ref_names: HashSet<&String> = HashSet::new();
-        members.iter().for_each(|member| {
-            type_ref_names.extend(member.type_ann.type_ref_names());
-        });
-        extends.iter().for_each(|ty| {
-            type_ref_names.extend(ty.type_ref_names());
-        });
+    fn create_decl(&self, members: Vec<TsTypeElement>, extends: Vec<TsType>) -> Decl {
+        // An interface can only extend an identifier/qualified-name with optional type arguments.
+        if extends.iter().all(|ty| ty.is_ref()) {
+            let mut type_ref_names: HashSet<&String> = HashSet::new();
+            members.iter().for_each(|member| {
+                type_ref_names.extend(member.type_ann.type_ref_names());
+            });
+            extends.iter().for_each(|ty| {
+                type_ref_names.extend(ty.type_ref_names());
+            });
 
-        Decl::TsInterface(TsInterfaceDecl {
-            id: self.container.name(),
-            type_params: self.create_relevant_type_params(type_ref_names),
-            extends,
-            body: members,
-        })
+            let type_params = self.create_relevant_type_params(type_ref_names);
+
+            Decl::TsInterface(TsInterfaceDecl {
+                id: self.container.name(),
+                type_params,
+                extends,
+                body: members,
+            })
+        } else {
+            let extra = TsType::Intersection(
+                extends
+                    .into_iter()
+                    .map(|ty| match ty {
+                        TsType::Option(ty) => TsType::Union(vec![*ty, TsType::empty_type_lit()]),
+                        _ => ty,
+                    })
+                    .collect(),
+            );
+            let type_ann = TsType::TypeLit(TsTypeLit { members }).and(extra);
+
+            self.create_type_alias_decl(type_ann)
+        }
     }
 
     fn parse_struct(&self, style: Style, fields: &[Field]) -> Decl {
@@ -112,11 +130,9 @@ impl<'a> Parser<'a> {
                 vec.push(tag_field);
                 vec.extend(members);
 
-                self.create_interface_decl(vec, extends)
+                self.create_decl(vec, extends)
             }
-            (_, ParsedFields::Named(members, extends)) => {
-                self.create_interface_decl(members, extends)
-            }
+            (_, ParsedFields::Named(members, extends)) => self.create_decl(members, extends),
             (_, parsed_fields) => self.create_type_alias_decl(parsed_fields.into()),
         }
     }

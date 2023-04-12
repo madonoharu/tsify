@@ -622,9 +622,12 @@ impl Display for TsType {
                 write!(f, "\"{lit}\"")
             }
 
-            TsType::Array(elem) => {
-                write!(f, "{elem}[]")
-            }
+            TsType::Array(elem) => match elem.as_ref() {
+                TsType::Union(_) | TsType::Intersection(_) | &TsType::Option(_) => {
+                    write!(f, "({elem})[]")
+                }
+                _ => write!(f, "{elem}[]"),
+            },
 
             TsType::Tuple(elems) => {
                 let elems = elems

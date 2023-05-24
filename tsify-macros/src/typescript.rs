@@ -750,6 +750,9 @@ mod tests {
         assert_ts!(Box<i32> | Rc<i32> | Arc<i32> | Cell<i32> | RefCell<i32> | Cow<'a, i32>, "number");
         assert_ts!(Vec<i32> | VecDeque<i32> | LinkedList<i32> | &'a [i32], "number[]");
         assert_ts!(HashSet<i32> | BTreeSet<i32>, "number[]");
+
+        assert_ts!(Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | null)[]");
+
         assert_ts!(Result<i32, String>, "{ Ok: number } | { Err: string }");
         assert_ts!(dyn Fn(String, f64) | dyn FnOnce(String, f64) | dyn FnMut(String, f64), "(arg0: string, arg1: number) => void");
         assert_ts!(dyn Fn(String) -> i32 | dyn FnOnce(String) -> i32 | dyn FnMut(String) -> i32, "(arg0: string) => number");

@@ -13,15 +13,15 @@ use syn::{parse_macro_input, DeriveInput};
 fn declare_impl(
     args: proc_macro2::TokenStream,
     item: syn::Item,
-) -> darling::Result<proc_macro2::TokenStream> {
+) -> syn::Result<proc_macro2::TokenStream> {
     match item {
         syn::Item::Type(item) => type_alias::expend(item),
         syn::Item::Enum(item) => derive::expand_by_attr(args, item.into()),
         syn::Item::Struct(item) => derive::expand_by_attr(args, item.into()),
-        _ => Err(darling::Error::custom(
+        _ => Err(syn::Error::new_spanned(
+            args,
             "#[declare] can only be applied to a struct, enum, or type alias.",
-        )
-        .with_span(&args)),
+        )),
     }
 }
 
@@ -34,7 +34,7 @@ pub fn declare(
     let args = proc_macro2::TokenStream::from(args);
 
     declare_impl(args, item)
-        .unwrap_or_else(|err| err.write_errors())
+        .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
 
@@ -43,6 +43,6 @@ pub fn derive_tsify(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let item: DeriveInput = parse_macro_input!(input);
 
     derive::expand(item)
-        .unwrap_or_else(|err| err.write_errors())
+        .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }

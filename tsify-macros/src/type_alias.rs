@@ -3,7 +3,7 @@ use quote::quote;
 
 use crate::{ctxt::Ctxt, decl::TsTypeAliasDecl, typescript::TsType};
 
-pub fn expend(item: syn::ItemType) -> darling::Result<TokenStream> {
+pub fn expend(item: syn::ItemType) -> syn::Result<TokenStream> {
     let ctxt = Ctxt::new();
 
     let type_ann = TsType::from(item.ty.as_ref());

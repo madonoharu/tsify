@@ -4,7 +4,7 @@ use syn::{parse_quote, DeriveInput};
 
 use crate::{container::Container, parser::Parser, wasm_bindgen};
 
-pub fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
+pub fn expand(input: DeriveInput) -> syn::Result<TokenStream> {
     let cont = Container::from_derive_input(&input)?;
 
     let parser = Parser::new(&cont);
@@ -34,7 +34,7 @@ pub fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     Ok(tokens)
 }
 
-pub fn expand_by_attr(args: TokenStream, input: DeriveInput) -> darling::Result<TokenStream> {
+pub fn expand_by_attr(args: TokenStream, input: DeriveInput) -> syn::Result<TokenStream> {
     let mut cloned_input = input.clone();
     let attr: syn::Attribute = parse_quote!(#[tsify(#args)]);
     cloned_input.attrs.push(attr);

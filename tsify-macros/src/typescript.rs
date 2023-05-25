@@ -256,7 +256,7 @@ impl TsType {
                     .iter()
                     .filter_map(|p| match p {
                         syn::GenericArgument::Type(t) => Some(t),
-                        syn::GenericArgument::Binding(t) => Some(&t.ty),
+                        syn::GenericArgument::AssocType(t) => Some(&t.ty),
                         _ => None,
                     })
                     .collect();

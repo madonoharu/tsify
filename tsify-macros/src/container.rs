@@ -1,12 +1,7 @@
-use darling::FromDeriveInput;
 use serde_derive_internals::{ast, ast::Container as SerdeContainer, attr};
 
 use crate::{attrs::TsifyContainerAttars, ctxt::Ctxt};
 
-fn syn_errors_into_darling_error(errors: Vec<syn::Error>) -> darling::Error {
-    let errors = errors.into_iter().map(darling::Error::from).collect();
-    darling::Error::multiple(errors)
-}
 pub struct Container<'a> {
     pub ctxt: Ctxt,
     pub attrs: TsifyContainerAttars,
@@ -22,7 +17,7 @@ impl<'a> Container<'a> {
         let attrs = match attrs {
             Ok(attrs) => attrs,
             Err(err) => {
-                ctxt.darling_error(err);
+                ctxt.syn_error(err);
                 Default::default()
             }
         };
@@ -34,20 +29,17 @@ impl<'a> Container<'a> {
         }
     }
 
-    pub fn from_derive_input(input: &'a syn::DeriveInput) -> Result<Self, darling::Error> {
+    pub fn from_derive_input(input: &'a syn::DeriveInput) -> syn::Result<Self> {
         let cx = serde_derive_internals::Ctxt::new();
         let serde_cont =
             SerdeContainer::from_ast(&cx, input, serde_derive_internals::Derive::Serialize);
 
         match serde_cont {
             Some(serde_container) => {
-                cx.check().map_err(syn_errors_into_darling_error)?;
+                cx.check()?;
                 Ok(Self::new(serde_container))
             }
-            None => {
-                let errors = cx.check().expect_err("serde_cont is None");
-                Err(syn_errors_into_darling_error(errors))
-            }
+            None => Err(cx.check().expect_err("serde_cont is None")),
         }
     }
 
@@ -76,11 +68,11 @@ impl<'a> Container<'a> {
         &self.serde_container.data
     }
 
-    pub fn darling_error(&self, err: darling::Error) {
-        self.ctxt.darling_error(err)
+    pub fn syn_error(&self, err: syn::Error) {
+        self.ctxt.syn_error(err);
     }
 
-    pub fn check(self) -> Result<(), darling::Error> {
+    pub fn check(self) -> syn::Result<()> {
         self.ctxt.check()
     }
 }

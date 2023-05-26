@@ -179,7 +179,7 @@ impl<'a> Parser<'a> {
         let ts_attrs = match TsifyFieldAttrs::from_serde_field(field) {
             Ok(attrs) => attrs,
             Err(err) => {
-                self.container.darling_error(err);
+                self.container.syn_error(err);
                 return (TsType::NEVER, None);
             }
         };

@@ -734,11 +734,13 @@ mod tests {
             assert_ts!(u128 | i128, "bigint");
             assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Map<string, number>");
             assert_ts!(Option<i32>, "number | undefined");
+            assert_ts!(Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | undefined)[]");
         } else {
             assert_ts!((), "null");
             assert_ts!(u128 | i128, "number");
             assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Record<string, number>");
             assert_ts!(Option<i32>, "number | null");
+            assert_ts!(Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | null)[]");
         }
 
         assert_ts!(
@@ -750,8 +752,6 @@ mod tests {
         assert_ts!(Box<i32> | Rc<i32> | Arc<i32> | Cell<i32> | RefCell<i32> | Cow<'a, i32>, "number");
         assert_ts!(Vec<i32> | VecDeque<i32> | LinkedList<i32> | &'a [i32], "number[]");
         assert_ts!(HashSet<i32> | BTreeSet<i32>, "number[]");
-
-        assert_ts!(Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | null)[]");
 
         assert_ts!(Result<i32, String>, "{ Ok: number } | { Err: string }");
         assert_ts!(dyn Fn(String, f64) | dyn FnOnce(String, f64) | dyn FnMut(String, f64), "(arg0: string, arg1: number) => void");

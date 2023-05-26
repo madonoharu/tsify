@@ -56,7 +56,11 @@ const _: () = {
         type Abi = <JsType as FromWasmAbi>::Abi;
         #[inline]
         unsafe fn from_abi(js: Self::Abi) -> Self {
-            Self::from_js(&JsType::from_abi(js)).unwrap_throw()
+            let result = Self::from_js(&JsType::from_abi(js));
+            if let Err(err) = result {
+                wasm_bindgen::throw_str(err.to_string().as_ref());
+            }
+            result.unwrap_throw()
         }
     }
     impl<'a> OptionFromWasmAbi for Borrow<'a>

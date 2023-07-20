@@ -11,7 +11,10 @@ const _: () = {
     extern crate serde as _serde;
     use tsify::Tsify;
     use wasm_bindgen::{
-        convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
+        convert::{
+            FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi,
+            RefFromWasmAbi,
+        },
         describe::WasmDescribe, prelude::*,
     };
     #[wasm_bindgen]
@@ -71,6 +74,23 @@ const _: () = {
         #[inline]
         fn is_none(js: &Self::Abi) -> bool {
             <JsType as OptionFromWasmAbi>::is_none(js)
+        }
+    }
+    pub struct SelfOwner<T>(T);
+    impl<T> ::core::ops::Deref for SelfOwner<T> {
+        type Target = T;
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+    impl<T, U> RefFromWasmAbi for GenericEnum<T, U>
+    where
+        Self: _serde::de::DeserializeOwned,
+    {
+        type Abi = <JsType as RefFromWasmAbi>::Abi;
+        type Anchor = SelfOwner<Self>;
+        unsafe fn ref_from_abi(js: Self::Abi) -> Self::Anchor {
+            SelfOwner(Self::from_abi(js))
         }
     }
 };

@@ -321,6 +321,17 @@ impl TsType {
                 Self::Array(Box::new(elem))
             }
 
+            "ByteBuf" => {
+                if cfg!(feature = "js") {
+                    Self::Ref {
+                        name: String::from("Uint8Array"),
+                        type_params: vec![],
+                    }
+                } else {
+                    Self::Array(Box::new(Self::NUMBER))
+                }
+            }
+
             "Option" if args.len() == 1 => Self::Option(Box::new(Self::from_syn_type(args[0]))),
 
             "Result" if args.len() == 2 => {
@@ -735,12 +746,14 @@ mod tests {
             assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Map<string, number>");
             assert_ts!(Option<i32>, "number | undefined");
             assert_ts!(Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | undefined)[]");
+            assert_ts!(ByteBuf, "Uint8Array");
         } else {
             assert_ts!((), "null");
             assert_ts!(u128 | i128, "number");
             assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Record<string, number>");
             assert_ts!(Option<i32>, "number | null");
             assert_ts!(Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | null)[]");
+            assert_ts!(ByteBuf, "number[]");
         }
 
         assert_ts!(

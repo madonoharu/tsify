@@ -1,19 +1,33 @@
 use serde_derive_internals::ast::Field;
 
 #[derive(Debug, Default)]
-pub struct TsifyContainerAttars {
+pub struct TsifyContainerAttrs {
     pub into_wasm_abi: bool,
     pub from_wasm_abi: bool,
     pub namespace: bool,
+    pub ty_config: TypeGenerationConfig,
 }
 
-impl TsifyContainerAttars {
+#[derive(Debug, Default)]
+pub struct TypeGenerationConfig {
+    pub type_prefix: Option<String>,
+    pub type_suffix: Option<String>,
+}
+impl TypeGenerationConfig {
+    pub fn format_name(&self, mut name: String) -> String {
+        if let Some(ref prefix) = self.type_prefix {
+            name.insert_str(0, prefix);
+        }
+        if let Some(ref suffix) = self.type_suffix {
+            name.push_str(suffix);
+        }
+        name
+    }
+}
+
+impl TsifyContainerAttrs {
     pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
-        let mut attrs = Self {
-            into_wasm_abi: false,
-            from_wasm_abi: false,
-            namespace: false,
-        };
+        let mut attrs = Self::default();
 
         for attr in &input.attrs {
             if !attr.path().is_ident("tsify") {
@@ -48,7 +62,25 @@ impl TsifyContainerAttars {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`"))
+                if meta.path.is_ident("type_prefix") {
+                    if attrs.ty_config.type_prefix.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit: syn::LitStr = meta.value()?.parse()?;
+                    attrs.ty_config.type_prefix = Some(lit.value());
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("type_suffix") {
+                    if attrs.ty_config.type_suffix.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit: syn::LitStr = meta.value()?.parse()?;
+                    attrs.ty_config.type_suffix = Some(lit.value());
+                    return Ok(());
+                }
+
+                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`, 'type_prefix', 'type_suffix'"))
             })?;
         }
 

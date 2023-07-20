@@ -184,7 +184,7 @@ impl<'a> Parser<'a> {
             }
         };
 
-        let type_ann = TsType::from(field.ty);
+        let type_ann = TsType::from_syn_type(&self.container.attrs.ty_config, field.ty);
 
         if let Some(t) = &ts_attrs.type_override {
             let type_ref_names = type_ann.type_ref_names();

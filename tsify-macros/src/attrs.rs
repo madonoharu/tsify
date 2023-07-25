@@ -12,6 +12,8 @@ pub struct TsifyContainerAttrs {
 pub struct TypeGenerationConfig {
     pub type_prefix: Option<String>,
     pub type_suffix: Option<String>,
+    pub missing_as_null: bool,
+    pub hashmap_as_object: bool,
 }
 impl TypeGenerationConfig {
     pub fn format_name(&self, mut name: String) -> String {
@@ -80,7 +82,33 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`, 'type_prefix', 'type_suffix'"))
+                if meta.path.is_ident("missing_as_null") {
+                    if attrs.ty_config.missing_as_null {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    if cfg!(not(feature = "js")) {
+                        return Err(meta.error(
+                            "#[tsify(missing_as_null)] requires the `js` feature",
+                        ));
+                    }
+                    attrs.ty_config.missing_as_null = true;
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("hashmap_as_object") {
+                    if attrs.ty_config.hashmap_as_object {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    if cfg!(not(feature = "js")) {
+                        return Err(meta.error(
+                            "#[tsify(hashmap_as_object)] requires the `js` feature",
+                        ));
+                    }
+                    attrs.ty_config.hashmap_as_object = true;
+                    return Ok(());
+                }
+
+                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`, 'type_prefix', 'type_suffix', 'missing_as_null', 'hashmap_as_object'"))
             })?;
         }
 

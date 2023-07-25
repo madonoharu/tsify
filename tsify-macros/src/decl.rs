@@ -119,10 +119,13 @@ impl TsEnumDecl {
                     .map(|t| TsEnumDecl::replace_type_params(t.clone(), type_args))
                     .collect(),
             ),
-            TsType::Option(t) => TsType::Option(Box::new(TsEnumDecl::replace_type_params(
-                t.deref().clone(),
-                type_args,
-            ))),
+            TsType::Option(t, null) => TsType::Option(
+                Box::new(TsEnumDecl::replace_type_params(
+                    t.deref().clone(),
+                    type_args,
+                )),
+                null,
+            ),
             TsType::Fn { params, type_ann } => TsType::Fn {
                 params: params
                     .iter()

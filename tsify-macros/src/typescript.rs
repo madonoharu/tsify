@@ -72,12 +72,35 @@ impl TsTypeLit {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NullType {
+    Null,
+    Undefined,
+}
+
+impl NullType {
+    pub const fn new(config: &TypeGenerationConfig) -> Self {
+        if cfg!(feature = "js") && !config.missing_as_null {
+            Self::Undefined
+        } else {
+            Self::Null
+        }
+    }
+
+    pub const fn to_type(&self) -> TsType {
+        match self {
+            Self::Null => TsType::NULL,
+            Self::Undefined => TsType::UNDEFINED,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TsType {
     Keyword(TsKeywordTypeKind),
     Lit(String),
     Array(Box<Self>),
     Tuple(Vec<Self>),
-    Option(Box<Self>),
+    Option(Box<Self>, NullType),
     Ref {
         name: String,
         type_params: Vec<Self>,
@@ -125,12 +148,8 @@ impl TsType {
     pub const NULL: TsType = TsType::Keyword(TsKeywordTypeKind::Null);
     pub const NEVER: TsType = TsType::Keyword(TsKeywordTypeKind::Never);
 
-    pub const fn nullish() -> Self {
-        if cfg!(feature = "js") {
-            Self::UNDEFINED
-        } else {
-            Self::NULL
-        }
+    pub const fn nullish(config: &TypeGenerationConfig) -> Self {
+        NullType::new(config).to_type()
     }
 
     pub const fn empty_type_lit() -> Self {
@@ -212,7 +231,7 @@ impl TsType {
 
             Tuple(TypeTuple { elems, .. }) => {
                 if elems.is_empty() {
-                    TsType::nullish()
+                    TsType::nullish(config)
                 } else {
                     let elems = elems
                         .iter()
@@ -312,7 +331,7 @@ impl TsType {
                     .map(|arg| Self::from_syn_type(config, arg))
                     .collect();
 
-                let name = if cfg!(feature = "js") {
+                let name = if cfg!(feature = "js") && !config.hashmap_as_object {
                     "Map"
                 } else {
                     "Record"
@@ -327,9 +346,10 @@ impl TsType {
                 Self::Array(Box::new(elem))
             }
 
-            "Option" if args.len() == 1 => {
-                Self::Option(Box::new(Self::from_syn_type(config, args[0])))
-            }
+            "Option" if args.len() == 1 => Self::Option(
+                Box::new(Self::from_syn_type(config, args[0])),
+                NullType::new(config),
+            ),
 
             "Result" if args.len() == 2 => {
                 let arg0 = Self::from_syn_type(config, args[0]);
@@ -388,7 +408,13 @@ impl TsType {
         }
     }
 
-    pub fn with_tag_type(self, name: String, style: Style, tag_type: &TagType) -> Self {
+    pub fn with_tag_type(
+        self,
+        config: &TypeGenerationConfig,
+        name: String,
+        style: Style,
+        tag_type: &TagType,
+    ) -> Self {
         let type_ann = self;
 
         match tag_type {
@@ -405,7 +431,7 @@ impl TsType {
                 }
             }
             TagType::Internal { tag } => {
-                if type_ann == TsType::nullish() {
+                if type_ann == TsType::nullish(config) {
                     let tag_field: TsType = TsTypeElement {
                         key: tag.clone(),
                         type_ann: TsType::Lit(name),
@@ -462,7 +488,7 @@ impl TsType {
             TsType::Tuple(elems) => {
                 elems.iter().for_each(|t| t.visit(f));
             }
-            TsType::Option(t) => t.visit(f),
+            TsType::Option(t, _) => t.visit(f),
             TsType::Fn { params, type_ann } => {
                 params
                     .iter()
@@ -501,7 +527,9 @@ impl TsType {
                     .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
                     .collect(),
             ),
-            TsType::Option(t) => TsType::Option(Box::new(t.prefix_type_refs(prefix, exceptions))),
+            TsType::Option(t, null) => {
+                TsType::Option(Box::new(t.prefix_type_refs(prefix, exceptions)), null)
+            }
             TsType::Ref { name, type_params } => {
                 if exceptions.contains(&name) {
                     TsType::Ref {
@@ -555,7 +583,7 @@ impl TsType {
 
     pub fn type_refs(&self, type_refs: &mut Vec<(String, Vec<TsType>)>) {
         match self {
-            TsType::Array(t) | TsType::Option(t) => t.type_refs(type_refs),
+            TsType::Array(t) | TsType::Option(t, _) => t.type_refs(type_refs),
             TsType::Tuple(tv) | TsType::Union(tv) | TsType::Intersection(tv) => {
                 tv.iter().for_each(|t| t.type_refs(type_refs))
             }
@@ -640,7 +668,7 @@ impl Display for TsType {
             }
 
             TsType::Array(elem) => match elem.as_ref() {
-                TsType::Union(_) | TsType::Intersection(_) | &TsType::Option(_) => {
+                TsType::Union(_) | TsType::Intersection(_) | &TsType::Option(_, _) => {
                     write!(f, "({elem})[]")
                 }
                 _ => write!(f, "{elem}[]"),
@@ -681,8 +709,8 @@ impl Display for TsType {
                 write!(f, "({params}) => {type_ann}")
             }
 
-            TsType::Option(elem) => {
-                write!(f, "{elem} | {}", TsType::nullish())
+            TsType::Option(elem, null) => {
+                write!(f, "{elem} | {}", null.to_type())
             }
 
             TsType::TypeLit(type_lit) => {

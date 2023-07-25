@@ -101,7 +101,7 @@ impl<'a> Parser<'a> {
                 extends
                     .into_iter()
                     .map(|ty| match ty {
-                        TsType::Option(ty) => TsType::Union(vec![*ty, TsType::empty_type_lit()]),
+                        TsType::Option(ty, _) => TsType::Union(vec![*ty, TsType::empty_type_lit()]),
                         _ => ty,
                     })
                     .collect(),
@@ -142,7 +142,9 @@ impl<'a> Parser<'a> {
             Style::Struct => FieldsStyle::Named,
             Style::Newtype => return ParsedFields::Transparent(self.parse_field(&fields[0]).0),
             Style::Tuple => FieldsStyle::Unnamed,
-            Style::Unit => return ParsedFields::Transparent(TsType::nullish()),
+            Style::Unit => {
+                return ParsedFields::Transparent(TsType::nullish(&self.container.attrs.ty_config))
+            }
         };
 
         let fields = fields
@@ -217,7 +219,7 @@ impl<'a> Parser<'a> {
 
                 let type_ann = if optional {
                     match type_ann {
-                        TsType::Option(t) => *t,
+                        TsType::Option(t, _) => *t,
                         _ => type_ann,
                     }
                 } else {
@@ -276,7 +278,7 @@ impl<'a> Parser<'a> {
         let name = variant.attrs.name().serialize_name();
         let style = variant.style;
         let type_ann: TsType = self.parse_fields(style, &variant.fields).into();
-        type_ann.with_tag_type(name, style, tag_type)
+        type_ann.with_tag_type(&self.container.attrs.ty_config, name, style, tag_type)
     }
 }
 

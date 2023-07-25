@@ -41,6 +41,9 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
 
     let typescript_type = decl.id();
+    
+    let missing_as_null = attrs.ty_config.missing_as_null;
+    let hashmap_as_object = attrs.ty_config.hashmap_as_object;
 
     quote! {
         #[automatically_derived]
@@ -63,6 +66,10 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             impl #impl_generics Tsify for #ident #ty_generics #where_clause {
                 type JsType = JsType;
                 const DECL: &'static str = #decl_str;
+                const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig { 
+                    missing_as_null: #missing_as_null,
+                    hashmap_as_object: #hashmap_as_object,
+                };
             }
 
             #typescript_custom_section

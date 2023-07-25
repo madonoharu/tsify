@@ -1,17 +1,18 @@
 use serde_derive_internals::{ast, ast::Container as SerdeContainer, attr};
 
-use crate::{attrs::TsifyContainerAttars, ctxt::Ctxt};
+use crate::{attrs::TsifyContainerAttrs, ctxt::Ctxt};
 
 pub struct Container<'a> {
     pub ctxt: Ctxt,
-    pub attrs: TsifyContainerAttars,
+    pub attrs: TsifyContainerAttrs,
     pub serde_container: SerdeContainer<'a>,
+    pub name: String,
 }
 
 impl<'a> Container<'a> {
     pub fn new(serde_container: SerdeContainer<'a>) -> Self {
         let input = &serde_container.original;
-        let attrs = TsifyContainerAttars::from_derive_input(input);
+        let attrs = TsifyContainerAttrs::from_derive_input(input);
         let ctxt = Ctxt::new();
 
         let attrs = match attrs {
@@ -22,10 +23,15 @@ impl<'a> Container<'a> {
             }
         };
 
+        let name = attrs
+            .ty_config
+            .format_name(serde_container.attrs.name().serialize_name());
+
         Self {
             ctxt,
             attrs,
             serde_container,
+            name,
         }
     }
 
@@ -57,7 +63,7 @@ impl<'a> Container<'a> {
     }
 
     pub fn name(&self) -> String {
-        self.serde_attrs().name().serialize_name()
+        self.name.clone()
     }
 
     pub fn generics(&self) -> &syn::Generics {

@@ -1,12 +1,12 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::{ctxt::Ctxt, decl::TsTypeAliasDecl, typescript::TsType};
+use crate::{attrs::TypeGenerationConfig, ctxt::Ctxt, decl::TsTypeAliasDecl, typescript::TsType};
 
 pub fn expend(item: syn::ItemType) -> syn::Result<TokenStream> {
     let ctxt = Ctxt::new();
 
-    let type_ann = TsType::from(item.ty.as_ref());
+    let type_ann = TsType::from_syn_type(&TypeGenerationConfig::default(), item.ty.as_ref());
 
     let decl = TsTypeAliasDecl {
         id: item.ident.to_string(),

@@ -39,6 +39,23 @@ fn test_prefix() {
             export type SpecialPrefixedEnum = { VariantA: SpecialMyType } | { VariantB: number };"
         }
     );
+
+    #[derive(Tsify)]
+    #[tsify(type_prefix = "Special")]
+    struct GenericStruct<T> {
+        inner: T,
+        other: u32,
+    }
+
+    assert_eq!(
+        GenericStruct::<()>::DECL,
+        indoc! {"
+            export interface SpecialGenericStruct<SpecialT> {
+                inner: SpecialT;
+                other: number;
+            }"
+        }
+    );
 }
 
 #[test]

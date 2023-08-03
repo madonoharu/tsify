@@ -15,7 +15,7 @@ fn declare_impl(
     item: syn::Item,
 ) -> syn::Result<proc_macro2::TokenStream> {
     match item {
-        syn::Item::Type(item) => type_alias::expend(item),
+        syn::Item::Type(item) => type_alias::expend(args, item),
         syn::Item::Enum(item) => derive::expand_by_attr(args, item.into()),
         syn::Item::Struct(item) => derive::expand_by_attr(args, item.into()),
         _ => Err(syn::Error::new_spanned(

@@ -2,6 +2,8 @@ use std::{collections::HashSet, fmt::Display};
 
 use serde_derive_internals::{ast::Style, attr::TagType};
 
+use crate::comments::write_doc_comments;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TsKeywordTypeKind {
     Number,
@@ -19,6 +21,7 @@ pub struct TsTypeElement {
     pub key: String,
     pub type_ann: TsType,
     pub optional: bool,
+    pub comments: Vec<String>,
 }
 
 impl From<TsTypeElement> for TsTypeLit {
@@ -101,6 +104,7 @@ macro_rules! type_lit {
                     key: stringify!($k).to_string(),
                     type_ann: $t,
                     optional: false,
+                    comments: vec![],
                 }
             ),*],
         })
@@ -383,6 +387,7 @@ impl TsType {
                         key: name,
                         type_ann,
                         optional: false,
+                        comments: vec![],
                     }
                     .into()
                 }
@@ -393,6 +398,7 @@ impl TsType {
                         key: tag.clone(),
                         type_ann: TsType::Lit(name),
                         optional: false,
+                        comments: vec![],
                     }
                     .into();
 
@@ -402,6 +408,7 @@ impl TsType {
                         key: tag.clone(),
                         type_ann: TsType::Lit(name),
                         optional: false,
+                        comments: vec![],
                     }
                     .into();
 
@@ -413,6 +420,7 @@ impl TsType {
                     key: tag.clone(),
                     type_ann: TsType::Lit(name),
                     optional: false,
+                    comments: vec![],
                 };
 
                 if matches!(style, Style::Unit) {
@@ -422,6 +430,7 @@ impl TsType {
                         key: content.clone(),
                         type_ann,
                         optional: false,
+                        comments: vec![],
                     };
 
                     TsTypeLit {
@@ -519,6 +528,7 @@ impl TsType {
                         key: t.key.clone(),
                         optional: t.optional,
                         type_ann: t.type_ann.clone().prefix_type_refs(prefix, exceptions),
+                        comments: t.comments.clone(),
                     })
                     .collect(),
             }),
@@ -578,12 +588,25 @@ fn is_js_ident(string: &str) -> bool {
     !string.contains('-')
 }
 
+impl TsTypeElement {
+    pub fn to_string_with_indent(&self, indent: usize) -> String {
+        let out = self.to_string();
+        let indent_str = " ".repeat(indent);
+        out.split("\n")
+            .map(|line| format!("{}{}", indent_str, line))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
 impl Display for TsTypeElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let key = &self.key;
         let type_ann = &self.type_ann;
 
         let optional_ann = if self.optional { "?" } else { "" };
+
+        write_doc_comments(f, &self.comments)?;
 
         if is_js_ident(key) {
             write!(f, "{key}{optional_ann}: {type_ann}")
@@ -682,6 +705,15 @@ impl Display for TsType {
                     .iter()
                     .map(|ty| match ty {
                         TsType::Union(_) => format!("({ty})"),
+                        TsType::TypeLit(tl) => {
+                            // Intersections are formatted as single lines, so we need to remove
+                            // any comments as they are multi-line and will break the formatting.
+                            let mut copy = tl.clone();
+                            copy.members.iter_mut().for_each(|elem| {
+                                elem.comments = vec![];
+                            });
+                            copy.to_string()
+                        }
                         _ => ty.to_string(),
                     })
                     .collect::<Vec<_>>()

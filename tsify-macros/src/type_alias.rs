@@ -1,7 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::{ctxt::Ctxt, decl::TsTypeAliasDecl, typescript::TsType};
+use crate::{
+    comments::extract_doc_comments, ctxt::Ctxt, decl::TsTypeAliasDecl, typescript::TsType,
+};
 
 pub fn expend(item: syn::ItemType) -> syn::Result<TokenStream> {
     let ctxt = Ctxt::new();
@@ -17,6 +19,7 @@ pub fn expend(item: syn::ItemType) -> syn::Result<TokenStream> {
             .map(|ty| ty.ident.to_string())
             .collect(),
         type_ann,
+        comments: extract_doc_comments(&item.attrs),
     };
 
     let decl_str = decl.to_string();

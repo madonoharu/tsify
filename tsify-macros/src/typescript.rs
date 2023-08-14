@@ -2,7 +2,7 @@ use std::{collections::HashSet, fmt::Display};
 
 use serde_derive_internals::{ast::Style, attr::TagType};
 
-use crate::comments::format_doc_comments;
+use crate::comments::write_doc_comments;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TsKeywordTypeKind {
@@ -606,9 +606,7 @@ impl Display for TsTypeElement {
 
         let optional_ann = if self.optional { "?" } else { "" };
 
-        if !self.comments.is_empty() {
-            write!(f, "{}", format_doc_comments(&self.comments))?;
-        }
+        write_doc_comments(f, &self.comments)?;
 
         if is_js_ident(key) {
             write!(f, "{key}{optional_ann}: {type_ann}")

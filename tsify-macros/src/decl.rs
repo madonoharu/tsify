@@ -3,7 +3,7 @@ use std::{fmt::Display, vec};
 
 use crate::comments::clean_comments;
 use crate::{
-    comments::format_doc_comments,
+    comments::write_doc_comments,
     typescript::{TsType, TsTypeElement, TsTypeLit},
 };
 
@@ -36,9 +36,7 @@ impl Display for TsTypeAliasDecl {
             format!("{}<{}>", self.id, type_params)
         };
 
-        if !self.comments.is_empty() {
-            write!(f, "{}", format_doc_comments(&self.comments))?;
-        }
+        write_doc_comments(f, &self.comments)?;
 
         if self.export {
             write!(f, "export ")?;
@@ -57,9 +55,7 @@ pub struct TsInterfaceDecl {
 
 impl Display for TsInterfaceDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if !self.comments.is_empty() {
-            write!(f, "{}", format_doc_comments(&self.comments))?;
-        }
+        write_doc_comments(f, &self.comments)?;
 
         write!(f, "export interface {}", self.id)?;
 
@@ -226,9 +222,7 @@ impl Display for TsEnumDecl {
                 writeln!(f, "{}", type_ref)?;
             }
 
-            if !self.comments.is_empty() {
-                write!(f, "{}", format_doc_comments(&self.comments))?;
-            }
+            write_doc_comments(f, &self.comments)?;
 
             write!(f, "declare namespace {}", self.id)?;
 
@@ -267,9 +261,6 @@ impl Display for TsEnumDecl {
                 self.members
                     .iter()
                     .map(|member| {
-                        // let mut type_refs = Vec::new();
-                        // TsEnumDecl::replace_type_params(member.type_ann.clone(), &mut type_refs)
-
                         let mut clone = member.type_ann.clone();
                         clean_comments(&mut clone);
                         clone

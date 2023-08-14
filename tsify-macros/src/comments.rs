@@ -48,14 +48,21 @@ pub fn extract_doc_comments(attrs: &[syn::Attribute]) -> Vec<String> {
         })
 }
 
-pub fn format_doc_comments(comments: &Vec<String>) -> String {
+pub fn write_doc_comments(
+    f: &mut std::fmt::Formatter<'_>,
+    comments: &Vec<String>,
+) -> Result<(), std::fmt::Error> {
+    if comments.is_empty() {
+        return Ok(());
+    }
+
     let comment = comments
         .iter()
         .map(|line| format!(" *{}\n", line.trim_matches('"')))
         .collect::<Vec<_>>()
         .join("");
 
-    format!("/**\n{} */\n", comment)
+    write!(f, "{}", format!("/**\n{} */\n", comment))
 }
 
 pub fn clean_comments(typ: &mut TsType) -> () {

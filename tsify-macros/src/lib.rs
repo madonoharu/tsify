@@ -1,4 +1,5 @@
 mod attrs;
+mod comments;
 mod container;
 mod ctxt;
 mod decl;

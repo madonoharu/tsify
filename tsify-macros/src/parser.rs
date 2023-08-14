@@ -7,6 +7,7 @@ use serde_derive_internals::{
 
 use crate::{
     attrs::TsifyFieldAttrs,
+    comments::extract_doc_comments,
     container::Container,
     decl::{Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl},
     typescript::{TsType, TsTypeElement, TsTypeLit},
@@ -74,6 +75,7 @@ impl<'a> Parser<'a> {
             export: true,
             type_params: self.create_relevant_type_params(type_ann.type_ref_names()),
             type_ann,
+            comments: extract_doc_comments(&self.container.serde_container.original.attrs),
         })
     }
 
@@ -95,6 +97,7 @@ impl<'a> Parser<'a> {
                 type_params,
                 extends,
                 body: members,
+                comments: extract_doc_comments(&self.container.serde_container.original.attrs),
             })
         } else {
             let extra = TsType::Intersection(
@@ -124,6 +127,7 @@ impl<'a> Parser<'a> {
                     key: tag.clone(),
                     type_ann: TsType::Lit(name),
                     optional: false,
+                    comments: vec![],
                 };
 
                 let mut vec = Vec::with_capacity(members.len() + 1);
@@ -224,10 +228,13 @@ impl<'a> Parser<'a> {
                     type_ann
                 };
 
+                let comments = extract_doc_comments(&field.original.attrs);
+
                 TsTypeElement {
                     key,
                     type_ann,
                     optional: optional || !default_is_none,
+                    comments,
                 }
             })
             .collect();
@@ -248,6 +255,7 @@ impl<'a> Parser<'a> {
                 let decl = self.create_type_alias_decl(self.parse_variant(variant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
                     type_alias.id = variant.attrs.name().serialize_name();
+                    type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
                     type_alias
                 } else {
@@ -268,6 +276,7 @@ impl<'a> Parser<'a> {
             type_params: relevant_type_params,
             members,
             namespace: self.container.attrs.namespace,
+            comments: extract_doc_comments(&self.container.serde_container.original.attrs),
         })
     }
 

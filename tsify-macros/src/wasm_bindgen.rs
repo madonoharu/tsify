@@ -44,6 +44,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     
     let missing_as_null = attrs.ty_config.missing_as_null;
     let hashmap_as_object = attrs.ty_config.hashmap_as_object;
+    let large_number_types_as_bigints = attrs.ty_config.large_number_types_as_bigints;
 
     quote! {
         #[automatically_derived]
@@ -66,9 +67,10 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             impl #impl_generics Tsify for #ident #ty_generics #where_clause {
                 type JsType = JsType;
                 const DECL: &'static str = #decl_str;
-                const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig { 
+                const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
                     missing_as_null: #missing_as_null,
                     hashmap_as_object: #hashmap_as_object,
+                    large_number_types_as_bigints: #large_number_types_as_bigints,
                 };
             }
 

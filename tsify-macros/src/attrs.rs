@@ -14,6 +14,7 @@ pub struct TypeGenerationConfig {
     pub type_suffix: Option<String>,
     pub missing_as_null: bool,
     pub hashmap_as_object: bool,
+    pub large_number_types_as_bigints: bool,
 }
 impl TypeGenerationConfig {
     pub fn format_name(&self, mut name: String) -> String {
@@ -108,7 +109,20 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`, 'type_prefix', 'type_suffix', 'missing_as_null', 'hashmap_as_object'"))
+                if meta.path.is_ident("large_number_types_as_bigints") {
+                    if attrs.ty_config.large_number_types_as_bigints {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    if cfg!(not(feature = "js")) {
+                        return Err(meta.error(
+                            "#[tsify(large_number_types_as_bigints)] requires the `js` feature",
+                        ));
+                    }
+                    attrs.ty_config.large_number_types_as_bigints = true;
+                    return Ok(());
+                }
+
+                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`, 'type_prefix', 'type_suffix', 'missing_as_null', 'hashmap_as_object', 'large_number_types_as_bigints'"))
             })?;
         }
 

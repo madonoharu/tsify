@@ -38,4 +38,19 @@ fn test_transparent() {
             }"
         }
     );
+
+    #[derive(Tsify)]
+    #[tsify(large_number_types_as_bigints)]
+    struct BigNumber {
+        a: u64,
+    }
+
+    assert_eq!(
+        BigNumber::DECL,
+        indoc! {"
+            export interface BigNumber {
+                a: bigint;
+            }"
+        }
+    )
 }

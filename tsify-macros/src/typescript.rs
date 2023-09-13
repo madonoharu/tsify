@@ -301,8 +301,16 @@ impl TsType {
         };
 
         match name.as_str() {
-            "u8" | "u16" | "u32" | "u64" | "usize" | "i8" | "i16" | "i32" | "i64" | "isize"
+            "u8" | "u16" | "u32" | "i8" | "i16" | "i32"
             | "f64" | "f32" => Self::NUMBER,
+
+            "usize" | "isize" | "u64" | "i64" => {
+                if cfg!(feature = "js") && config.large_number_types_as_bigints {
+                    Self::BIGINT
+                } else {
+                    Self::NUMBER
+                }
+            }
 
             "u128" | "i128" => {
                 if cfg!(feature = "js") {

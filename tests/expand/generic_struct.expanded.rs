@@ -19,6 +19,11 @@ const _: () = {
     impl<T> Tsify for GenericStruct<T> {
         type JsType = JsType;
         const DECL: &'static str = "export interface GenericStruct<T> {\n    x: T;\n}";
+        const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
+            missing_as_null: false,
+            hashmap_as_object: false,
+            large_number_types_as_bigints: false,
+        };
     }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export interface GenericStruct<T> {\n    x: T;\n}";
@@ -89,6 +94,11 @@ const _: () = {
     impl<T> Tsify for GenericNewtype<T> {
         type JsType = JsType;
         const DECL: &'static str = "export type GenericNewtype<T> = T;";
+        const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
+            missing_as_null: false,
+            hashmap_as_object: false,
+            large_number_types_as_bigints: false,
+        };
     }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export type GenericNewtype<T> = T;";

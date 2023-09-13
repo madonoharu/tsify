@@ -24,6 +24,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<TokenStream> {
                 use tsify::Tsify;
                 impl #impl_generics Tsify for #ident #ty_generics #where_clause {
                     const DECL: &'static str = #decl_str;
+                    const CONFIG: tsify::SerializationConfig;
                 }
             };
         }

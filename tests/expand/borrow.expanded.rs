@@ -21,6 +21,11 @@ const _: () = {
     impl<'a> Tsify for Borrow<'a> {
         type JsType = JsType;
         const DECL: &'static str = "export interface Borrow {\n    raw: string;\n    cow: string;\n}";
+        const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
+            missing_as_null: false,
+            hashmap_as_object: false,
+            large_number_types_as_bigints: false,
+        };
     }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export interface Borrow {\n    raw: string;\n    cow: string;\n}";

@@ -2,6 +2,8 @@ use std::{collections::HashSet, fmt::Display};
 
 use serde_derive_internals::{ast::Style, attr::TagType};
 
+use crate::attrs::TypeGenerationConfig;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TsKeywordTypeKind {
     Number,
@@ -70,12 +72,35 @@ impl TsTypeLit {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NullType {
+    Null,
+    Undefined,
+}
+
+impl NullType {
+    pub const fn new(config: &TypeGenerationConfig) -> Self {
+        if cfg!(feature = "js") && !config.missing_as_null {
+            Self::Undefined
+        } else {
+            Self::Null
+        }
+    }
+
+    pub const fn to_type(&self) -> TsType {
+        match self {
+            Self::Null => TsType::NULL,
+            Self::Undefined => TsType::UNDEFINED,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TsType {
     Keyword(TsKeywordTypeKind),
     Lit(String),
     Array(Box<Self>),
     Tuple(Vec<Self>),
-    Option(Box<Self>),
+    Option(Box<Self>, NullType),
     Ref {
         name: String,
         type_params: Vec<Self>,
@@ -113,12 +138,6 @@ impl From<TsKeywordTypeKind> for TsType {
     }
 }
 
-impl From<&syn::Type> for TsType {
-    fn from(ty: &syn::Type) -> Self {
-        Self::from_syn_type(ty)
-    }
-}
-
 impl TsType {
     pub const NUMBER: TsType = TsType::Keyword(TsKeywordTypeKind::Number);
     pub const BIGINT: TsType = TsType::Keyword(TsKeywordTypeKind::Bigint);
@@ -129,12 +148,8 @@ impl TsType {
     pub const NULL: TsType = TsType::Keyword(TsKeywordTypeKind::Null);
     pub const NEVER: TsType = TsType::Keyword(TsKeywordTypeKind::Never);
 
-    pub const fn nullish() -> Self {
-        if cfg!(feature = "js") {
-            Self::UNDEFINED
-        } else {
-            Self::NULL
-        }
+    pub const fn nullish(config: &TypeGenerationConfig) -> Self {
+        NullType::new(config).to_type()
     }
 
     pub const fn empty_type_lit() -> Self {
@@ -170,7 +185,7 @@ impl TsType {
         }
     }
 
-    fn from_syn_type(ty: &syn::Type) -> Self {
+    pub fn from_syn_type(config: &TypeGenerationConfig, ty: &syn::Type) -> Self {
         use syn::Type::*;
         use syn::{
             TypeArray, TypeBareFn, TypeGroup, TypeImplTrait, TypeParamBound, TypeParen, TypePath,
@@ -179,7 +194,7 @@ impl TsType {
 
         match ty {
             Array(TypeArray { elem, len, .. }) => {
-                let elem = Self::from_syn_type(elem);
+                let elem = Self::from_syn_type(config, elem);
                 let len = parse_len(len);
 
                 match len {
@@ -188,20 +203,22 @@ impl TsType {
                 }
             }
 
-            Slice(TypeSlice { elem, .. }) => Self::Array(Box::new(Self::from_syn_type(elem))),
+            Slice(TypeSlice { elem, .. }) => {
+                Self::Array(Box::new(Self::from_syn_type(config, elem)))
+            }
 
             Reference(TypeReference { elem, .. })
             | Paren(TypeParen { elem, .. })
-            | Group(TypeGroup { elem, .. }) => Self::from_syn_type(elem),
+            | Group(TypeGroup { elem, .. }) => Self::from_syn_type(config, elem),
 
             BareFn(TypeBareFn { inputs, output, .. }) => {
                 let params = inputs
                     .iter()
-                    .map(|arg| Self::from_syn_type(&arg.ty))
+                    .map(|arg| Self::from_syn_type(config, &arg.ty))
                     .collect();
 
                 let type_ann = if let syn::ReturnType::Type(_, ty) = output {
-                    Self::from_syn_type(ty)
+                    Self::from_syn_type(config, ty)
                 } else {
                     TsType::VOID
                 };
@@ -214,21 +231,24 @@ impl TsType {
 
             Tuple(TypeTuple { elems, .. }) => {
                 if elems.is_empty() {
-                    TsType::nullish()
+                    TsType::nullish(config)
                 } else {
-                    let elems = elems.iter().map(Self::from_syn_type).collect();
+                    let elems = elems
+                        .iter()
+                        .map(|ty| Self::from_syn_type(config, ty))
+                        .collect();
                     Self::Tuple(elems)
                 }
             }
 
-            Path(TypePath { path, .. }) => Self::from_path(path).unwrap_or(TsType::NEVER),
+            Path(TypePath { path, .. }) => Self::from_path(config, path).unwrap_or(TsType::NEVER),
 
             TraitObject(TypeTraitObject { bounds, .. })
             | ImplTrait(TypeImplTrait { bounds, .. }) => {
                 let elems = bounds
                     .iter()
                     .filter_map(|t| match t {
-                        TypeParamBound::Trait(t) => Self::from_path(&t.path),
+                        TypeParamBound::Trait(t) => Self::from_path(config, &t.path),
                         _ => None, // skip lifetime etc.
                     })
                     .collect();
@@ -242,11 +262,13 @@ impl TsType {
         }
     }
 
-    fn from_path(path: &syn::Path) -> Option<Self> {
-        path.segments.last().map(Self::from_path_segment)
+    fn from_path(config: &TypeGenerationConfig, path: &syn::Path) -> Option<Self> {
+        path.segments
+            .last()
+            .map(|segment| Self::from_path_segment(config, segment))
     }
 
-    fn from_path_segment(segment: &syn::PathSegment) -> Self {
+    fn from_path_segment(config: &TypeGenerationConfig, segment: &syn::PathSegment) -> Self {
         let name = segment.ident.to_string();
 
         let (args, output) = match &segment.arguments {
@@ -279,8 +301,16 @@ impl TsType {
         };
 
         match name.as_str() {
-            "u8" | "u16" | "u32" | "u64" | "usize" | "i8" | "i16" | "i32" | "i64" | "isize"
+            "u8" | "u16" | "u32" | "i8" | "i16" | "i32"
             | "f64" | "f32" => Self::NUMBER,
+
+            "usize" | "isize" | "u64" | "i64" => {
+                if cfg!(feature = "js") && config.large_number_types_as_bigints {
+                    Self::BIGINT
+                } else {
+                    Self::NUMBER
+                }
+            }
 
             "u128" | "i128" => {
                 if cfg!(feature = "js") {
@@ -295,18 +325,21 @@ impl TsType {
             "bool" => Self::BOOLEAN,
 
             "Box" | "Cow" | "Rc" | "Arc" | "Cell" | "RefCell" if args.len() == 1 => {
-                Self::from_syn_type(args[0])
+                Self::from_syn_type(config, args[0])
             }
 
             "Vec" | "VecDeque" | "LinkedList" if args.len() == 1 => {
-                let elem = Self::from_syn_type(args[0]);
+                let elem = Self::from_syn_type(config, args[0]);
                 Self::Array(Box::new(elem))
             }
 
             "HashMap" | "BTreeMap" if args.len() == 2 => {
-                let type_params = args.iter().map(|arg| Self::from_syn_type(arg)).collect();
+                let type_params = args
+                    .iter()
+                    .map(|arg| Self::from_syn_type(config, arg))
+                    .collect();
 
-                let name = if cfg!(feature = "js") {
+                let name = if cfg!(feature = "js") && !config.hashmap_as_object {
                     "Map"
                 } else {
                     "Record"
@@ -317,15 +350,18 @@ impl TsType {
             }
 
             "HashSet" | "BTreeSet" if args.len() == 1 => {
-                let elem = Self::from_syn_type(args[0]);
+                let elem = Self::from_syn_type(config, args[0]);
                 Self::Array(Box::new(elem))
             }
 
-            "Option" if args.len() == 1 => Self::Option(Box::new(Self::from_syn_type(args[0]))),
+            "Option" if args.len() == 1 => Self::Option(
+                Box::new(Self::from_syn_type(config, args[0])),
+                NullType::new(config),
+            ),
 
             "Result" if args.len() == 2 => {
-                let arg0 = Self::from_syn_type(args[0]);
-                let arg1 = Self::from_syn_type(args[1]);
+                let arg0 = Self::from_syn_type(config, args[0]);
+                let arg1 = Self::from_syn_type(config, args[1]);
 
                 let ok = type_lit! { Ok: arg0 };
                 let err = type_lit! { Err: arg1 };
@@ -344,7 +380,7 @@ impl TsType {
             },
 
             "Range" | "RangeInclusive" => {
-                let start = Self::from_syn_type(args[0]);
+                let start = Self::from_syn_type(config, args[0]);
                 let end = start.clone();
 
                 type_lit! {
@@ -354,9 +390,12 @@ impl TsType {
             }
 
             "Fn" | "FnOnce" | "FnMut" => {
-                let params = args.into_iter().map(Self::from_syn_type).collect();
+                let params = args
+                    .into_iter()
+                    .map(|ty| Self::from_syn_type(config, ty))
+                    .collect();
                 let type_ann = output
-                    .map(Self::from_syn_type)
+                    .map(|ty| Self::from_syn_type(config, ty))
                     .unwrap_or_else(|| TsType::VOID);
 
                 Self::Fn {
@@ -365,13 +404,25 @@ impl TsType {
                 }
             }
             _ => {
-                let type_params = args.into_iter().map(Self::from_syn_type).collect();
-                Self::Ref { name, type_params }
+                let type_params = args
+                    .into_iter()
+                    .map(|ty| Self::from_syn_type(config, ty))
+                    .collect();
+                Self::Ref {
+                    name: config.format_name(name),
+                    type_params,
+                }
             }
         }
     }
 
-    pub fn with_tag_type(self, name: String, style: Style, tag_type: &TagType) -> Self {
+    pub fn with_tag_type(
+        self,
+        config: &TypeGenerationConfig,
+        name: String,
+        style: Style,
+        tag_type: &TagType,
+    ) -> Self {
         let type_ann = self;
 
         match tag_type {
@@ -388,7 +439,7 @@ impl TsType {
                 }
             }
             TagType::Internal { tag } => {
-                if type_ann == TsType::nullish() {
+                if type_ann == TsType::nullish(config) {
                     let tag_field: TsType = TsTypeElement {
                         key: tag.clone(),
                         type_ann: TsType::Lit(name),
@@ -445,7 +496,7 @@ impl TsType {
             TsType::Tuple(elems) => {
                 elems.iter().for_each(|t| t.visit(f));
             }
-            TsType::Option(t) => t.visit(f),
+            TsType::Option(t, _) => t.visit(f),
             TsType::Fn { params, type_ann } => {
                 params
                     .iter()
@@ -484,7 +535,9 @@ impl TsType {
                     .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
                     .collect(),
             ),
-            TsType::Option(t) => TsType::Option(Box::new(t.prefix_type_refs(prefix, exceptions))),
+            TsType::Option(t, null) => {
+                TsType::Option(Box::new(t.prefix_type_refs(prefix, exceptions)), null)
+            }
             TsType::Ref { name, type_params } => {
                 if exceptions.contains(&name) {
                     TsType::Ref {
@@ -538,7 +591,7 @@ impl TsType {
 
     pub fn type_refs(&self, type_refs: &mut Vec<(String, Vec<TsType>)>) {
         match self {
-            TsType::Array(t) | TsType::Option(t) => t.type_refs(type_refs),
+            TsType::Array(t) | TsType::Option(t, _) => t.type_refs(type_refs),
             TsType::Tuple(tv) | TsType::Union(tv) | TsType::Intersection(tv) => {
                 tv.iter().for_each(|t| t.type_refs(type_refs))
             }
@@ -623,7 +676,7 @@ impl Display for TsType {
             }
 
             TsType::Array(elem) => match elem.as_ref() {
-                TsType::Union(_) | TsType::Intersection(_) | &TsType::Option(_) => {
+                TsType::Union(_) | TsType::Intersection(_) | &TsType::Option(_, _) => {
                     write!(f, "({elem})[]")
                 }
                 _ => write!(f, "{elem}[]"),
@@ -664,8 +717,8 @@ impl Display for TsType {
                 write!(f, "({params}) => {type_ann}")
             }
 
-            TsType::Option(elem) => {
-                write!(f, "{elem} | {}", TsType::nullish())
+            TsType::Option(elem, null) => {
+                write!(f, "{elem} | {}", null.to_type())
             }
 
             TsType::TypeLit(type_lit) => {
@@ -715,13 +768,15 @@ impl Display for TsType {
 
 #[cfg(test)]
 mod tests {
+    use crate::attrs::TypeGenerationConfig;
+
     use super::TsType;
 
     macro_rules! assert_ts {
-        ( $( $t:ty )|* , $expected:expr) => {
+        ($config:expr, $( $t:ty )|* , $expected:expr) => {
           $({
             let ty: syn::Type = syn::parse_quote!($t);
-            let ts_type = TsType::from_syn_type(&ty);
+            let ts_type = TsType::from_syn_type(&$config, &ty);
             assert_eq!(ts_type.to_string(), $expected);
           })*
         };
@@ -729,50 +784,65 @@ mod tests {
 
     #[test]
     fn test_basic_types() {
+        let config = TypeGenerationConfig::default();
         if cfg!(feature = "js") {
-            assert_ts!((), "undefined");
-            assert_ts!(u128 | i128, "bigint");
-            assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Map<string, number>");
-            assert_ts!(Option<i32>, "number | undefined");
-            assert_ts!(Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | undefined)[]");
+            assert_ts!(config, (), "undefined");
+            assert_ts!(config, u128 | i128, "bigint");
+            assert_ts!(config, HashMap<String, i32> | BTreeMap<String, i32>, "Map<string, number>");
+            assert_ts!(config, Option<i32>, "number | undefined");
+            assert_ts!(config, Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | undefined)[]");
         } else {
-            assert_ts!((), "null");
-            assert_ts!(u128 | i128, "number");
-            assert_ts!(HashMap<String, i32> | BTreeMap<String, i32>, "Record<string, number>");
-            assert_ts!(Option<i32>, "number | null");
-            assert_ts!(Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | null)[]");
+            assert_ts!(config, (), "null");
+            assert_ts!(config, u128 | i128, "number");
+            assert_ts!(config, HashMap<String, i32> | BTreeMap<String, i32>, "Record<string, number>");
+            assert_ts!(config, Option<i32>, "number | null");
+            assert_ts!(config, Vec<Option<T>> | VecDeque<Option<T>> | LinkedList<Option<T>> | &'a [Option<T>], "(T | null)[]");
         }
 
         assert_ts!(
+            config,
             u8 | u16 | u32 | u64 | usize | i8 | i16 | i32 | i64 | isize | f32 | f64,
             "number"
         );
-        assert_ts!(String | str | char | Path | PathBuf, "string");
-        assert_ts!(bool, "boolean");
-        assert_ts!(Box<i32> | Rc<i32> | Arc<i32> | Cell<i32> | RefCell<i32> | Cow<'a, i32>, "number");
-        assert_ts!(Vec<i32> | VecDeque<i32> | LinkedList<i32> | &'a [i32], "number[]");
-        assert_ts!(HashSet<i32> | BTreeSet<i32>, "number[]");
+        assert_ts!(config, String | str | char | Path | PathBuf, "string");
+        assert_ts!(config, bool, "boolean");
+        assert_ts!(config, Box<i32> | Rc<i32> | Arc<i32> | Cell<i32> | RefCell<i32> | Cow<'a, i32>, "number");
+        assert_ts!(config, Vec<i32> | VecDeque<i32> | LinkedList<i32> | &'a [i32], "number[]");
+        assert_ts!(config, HashSet<i32> | BTreeSet<i32>, "number[]");
 
-        assert_ts!(Result<i32, String>, "{ Ok: number } | { Err: string }");
-        assert_ts!(dyn Fn(String, f64) | dyn FnOnce(String, f64) | dyn FnMut(String, f64), "(arg0: string, arg1: number) => void");
-        assert_ts!(dyn Fn(String) -> i32 | dyn FnOnce(String) -> i32 | dyn FnMut(String) -> i32, "(arg0: string) => number");
+        assert_ts!(config, Result<i32, String>, "{ Ok: number } | { Err: string }");
+        assert_ts!(config, dyn Fn(String, f64) | dyn FnOnce(String, f64) | dyn FnMut(String, f64), "(arg0: string, arg1: number) => void");
+        assert_ts!(config, dyn Fn(String) -> i32 | dyn FnOnce(String) -> i32 | dyn FnMut(String) -> i32, "(arg0: string) => number");
 
-        assert_ts!((i32), "number");
-        assert_ts!((i32, String, bool), "[number, string, boolean]");
+        assert_ts!(config, (i32), "number");
+        assert_ts!(config, (i32, String, bool), "[number, string, boolean]");
 
-        assert_ts!([i32; 4], "[number, number, number, number]");
-        assert_ts!([i32; 16], format!("[{}]", ["number"; 16].join(", ")));
-        assert_ts!([i32; 17], "number[]");
-        assert_ts!([i32; 1 + 1], "number[]");
-
-        assert_ts!(Duration, "{ secs: number; nanos: number }");
+        assert_ts!(config, [i32; 4], "[number, number, number, number]");
         assert_ts!(
+            config,
+            [i32; 16],
+            format!("[{}]", ["number"; 16].join(", "))
+        );
+        assert_ts!(config, [i32; 17], "number[]");
+        assert_ts!(config, [i32; 1 + 1], "number[]");
+
+        assert_ts!(config, Duration, "{ secs: number; nanos: number }");
+        assert_ts!(
+            config,
             SystemTime,
             "{ secs_since_epoch: number; nanos_since_epoch: number }"
         );
 
-        assert_ts!(Range<i32>, "{ start: number; end: number }");
-        assert_ts!(Range<&'static str>, "{ start: string; end: string }");
-        assert_ts!(RangeInclusive<usize>, "{ start: number; end: number }");
+        assert_ts!(config, Range<i32>, "{ start: number; end: number }");
+        assert_ts!(
+            config,
+            Range<&'static str>,
+            "{ start: string; end: string }"
+        );
+        assert_ts!(
+            config,
+            RangeInclusive<usize>,
+            "{ start: number; end: number }"
+        );
     }
 }

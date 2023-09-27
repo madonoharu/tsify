@@ -16,8 +16,13 @@ proc-macro = true
 [dependencies]
 proc-macro2 = "1.0"
 quote = "1.0"
-syn = { version = "2.0", default-features = false, features = ["full", "parsing", "printing", "proc-macro"] }
-serde_derive_internals = "0.28"
+syn = { version = "2.0", default-features = false, features = [
+    "full",
+    "parsing",
+    "printing",
+    "proc-macro",
+] }
+serde_derive_internals = "0.29"
 
 [features]
 wasm-bindgen = []

@@ -9,6 +9,7 @@ repository = "https://github.com/madonoharu/tsify"
 homepage = "https://github.com/madonoharu/tsify"
 keywords = ["wasm", "wasm-bindgen", "typescript"]
 categories = ["wasm"]
+publish = ["si"]
 
 [dependencies]
 tsify-macros = { path = "tsify-macros", version = "0.4.3" }

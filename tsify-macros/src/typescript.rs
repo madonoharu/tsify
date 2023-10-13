@@ -575,7 +575,7 @@ fn parse_len(expr: &syn::Expr) -> Option<usize> {
 }
 
 fn is_js_ident(string: &str) -> bool {
-    !string.contains('-')
+    !string.is_empty() && !string.starts_with(|c: char| c.is_ascii_digit()) && !string.contains(|c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '$')
 }
 
 impl Display for TsTypeElement {

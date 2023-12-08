@@ -23,11 +23,11 @@ fn test_struct_with_type_override() {
     assert_eq!(
         Struct::DECL,
         indoc! {r#"
-            export interface Struct {
+            export type Struct = {
                 a: number;
                 b: 0 | 1 | 2;
                 c: string | null;
-            }"#
+            };"#
         }
     );
 
@@ -67,9 +67,9 @@ fn test_generic_struct_with_type_override() {
     }
 
     let expected = indoc! {r#"
-        export interface Foo<T> {
+        export type Foo<T> = {
             bar: [T, ...T[]];
-        }"#
+        };"#
     };
 
     assert_eq!(Foo::<()>::DECL, expected);

@@ -18,10 +18,10 @@ const _: () = {
     }
     impl<T> Tsify for GenericStruct<T> {
         type JsType = JsType;
-        const DECL: &'static str = "export interface GenericStruct<T> {\n    x: T;\n}";
+        const DECL: &'static str = "export type GenericStruct<T> = {\n    x: T;\n};";
     }
     #[wasm_bindgen(typescript_custom_section)]
-    const TS_APPEND_CONTENT: &'static str = "export interface GenericStruct<T> {\n    x: T;\n}";
+    const TS_APPEND_CONTENT: &'static str = "export type GenericStruct<T> = {\n    x: T;\n};";
     impl<T> WasmDescribe for GenericStruct<T> {
         #[inline]
         fn describe() {

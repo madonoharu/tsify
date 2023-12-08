@@ -18,11 +18,11 @@ fn test_generic_struct() {
     assert_eq!(
         GenericStruct::<(), (), (), ()>::DECL,
         indoc! {"
-            export interface GenericStruct<A, B, D> {
+            export type GenericStruct<A, B, D> = {
                 a: A;
                 b: B;
                 d: D;
-            }"
+            };"
         }
     );
 

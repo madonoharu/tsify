@@ -36,26 +36,17 @@ pub struct TsInterfaceDecl {
 
 impl Display for TsInterfaceDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "export interface {}", self.id)?;
+        write!(f, "export type {}", self.id)?;
 
         if !self.type_params.is_empty() {
             let type_params = self.type_params.join(", ");
             write!(f, "<{type_params}>")?;
         }
 
-        if !self.extends.is_empty() {
-            let extends = self
-                .extends
-                .iter()
-                .map(|ty| ty.to_string())
-                .collect::<Vec<_>>()
-                .join(", ");
-
-            write!(f, " extends {extends}")?;
-        }
+        write!(f, " =")?;
 
         if self.body.is_empty() {
-            write!(f, " {{}}")
+            write!(f, " {{}}")?;
         } else {
             let members = self
                 .body
@@ -64,8 +55,18 @@ impl Display for TsInterfaceDecl {
                 .collect::<Vec<_>>()
                 .join("");
 
-            write!(f, " {{{members}\n}}")
+            write!(f, " {{{members}\n}}")?;
         }
+
+        if !self.extends.is_empty() {
+            self
+                .extends
+                .iter()
+                .map(|ty| write!(f, " & {ty}"))
+                .collect::<std::fmt::Result>()?;
+        }
+
+        write!(f, ";")
     }
 }
 

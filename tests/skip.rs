@@ -20,9 +20,9 @@ fn test_skip() {
     assert_eq!(
         Struct::DECL,
         indoc! {"
-            export interface Struct {
+            export type Struct = {
                 a: number;
-            }"
+            };"
         }
     );
 

@@ -20,10 +20,10 @@ const _: () = {
     }
     impl<'a> Tsify for Borrow<'a> {
         type JsType = JsType;
-        const DECL: &'static str = "export interface Borrow {\n    raw: string;\n    cow: string;\n}";
+        const DECL: &'static str = "export type Borrow = {\n    raw: string;\n    cow: string;\n};";
     }
     #[wasm_bindgen(typescript_custom_section)]
-    const TS_APPEND_CONTENT: &'static str = "export interface Borrow {\n    raw: string;\n    cow: string;\n}";
+    const TS_APPEND_CONTENT: &'static str = "export type Borrow = {\n    raw: string;\n    cow: string;\n};";
     impl<'a> WasmDescribe for Borrow<'a> {
         #[inline]
         fn describe() {

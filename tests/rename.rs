@@ -17,10 +17,10 @@ fn test_rename() {
     assert_eq!(
         RenamedStruct::DECL,
         indoc! {"
-            export interface RenamedStruct {
+            export type RenamedStruct = {
                 X: number;
                 Y: number;
-            }"
+            };"
         }
     );
 
@@ -102,20 +102,20 @@ fn test_rename_all() {
     assert_eq!(
         PascalCase::DECL,
         indoc! {"
-            export interface PascalCase {
+            export type PascalCase = {
                 Foo: boolean;
                 FooBar: boolean;
-            }"
+            };"
         }
     );
 
     assert_eq!(
         ScreamingKebab::DECL,
         indoc! {r#"
-            export interface ScreamingKebab {
+            export type ScreamingKebab = {
                 FOO: boolean;
                 "FOO-BAR": boolean;
-            }"#
+            };"#
         }
     );
 }

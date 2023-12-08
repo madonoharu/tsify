@@ -30,44 +30,44 @@ fn test_optional() {
         assert_eq!(
             Optional::DECL,
             indoc! {"
-            export interface Optional {
+            export type Optional = {
                 a?: number;
                 b?: string;
                 c?: number;
                 d?: string | undefined;
-            }"
+            };"
             }
         );
         assert_eq!(
             OptionalAll::DECL,
             indoc! {"
-                export interface OptionalAll {
+                export type OptionalAll = {
                     a?: number;
                     b?: number;
                     c?: number | undefined;
-                }"
+                };"
             }
         );
     } else {
         assert_eq!(
             Optional::DECL,
             indoc! {"
-                export interface Optional {
+                export type Optional = {
                     a?: number;
                     b?: string;
                     c?: number;
                     d?: string | null;
-                }"
+                };"
             }
         );
         assert_eq!(
             OptionalAll::DECL,
             indoc! {"
-                export interface OptionalAll {
+                export type OptionalAll = {
                     a?: number;
                     b?: number;
                     c?: number | null;
-                }"
+                };"
             }
         );
     }

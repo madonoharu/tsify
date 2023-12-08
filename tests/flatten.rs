@@ -22,9 +22,9 @@ fn test_flatten() {
     assert_eq!(
         B::DECL,
         indoc! {"
-            export interface B extends A {
+            export type B = {
                 c: number;
-            }"
+            } & A;"
         }
     );
 }
@@ -50,4 +50,30 @@ fn test_flatten_option() {
             export type B = { c: number } & (A | {});"
         }
     );
+}
+
+#[test]
+fn test_flatten_enum() {
+    #[derive(Tsify)]
+    #[serde(tag = "type")]
+    enum A {
+        A,
+        B { b_data: String },
+    }
+
+    #[derive(Tsify)]
+    struct B {
+        #[serde(flatten)]
+        a: A,
+        b: i32,
+    }
+
+    assert_eq!(
+        B::DECL,
+        indoc! {"
+            export type B = {
+                b: number;
+            } & A;"
+        }
+    )
 }

@@ -28,17 +28,17 @@ fn test_named_fields() {
 
     let expected = if cfg!(feature = "js") {
         indoc! {"
-            export interface A {
+            export type A = {
                 a: [number, number];
                 b: Map<string, bigint>;
-            }"
+            };"
         }
     } else {
         indoc! {"
-            export interface A {
+            export type A = {
                 a: [number, number];
                 b: Record<string, number>;
-            }"
+            };"
         }
     };
 
@@ -79,9 +79,9 @@ fn test_nested_struct() {
     assert_eq!(
         B::DECL,
         indoc! {"
-            export interface B {
+            export type B = {
                 a: A;
-            }"
+            };"
         }
     );
 }
@@ -99,10 +99,10 @@ fn test_struct_with_borrowed_fields() {
     assert_eq!(
         Borrow::DECL,
         indoc! {"
-            export interface Borrow {
+            export type Borrow = {
                 raw: string;
                 cow: string;
-            }"
+            };"
         }
     );
 }
@@ -119,11 +119,11 @@ fn test_tagged_struct() {
     assert_eq!(
         TaggedStruct::DECL,
         indoc! {r#"
-            export interface TaggedStruct {
+            export type TaggedStruct = {
                 type: "TaggedStruct";
                 x: number;
                 y: number;
-            }"#
+            };"#
         }
     );
 }

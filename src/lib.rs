@@ -36,7 +36,8 @@ pub trait Tsify {
     where
         Self: serde::Serialize,
     {
-        serde_wasm_bindgen::to_value(self).map(JsCast::unchecked_from_js)
+        self.serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+            .map(JsCast::unchecked_from_js)
     }
 
     #[cfg(feature = "js")]

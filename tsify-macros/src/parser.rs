@@ -52,9 +52,21 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse(&self) -> Decl {
-        match self.container.serde_data() {
-            Data::Struct(style, ref fields) => self.parse_struct(*style, fields),
-            Data::Enum(ref variants) => self.parse_enum(variants),
+        if let Some(decl) = &self.container.attrs.type_override {
+            self.create_type_alias_decl(TsType::Override {
+                type_override: decl.to_string(),
+                type_params: self
+                    .container
+                    .generics()
+                    .type_params()
+                    .map(|p| p.ident.to_string())
+                    .collect(),
+            })
+        } else {
+            match self.container.serde_data() {
+                Data::Struct(style, ref fields) => self.parse_struct(*style, fields),
+                Data::Enum(ref variants) => self.parse_enum(variants),
+            }
         }
     }
 

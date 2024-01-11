@@ -47,6 +47,10 @@ impl<'a> Container<'a> {
         &self.serde_container.ident
     }
 
+    pub fn ident_str(&self) -> String {
+        self.ident().to_string()
+    }
+
     #[inline]
     pub fn serde_attrs(&self) -> &attr::Container {
         &self.serde_container.attrs

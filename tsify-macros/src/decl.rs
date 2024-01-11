@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use crate::typescript::{TsType, TsTypeElement, TsTypeLit};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TsTypeAliasDecl {
     pub id: String,
     pub export: bool,
@@ -27,6 +27,7 @@ impl Display for TsTypeAliasDecl {
     }
 }
 
+#[derive(Debug)]
 pub struct TsInterfaceDecl {
     pub id: String,
     pub type_params: Vec<String>,
@@ -69,6 +70,7 @@ impl Display for TsInterfaceDecl {
     }
 }
 
+#[derive(Debug)]
 pub struct TsEnumDecl {
     pub id: String,
     pub type_params: Vec<String>,

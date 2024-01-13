@@ -73,28 +73,16 @@ fn test_rename_all() {
     #[tsify(namespace)]
     enum Enum {
         /// Comment for snake_case
-        SnakeCase {
-            foo: bool,
-            foo_bar: bool,
-        },
+        SnakeCase { foo: bool, foo_bar: bool },
         /// Comment for camel_case
         #[serde(rename_all = "camelCase")]
-        CamelCase {
-            foo: bool,
-            foo_bar: bool,
-        },
+        CamelCase { foo: bool, foo_bar: bool },
         /// Comment for kebab_case
         #[serde(rename_all = "kebab-case")]
-        KebabCase {
-            foo: bool,
-            foo_bar: bool,
-        },
+        KebabCase { foo: bool, foo_bar: bool },
         /// Comment for screaming_snake_case
         #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-        ScreamingSnakeCase {
-            foo: bool,
-            foo_bar: bool,
-        },
+        ScreamingSnakeCase { foo: bool, foo_bar: bool },
     }
 
     /// Comment for PascalCase

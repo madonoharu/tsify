@@ -1,10 +1,13 @@
 use serde_derive_internals::ast::Field;
 
+use crate::comments::extract_doc_comments;
+
 #[derive(Debug, Default)]
 pub struct TsifyContainerAttars {
     pub into_wasm_abi: bool,
     pub from_wasm_abi: bool,
     pub namespace: bool,
+    pub comments: Vec<String>,
 }
 
 impl TsifyContainerAttars {
@@ -13,6 +16,7 @@ impl TsifyContainerAttars {
             into_wasm_abi: false,
             from_wasm_abi: false,
             namespace: false,
+            comments: extract_doc_comments(&input.attrs),
         };
 
         for attr in &input.attrs {
@@ -60,6 +64,7 @@ impl TsifyContainerAttars {
 pub struct TsifyFieldAttrs {
     pub type_override: Option<String>,
     pub optional: bool,
+    pub comments: Vec<String>,
 }
 
 impl TsifyFieldAttrs {
@@ -67,6 +72,7 @@ impl TsifyFieldAttrs {
         let mut attrs = Self {
             type_override: None,
             optional: false,
+            comments: extract_doc_comments(&field.original.attrs),
         };
 
         for attr in &field.original.attrs {

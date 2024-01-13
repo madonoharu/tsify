@@ -1,6 +1,10 @@
 name: Build and Test
 
-on: [push, pull_request]
+on:
+    push:
+        branches: [main, next]
+    pull_request:
+        branches: ["*"]
 
 jobs:
     build:
@@ -41,6 +45,7 @@ jobs:
                   profile: minimal
                   toolchain: stable
                   override: true
+                  components: expand
 
             - name: Test
               uses: actions-rs/cargo@v1

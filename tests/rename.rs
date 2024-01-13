@@ -174,3 +174,60 @@ fn test_rename_all() {
         }
     );
 }
+
+#[test]
+fn test_quote_non_identifiers() {
+    #[derive(Tsify)]
+    struct NonIdentifierRenameStruct {
+        #[serde(rename = "1")]
+        x: i32,
+        #[serde(rename = "1x")]
+        y: i32,
+        #[serde(rename = "-")]
+        z: i32,
+        #[serde(rename = " ")]
+        w: i32,
+        #[serde(rename = "#")]
+        q: i32,
+        #[serde(rename = "should_not_quote")]
+        p: i32,
+        #[serde(rename = "should$not$quote")]
+        r: i32,
+    }
+
+    assert_eq!(
+        NonIdentifierRenameStruct::DECL,
+        indoc! {"
+            export interface NonIdentifierRenameStruct {
+                \"1\": number;
+                \"1x\": number;
+                \"-\": number;
+                \" \": number;
+                \"#\": number;
+                should_not_quote: number;
+                should$not$quote: number;
+            }"
+        }
+    );
+
+    #[derive(Tsify)]
+    enum NonIdentifierRenameEnum {
+        #[serde(rename = "hello-world")]
+        A(bool),
+        #[serde(rename = "hel#&*world")]
+        B(i64),
+        #[serde(rename = "hello world")]
+        C(String),
+        #[serde(rename = "")]
+        D(i32),
+        #[serde(rename = "should_not_quote")]
+        E(String),
+    }
+
+    let expected = indoc! {r#"
+        export type NonIdentifierRenameEnum = { "hello-world": boolean } | { "hel#&*world": number } | { "hello world": string } | { "": number } | { should_not_quote: string };"#
+
+    };
+
+    assert_eq!(NonIdentifierRenameEnum::DECL, expected);
+}

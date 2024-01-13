@@ -66,7 +66,7 @@ impl Display for TsInterfaceDecl {
 
             write!(f, " {{{members}\n}}")
         }
-    } 
+    }
 }
 
 pub struct TsEnumDecl {

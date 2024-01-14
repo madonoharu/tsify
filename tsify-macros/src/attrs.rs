@@ -60,6 +60,7 @@ impl TsifyContainerAttars {
 pub struct TsifyFieldAttrs {
     pub type_override: Option<String>,
     pub optional: bool,
+    pub quote: bool,
 }
 
 impl TsifyFieldAttrs {
@@ -67,6 +68,7 @@ impl TsifyFieldAttrs {
         let mut attrs = Self {
             type_override: None,
             optional: false,
+            quote: false,
         };
 
         for attr in &field.original.attrs {
@@ -89,6 +91,14 @@ impl TsifyFieldAttrs {
                         return Err(meta.error("duplicate attribute"));
                     }
                     attrs.optional = true;
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("quote") {
+                    if attrs.quote {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.quote = true;
                     return Ok(());
                 }
 

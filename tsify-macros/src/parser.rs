@@ -211,9 +211,12 @@ impl<'a> Parser<'a> {
                 let key = field.attrs.name().serialize_name();
                 let (type_ann, field_attrs) = self.parse_field(field);
 
-                let optional = field_attrs.map_or(false, |attrs| attrs.optional);
+                let (optional, quote) =
+                    field_attrs.map_or((false, false), |attrs| (attrs.optional, attrs.quote));
                 let default_is_none = self.container.serde_attrs().default().is_none()
                     && field.attrs.default().is_none();
+
+                let key = if quote { format!("\"{}\"", key) } else { key };
 
                 let type_ann = if optional {
                     match type_ann {

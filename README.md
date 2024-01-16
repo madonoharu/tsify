@@ -81,6 +81,7 @@ Tsify field attributes
 
 - `type`
 - `optional`
+- `quote`
 
 Serde attributes
 
@@ -138,6 +139,27 @@ export interface Optional {
   a?: number;
   b?: string;
   c?: number;
+}
+```
+
+## Quoted Properties
+
+`#[tsify(quote)]` puts the resulting TypeScript property in quotes. This can be useful if, for example, `#[serde(rename)]` results in a property that is not a valid identifier in TypeScript.
+
+```rust
+#[derive(Tsify)]
+struct Quoted {
+  #[serde(rename = "with spaces")]
+  #[tsify(quote)]
+  with_spaces: i32
+}
+```
+
+Generated type:
+
+```ts
+export interface Quoted {
+  "with spaces": number;
 }
 ```
 

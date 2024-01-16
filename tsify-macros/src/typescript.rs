@@ -578,6 +578,10 @@ fn is_js_ident(string: &str) -> bool {
     !string.contains('-')
 }
 
+fn is_quoted(string: &str) -> bool {
+    string.starts_with('"') && string.ends_with('"')
+}
+
 impl Display for TsTypeElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let key = &self.key;
@@ -585,7 +589,7 @@ impl Display for TsTypeElement {
 
         let optional_ann = if self.optional { "?" } else { "" };
 
-        if is_js_ident(key) {
+        if is_js_ident(key) || is_quoted(key) {
             write!(f, "{key}{optional_ann}: {type_ann}")
         } else {
             write!(f, "\"{key}\"{optional_ann}: {type_ann}")

@@ -12,6 +12,10 @@ fn test_quote() {
         #[tsify(quote)]
         with_spaces: i32,
 
+        #[serde(rename = "with-hyphen")]
+        #[tsify(quote)]
+        with_hyphen: i32,
+
         #[serde(rename = "@invalid!ident")]
         #[tsify(quote)]
         invalid_ident: i32,
@@ -22,6 +26,7 @@ fn test_quote() {
         indoc! { r#"
             export interface QuotedStruct {
                 "with spaces": number;
+                "with-hyphen": number;
                 "@invalid!ident": number;
             }"#
         }

@@ -61,7 +61,7 @@ impl<'a> Container<'a> {
     }
 
     pub fn name(&self) -> String {
-        self.serde_attrs().name().serialize_name()
+        self.serde_attrs().name().serialize_name().to_owned()
     }
 
     pub fn generics(&self) -> &syn::Generics {

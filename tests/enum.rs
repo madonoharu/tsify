@@ -409,6 +409,22 @@ fn test_untagged_enum_with_namespace() {
 }
 
 #[test]
+fn test_renamed_enum() {
+    #[derive(Tsify)]
+    #[serde(rename_all_fields = "camelCase")]
+    enum Renamed {
+        First { foo_bar: String, baz_quoox: i32 },
+        Second { asdf_asdf: String, qwer_qwer: i32 },
+    }
+
+    let expected = indoc! {r#"
+        export type Renamed = { First: { fooBar: string; bazQuoox: number } } | { Second: { asdfAsdf: string; qwerQwer: number } };"#
+    };
+
+    assert_eq!(Renamed::DECL, expected);
+}
+
+#[test]
 fn test_module_reimport_enum() {
     /// Comment for Internal
     #[derive(Tsify)]

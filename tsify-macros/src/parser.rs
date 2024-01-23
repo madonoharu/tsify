@@ -212,7 +212,7 @@ impl<'a> Parser<'a> {
         let members = members
             .into_iter()
             .map(|field| {
-                let key = field.attrs.name().serialize_name();
+                let key = field.attrs.name().serialize_name().to_owned();
                 let (type_ann, field_attrs) = self.parse_field(field);
 
                 let optional = field_attrs.map_or(false, |attrs| attrs.optional);
@@ -254,7 +254,7 @@ impl<'a> Parser<'a> {
             .map(|variant| {
                 let decl = self.create_type_alias_decl(self.parse_variant(variant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
-                    type_alias.id = variant.attrs.name().serialize_name();
+                    type_alias.id = variant.attrs.name().serialize_name().to_owned();
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
                     type_alias
@@ -282,7 +282,7 @@ impl<'a> Parser<'a> {
 
     fn parse_variant(&self, variant: &Variant) -> TsType {
         let tag_type = self.container.serde_attrs().tag();
-        let name = variant.attrs.name().serialize_name();
+        let name = variant.attrs.name().serialize_name().to_owned();
         let style = variant.style;
         let type_ann: TsType = self.parse_fields(style, &variant.fields).into();
         type_ann.with_tag_type(name, style, tag_type)

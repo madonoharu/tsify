@@ -1,6 +1,6 @@
-# Tsify
+# Tsify-next
 
-Tsify is a library for generating TypeScript definitions from Rust code.
+Tsify-next is a library for generating TypeScript definitions from Rust code. The original [Tsify](https://github.com/madonoharu/tsify) appears to be in hypernation mode, so this for incorporates updates until main Tsify project comes back to life.
 
 Using this with [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) will automatically output the types to `.d.ts`.
 

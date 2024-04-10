@@ -42,13 +42,17 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
 
     let typescript_type = decl.id();
 
+    let missing_as_null = attrs.ty_config.missing_as_null;
+    let hashmap_as_object = attrs.ty_config.hashmap_as_object;
+    let large_number_types_as_bigints = attrs.ty_config.large_number_types_as_bigints;
+
     quote! {
         #[automatically_derived]
         const _: () = {
             #use_serde
             use tsify::Tsify;
             use wasm_bindgen::{
-                convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
+                convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi, RefFromWasmAbi},
                 describe::WasmDescribe,
                 prelude::*,
             };
@@ -63,6 +67,11 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             impl #impl_generics Tsify for #ident #ty_generics #where_clause {
                 type JsType = JsType;
                 const DECL: &'static str = #decl_str;
+                const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
+                    missing_as_null: #missing_as_null,
+                    hashmap_as_object: #hashmap_as_object,
+                    large_number_types_as_bigints: #large_number_types_as_bigints,
+                };
             }
 
             #typescript_custom_section
@@ -135,6 +144,26 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
             #[inline]
             fn is_none(js: &Self::Abi) -> bool {
                 <JsType as OptionFromWasmAbi>::is_none(js)
+            }
+        }
+
+        pub struct SelfOwner<T>(T);
+
+        impl<T> ::core::ops::Deref for SelfOwner<T> {
+            type Target = T;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+
+        impl #impl_generics RefFromWasmAbi for #ident #ty_generics #where_clause {
+            type Abi = <JsType as RefFromWasmAbi>::Abi;
+
+            type Anchor = SelfOwner<Self>;
+
+            unsafe fn ref_from_abi(js: Self::Abi) -> Self::Anchor {
+                SelfOwner(Self::from_abi(js))
             }
         }
     }

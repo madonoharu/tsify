@@ -1,14 +1,30 @@
-use std::fmt::Display;
 use std::ops::Deref;
+use std::{fmt::Display, vec};
 
-use crate::typescript::{TsType, TsTypeElement, TsTypeLit};
+use crate::comments::clean_comments;
+use crate::{
+    comments::write_doc_comments,
+    typescript::{TsType, TsTypeElement, TsTypeLit},
+};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TsTypeAliasDecl {
     pub id: String,
     pub export: bool,
     pub type_params: Vec<String>,
     pub type_ann: TsType,
+    pub comments: Vec<String>,
+}
+
+impl TsTypeAliasDecl {
+    pub fn to_string_with_indent(&self, indent: usize) -> String {
+        let out = self.to_string();
+        let indent_str = " ".repeat(indent);
+        out.split("\n")
+            .map(|line| format!("{}{}", indent_str, line))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
 }
 
 impl Display for TsTypeAliasDecl {
@@ -20,6 +36,8 @@ impl Display for TsTypeAliasDecl {
             format!("{}<{}>", self.id, type_params)
         };
 
+        write_doc_comments(f, &self.comments)?;
+
         if self.export {
             write!(f, "export ")?;
         }
@@ -27,15 +45,19 @@ impl Display for TsTypeAliasDecl {
     }
 }
 
+#[derive(Debug)]
 pub struct TsInterfaceDecl {
     pub id: String,
     pub type_params: Vec<String>,
     pub extends: Vec<TsType>,
     pub body: Vec<TsTypeElement>,
+    pub comments: Vec<String>,
 }
 
 impl Display for TsInterfaceDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write_doc_comments(f, &self.comments)?;
+
         write!(f, "export interface {}", self.id)?;
 
         if !self.type_params.is_empty() {
@@ -60,7 +82,7 @@ impl Display for TsInterfaceDecl {
             let members = self
                 .body
                 .iter()
-                .map(|elem| format!("\n    {elem};"))
+                .map(|elem| format!("\n{};", elem.to_string_with_indent(4)))
                 .collect::<Vec<_>>()
                 .join("");
 
@@ -69,11 +91,13 @@ impl Display for TsInterfaceDecl {
     }
 }
 
+#[derive(Debug)]
 pub struct TsEnumDecl {
     pub id: String,
     pub type_params: Vec<String>,
     pub members: Vec<TsTypeAliasDecl>,
     pub namespace: bool,
+    pub comments: Vec<String>,
 }
 
 const ALPHABET_UPPER: [char; 26] = [
@@ -119,10 +143,13 @@ impl TsEnumDecl {
                     .map(|t| TsEnumDecl::replace_type_params(t.clone(), type_args))
                     .collect(),
             ),
-            TsType::Option(t) => TsType::Option(Box::new(TsEnumDecl::replace_type_params(
-                t.deref().clone(),
-                type_args,
-            ))),
+            TsType::Option(t, null) => TsType::Option(
+                Box::new(TsEnumDecl::replace_type_params(
+                    t.deref().clone(),
+                    type_args,
+                )),
+                null,
+            ),
             TsType::Fn { params, type_ann } => TsType::Fn {
                 params: params
                     .iter()
@@ -141,6 +168,7 @@ impl TsEnumDecl {
                         key: t.key.clone(),
                         optional: t.optional,
                         type_ann: TsEnumDecl::replace_type_params(t.type_ann.clone(), type_args),
+                        comments: vec![],
                     })
                     .collect(),
             }),
@@ -187,6 +215,7 @@ impl Display for TsEnumDecl {
                                 export: false,
                                 type_params: type_refs,
                                 type_ann: ts_type,
+                                comments: vec![],
                             }
                         })
                         .collect::<Vec<_>>()
@@ -197,6 +226,9 @@ impl Display for TsEnumDecl {
             for type_ref in type_refs {
                 writeln!(f, "{}", type_ref)?;
             }
+
+            write_doc_comments(f, &self.comments)?;
+
             write!(f, "declare namespace {}", self.id)?;
 
             if self.members.is_empty() {
@@ -214,8 +246,9 @@ impl Display for TsEnumDecl {
                             .type_ann
                             .clone()
                             .prefix_type_refs(&prefix, &self.type_params),
+                        comments: elem.comments.clone(),
                     })
-                    .map(|elem| format!("\n    {elem}"))
+                    .map(|elem| format!("\n{}", elem.to_string_with_indent(4)))
                     .collect::<Vec<_>>()
                     .join("");
 
@@ -232,9 +265,14 @@ impl Display for TsEnumDecl {
             type_ann: TsType::Union(
                 self.members
                     .iter()
-                    .map(|member| member.type_ann.clone())
+                    .map(|member| {
+                        let mut clone = member.type_ann.clone();
+                        clean_comments(&mut clone);
+                        clone
+                    })
                     .collect(),
             ),
+            comments: self.comments.clone(),
         }
         .fmt(f)
     }

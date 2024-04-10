@@ -10,7 +10,10 @@ const _: () = {
     extern crate serde as _serde;
     use tsify::Tsify;
     use wasm_bindgen::{
-        convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi},
+        convert::{
+            FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi,
+            RefFromWasmAbi,
+        },
         describe::WasmDescribe, prelude::*,
     };
     #[wasm_bindgen]
@@ -21,6 +24,11 @@ const _: () = {
     impl<'a> Tsify for Borrow<'a> {
         type JsType = JsType;
         const DECL: &'static str = "export interface Borrow {\n    raw: string;\n    cow: string;\n}";
+        const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
+            missing_as_null: false,
+            hashmap_as_object: false,
+            large_number_types_as_bigints: false,
+        };
     }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export interface Borrow {\n    raw: string;\n    cow: string;\n}";
@@ -70,6 +78,23 @@ const _: () = {
         #[inline]
         fn is_none(js: &Self::Abi) -> bool {
             <JsType as OptionFromWasmAbi>::is_none(js)
+        }
+    }
+    pub struct SelfOwner<T>(T);
+    impl<T> ::core::ops::Deref for SelfOwner<T> {
+        type Target = T;
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+    impl<'a> RefFromWasmAbi for Borrow<'a>
+    where
+        Self: _serde::de::DeserializeOwned,
+    {
+        type Abi = <JsType as RefFromWasmAbi>::Abi;
+        type Anchor = SelfOwner<Self>;
+        unsafe fn ref_from_abi(js: Self::Abi) -> Self::Anchor {
+            SelfOwner(Self::from_abi(js))
         }
     }
 };

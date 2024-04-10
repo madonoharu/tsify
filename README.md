@@ -24,7 +24,7 @@ wasm-bindgen = { version = "0.2" }
 
 ```rust
 use serde::{Deserialize, Serialize};
-use tsify::Tsify;
+use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 #[derive(Tsify, Serialize, Deserialize)]
@@ -100,7 +100,7 @@ Serde attributes
 ## Type Override
 
 ```rust
-use tsify::Tsify;
+use tsify_next::Tsify;
 
 #[derive(Tsify)]
 pub struct Foo {
@@ -209,7 +209,7 @@ export type Color =
 ## Type Aliases
 
 ```rust
-use tsify::{declare, Tsify};
+use tsify_next::{declare, Tsify};
 
 #[derive(Tsify)]
 struct Foo<T>(T);

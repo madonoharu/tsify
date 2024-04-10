@@ -21,10 +21,10 @@ pub fn expand(input: DeriveInput) -> syn::Result<TokenStream> {
         quote! {
             #[automatically_derived]
             const _: () = {
-                use tsify::Tsify;
+                use tsify_next::Tsify;
                 impl #impl_generics Tsify for #ident #ty_generics #where_clause {
                     const DECL: &'static str = #decl_str;
-                    const CONFIG: tsify::SerializationConfig;
+                    const CONFIG: tsify_next::SerializationConfig;
                 }
             };
         }

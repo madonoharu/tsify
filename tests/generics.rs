@@ -2,7 +2,7 @@
 
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use tsify::Tsify;
+use tsify_next::Tsify;
 
 #[test]
 fn test_generic_struct() {

@@ -1,6 +1,6 @@
 # Tsify-next
 
-Tsify-next is a library for generating TypeScript definitions from Rust code. The original [Tsify](https://github.com/madonoharu/tsify) appears to be in hybernation mode, so this for incorporates updates until main Tsify project comes back to life.
+Tsify-next is a library for generating TypeScript definitions from Rust code. The original [Tsify](https://github.com/madonoharu/tsify) appears to be in hibernation mode. This repository will maintain updates until main Tsify project comes back to life.
 
 Using this with [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) will automatically output the types to `.d.ts`.
 
@@ -57,8 +57,8 @@ export function into_js(): Point;
  */
 export function from_js(point: Point): void;
 export interface Point {
-  x: number;
-  y: number;
+    x: number;
+    y: number;
 }
 ```
 
@@ -66,36 +66,36 @@ This is the behavior due to [`typescript_custom_section`](https://rustwasm.githu
 
 ## Crate Features
 
-- `json` (default) enables serialization through [`serde_json`](https://github.com/serde-rs/json).
-- `js` enables serialization through [`serde-wasm-bindgen`](https://github.com/cloudflare/serde-wasm-bindgen) and generates the appropriate types for it. This will be the default in future versions.
+-   `json` (default) enables serialization through [`serde_json`](https://github.com/serde-rs/json).
+-   `js` enables serialization through [`serde-wasm-bindgen`](https://github.com/cloudflare/serde-wasm-bindgen) and generates the appropriate types for it. This will be the default in future versions.
 
 ## Attributes
 
 Tsify container attributes
 
-- `into_wasm_abi` implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`.
-- `from_wasm_abi` implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above.
-- `namespace` generates a namespace for the enum variants.
+-   `into_wasm_abi` implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`.
+-   `from_wasm_abi` implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above.
+-   `namespace` generates a namespace for the enum variants.
 
 Tsify field attributes
 
-- `type`
-- `optional`
+-   `type`
+-   `optional`
 
 Serde attributes
 
-- `rename`
-- `rename-all`
-- `tag`
-- `content`
-- `untagged`
-- `skip`
-- `skip_serializing`
-- `skip_deserializing`
-- `skip_serializing_if = "Option::is_none"`
-- `flatten`
-- `default`
-- `transparent`
+-   `rename`
+-   `rename-all`
+-   `tag`
+-   `content`
+-   `untagged`
+-   `skip`
+-   `skip_serializing`
+-   `skip_deserializing`
+-   `skip_serializing_if = "Option::is_none"`
+-   `flatten`
+-   `default`
+-   `transparent`
 
 ## Type Override
 
@@ -113,7 +113,7 @@ Generated type:
 
 ```ts
 export interface Foo {
-  x: 0 | 1 | 2;
+    x: 0 | 1 | 2;
 }
 ```
 
@@ -135,9 +135,9 @@ Generated type:
 
 ```ts
 export interface Optional {
-  a?: number;
-  b?: string;
-  c?: number;
+    a?: number;
+    b?: string;
+    c?: number;
 }
 ```
 
@@ -162,11 +162,11 @@ Generated type:
 
 ```ts
 export type Color =
-  | "Red"
-  | "Blue"
-  | "Green"
-  | { Rgb: [number, number, number] }
-  | { Hsv: { hue: number; saturation: number; value: number } };
+    | "Red"
+    | "Blue"
+    | "Green"
+    | { Rgb: [number, number, number] }
+    | { Hsv: { hue: number; saturation: number; value: number } };
 ```
 
 ## Enum with namespace
@@ -191,19 +191,21 @@ Generated type:
 
 ```ts
 declare namespace Color {
-  export type Red = "Red";
-  export type Blue = "Blue";
-  export type Green = "Green";
-  export type Rgb = { Rgb: [number, number, number] };
-  export type Hsv = { Hsv: { hue: number; saturation: number; value: number } };
+    export type Red = "Red";
+    export type Blue = "Blue";
+    export type Green = "Green";
+    export type Rgb = { Rgb: [number, number, number] };
+    export type Hsv = {
+        Hsv: { hue: number; saturation: number; value: number };
+    };
 }
 
 export type Color =
-  | "Red"
-  | "Blue"
-  | "Green"
-  | { Rgb: [number, number, number] }
-  | { Hsv: { hue: number; saturation: number; value: number } };
+    | "Red"
+    | "Blue"
+    | "Green"
+    | { Rgb: [number, number, number] }
+    | { Hsv: { hue: number; saturation: number; value: number } };
 ```
 
 ## Type Aliases

@@ -35,6 +35,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<TokenStream> {
     Ok(tokens)
 }
 
+/// Expand an `enum` or `struct` with `#[derive(Tsify)]`.
 pub fn expand_by_attr(args: TokenStream, input: DeriveInput) -> syn::Result<TokenStream> {
     let mut cloned_input = input.clone();
     let attr: syn::Attribute = parse_quote!(#[tsify(#args)]);

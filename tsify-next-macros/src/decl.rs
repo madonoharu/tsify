@@ -91,6 +91,7 @@ impl Display for TsInterfaceDecl {
     }
 }
 
+/// A Typescript type resulting from an enum declaration.
 #[derive(Debug)]
 pub struct TsEnumDecl {
     pub id: String,
@@ -278,6 +279,8 @@ impl Display for TsEnumDecl {
     }
 }
 
+/// A typescript type declaration. For example `type Foo = string;`
+/// or `interface Bar { baz: number; }`
 #[allow(clippy::enum_variant_names)]
 pub enum Decl {
     TsTypeAlias(TsTypeAliasDecl),

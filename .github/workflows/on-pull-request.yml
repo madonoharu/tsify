@@ -47,13 +47,18 @@ jobs:
                   override: true
                   components: rustfmt
 
+            - name: Install wasm-pack
+              uses: jetli/wasm-pack-action@v0.4.0
+              with:
+                  # Optional version of wasm-pack to install(eg. 'v0.9.1', 'latest')
+                  version: "latest"
+
             - name: Add cargo-expand
               run: cargo install cargo-expand
 
+            # Run the ./test.sh script
             - name: Test
-              uses: actions-rs/cargo@v1
-              with:
-                  command: test
+              run: ./test.sh
     lint:
         name: Lint
         runs-on: ubuntu-latest

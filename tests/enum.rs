@@ -39,6 +39,18 @@ fn test_externally_tagged_enum() {
 }
 
 #[test]
+fn test_empty_enum() {
+    #[derive(Tsify)]
+    enum Empty {}
+
+    let expected = indoc! {r#"
+        export type Empty = void;"#
+    };
+
+    assert_eq!(Empty::DECL, expected);
+}
+
+#[test]
 fn test_externally_tagged_enum_with_namespace() {
     /// Comment for External
     #[derive(Tsify)]

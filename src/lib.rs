@@ -14,6 +14,8 @@ pub struct SerializationConfig {
     pub large_number_types_as_bigints: bool,
 }
 
+/// `Tsify` is a trait that allows you to convert a type to and from JavaScript.
+/// Can be implemented manually if you need to customize the serialization or deserialization.
 pub trait Tsify {
     #[cfg(feature = "wasm-bindgen")]
     type JsType: JsCast;

@@ -1,6 +1,6 @@
 [package]
 name = "tsify-next"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 authors = [
   "Madono Haru <madonoharu@gmail.com>",
@@ -14,7 +14,7 @@ keywords = ["wasm", "wasm-bindgen", "typescript"]
 categories = ["wasm"]
 
 [dependencies]
-tsify-next-macros = { path = "tsify-next-macros", version = "^0.5" }
+tsify-next-macros = { path = "tsify-next-macros", version = "0.5.1" }
 wasm-bindgen = { version = "0.2.86", optional = true }
 serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
@@ -50,4 +50,5 @@ json = [
 ]
 
 [workspace]
-members = ["tsify-next-macros"]
+members = ["tsify-next-macros", "tests-e2e/*"]
+exclude = ["tests-e2e/reference_output"]

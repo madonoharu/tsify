@@ -91,23 +91,27 @@ impl Display for TsType {
                 write!(f, "{types}")
             }
 
-            TsType::Union(types) => {
-                if types.len() == 1 {
-                    let ty = &types[0];
-                    return write!(f, "{ty}");
+            TsType::Union(types) => match types.len() {
+                0 => {
+                    write!(f, "void")
                 }
+                1 => {
+                    let ty = &types[0];
+                    write!(f, "{ty}")
+                }
+                _ => {
+                    let types = types
+                        .iter()
+                        .map(|ty| match ty {
+                            TsType::Intersection(_) => format!("({ty})"),
+                            _ => ty.to_string(),
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" | ");
 
-                let types = types
-                    .iter()
-                    .map(|ty| match ty {
-                        TsType::Intersection(_) => format!("({ty})"),
-                        _ => ty.to_string(),
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" | ");
-
-                write!(f, "{types}")
-            }
+                    write!(f, "{types}")
+                }
+            },
 
             TsType::Override { type_override, .. } => f.write_str(type_override),
         }

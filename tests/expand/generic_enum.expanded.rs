@@ -210,6 +210,12 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
+    impl<T, U> From<GenericEnum<T, U>> for JsValue {
+        #[inline]
+        fn from(value: GenericEnum<T, U>) -> Self {
+            value.into_js().unwrap_throw().into()
+        }
+    }
     impl<T, U> FromWasmAbi for GenericEnum<T, U>
     where
         Self: _serde::de::DeserializeOwned,

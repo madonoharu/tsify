@@ -110,6 +110,13 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
                 <JsType as OptionIntoWasmAbi>::none()
             }
         }
+
+        impl #impl_generics From<#ident #ty_generics> for JsValue {
+            #[inline]
+            fn from(value: #ident #ty_generics) -> Self {
+                value.into_js().unwrap_throw().into()
+            }
+        }
     }
 }
 

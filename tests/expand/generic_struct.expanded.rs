@@ -209,6 +209,12 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
+    impl<T> From<GenericStruct<T>> for JsValue {
+        #[inline]
+        fn from(value: GenericStruct<T>) -> Self {
+            value.into_js().unwrap_throw().into()
+        }
+    }
     impl<T> FromWasmAbi for GenericStruct<T>
     where
         Self: _serde::de::DeserializeOwned,
@@ -457,6 +463,12 @@ const _: () = {
         #[inline]
         fn none() -> Self::Abi {
             <JsType as OptionIntoWasmAbi>::none()
+        }
+    }
+    impl<T> From<GenericNewtype<T>> for JsValue {
+        #[inline]
+        fn from(value: GenericNewtype<T>) -> Self {
+            value.into_js().unwrap_throw().into()
         }
     }
     impl<T> FromWasmAbi for GenericNewtype<T>

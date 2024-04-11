@@ -20,7 +20,7 @@ impl TsTypeAliasDecl {
     pub fn to_string_with_indent(&self, indent: usize) -> String {
         let out = self.to_string();
         let indent_str = " ".repeat(indent);
-        out.split("\n")
+        out.split('\n')
             .map(|line| format!("{}{}", indent_str, line))
             .collect::<Vec<_>>()
             .join("\n")

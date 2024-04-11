@@ -10,11 +10,7 @@ pub fn extract_doc_comments(attrs: &[syn::Attribute]) -> Vec<String> {
         .filter_map(|a| {
             // if the path segments include an ident of "doc" we know this
             // this is a doc comment
-            if a.path()
-                .segments
-                .iter()
-                .any(|s| s.ident.to_string() == "doc")
-            {
+            if a.path().segments.iter().any(|s| s.ident == "doc") {
                 Some(a.to_token_stream().into_iter().filter_map(|t| match t {
                     TokenTree::Group(group) => {
                         // this will return the inner tokens of the group
@@ -48,6 +44,7 @@ pub fn extract_doc_comments(attrs: &[syn::Attribute]) -> Vec<String> {
         })
 }
 
+/// Output extracted doc comments as Typescript doc comments.
 pub fn write_doc_comments(
     f: &mut std::fmt::Formatter<'_>,
     comments: &Vec<String>,
@@ -62,10 +59,11 @@ pub fn write_doc_comments(
         .collect::<Vec<_>>()
         .join("");
 
-    write!(f, "{}", format!("/**\n{} */\n", comment))
+    write!(f, "{}", format_args!("/**\n{} */\n", comment))
 }
 
-pub fn clean_comments(typ: &mut TsType) -> () {
+/// Remove all comments from a `TsType::TypeLit`
+pub fn clean_comments(typ: &mut TsType) {
     if let TsType::TypeLit(ref mut lit) = typ {
         lit.members.iter_mut().for_each(|elem| {
             elem.comments = vec![];

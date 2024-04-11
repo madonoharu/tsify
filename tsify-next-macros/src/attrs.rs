@@ -2,32 +2,43 @@ use serde_derive_internals::ast::Field;
 
 use crate::comments::extract_doc_comments;
 
+/// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
+/// E.g., through `#[tsify(into_wasm_abi)]`.
 #[derive(Debug, Default)]
 pub struct TsifyContainerAttrs {
+    /// Implement `IntoWasmAbi` for the type.
     pub into_wasm_abi: bool,
+    /// Implement `FromWasmAbi` for the type.
     pub from_wasm_abi: bool,
+    /// Whether the type should be wrapped in a Typescript namespace.
     pub namespace: bool,
+    /// Information about how the type should be serialized.
     pub ty_config: TypeGenerationConfig,
+    /// Comments associated with the type. These will be written out to the generated Typescript.
     pub comments: Vec<String>,
 }
 
+/// Configuration affecting how Typescript types are generated.
 #[derive(Debug, Default)]
 pub struct TypeGenerationConfig {
+    /// Universal prefix for generated types
     pub type_prefix: Option<String>,
+    /// Universal suffix for generated types
     pub type_suffix: Option<String>,
+    /// Whether missing fields should be represented as null in Typescript
     pub missing_as_null: bool,
+    /// Whether a hashmap should be represented as an object in Typescript
     pub hashmap_as_object: bool,
+    /// Whether large number types should be represented as BigInts in Typescript
     pub large_number_types_as_bigints: bool,
 }
+
 impl TypeGenerationConfig {
-    pub fn format_name(&self, mut name: String) -> String {
-        if let Some(ref prefix) = self.type_prefix {
-            name.insert_str(0, prefix);
-        }
-        if let Some(ref suffix) = self.type_suffix {
-            name.push_str(suffix);
-        }
-        name
+    /// Format a type `name` adding a prefix and suffix if they are set.
+    pub fn format_name(&self, name: String) -> String {
+        let prefix = self.type_prefix.as_ref().map_or("", String::as_str);
+        let suffix = self.type_suffix.as_ref().map_or("", String::as_str);
+        format!("{}{}{}", prefix, name, suffix)
     }
 }
 
@@ -131,7 +142,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`, 'type_prefix', 'type_suffix', 'missing_as_null', 'hashmap_as_object', 'large_number_types_as_bigints'"))
+                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
         }
 

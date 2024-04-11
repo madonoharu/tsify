@@ -63,7 +63,6 @@ impl<'a> Parser<'a> {
         self.container
             .generics()
             .type_params()
-            .into_iter()
             .map(|p| p.ident.to_string())
             .filter(|t| type_ref_names.contains(t))
             .collect()

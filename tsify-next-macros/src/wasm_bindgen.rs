@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse_quote;
+use syn::{parse_quote, WhereClause};
 
 use crate::{container::Container, decl::Decl};
 
@@ -94,6 +94,11 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
+    let serde_where_clause = WhereClause {
+        where_token: parse_quote!(where),
+        predicates: parse_quote!(#ident #ty_generics: #serde_path::Serialize),
+    };
+
     quote! {
         impl #impl_generics IntoWasmAbi for #ident #ty_generics #where_clause {
             type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -111,7 +116,7 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
             }
         }
 
-        impl #impl_generics From<#ident #ty_generics> for JsValue {
+        impl #impl_generics From<#ident #ty_generics> for JsValue #serde_where_clause {
             #[inline]
             fn from(value: #ident #ty_generics) -> Self {
                 value.into_js().unwrap_throw().into()

@@ -209,7 +209,10 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
-    impl<T> From<GenericStruct<T>> for JsValue {
+    impl<T> From<GenericStruct<T>> for JsValue
+    where
+        GenericStruct<T>: _serde::Serialize,
+    {
         #[inline]
         fn from(value: GenericStruct<T>) -> Self {
             value.into_js().unwrap_throw().into()
@@ -465,7 +468,10 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
-    impl<T> From<GenericNewtype<T>> for JsValue {
+    impl<T> From<GenericNewtype<T>> for JsValue
+    where
+        GenericNewtype<T>: _serde::Serialize,
+    {
         #[inline]
         fn from(value: GenericNewtype<T>) -> Self {
             value.into_js().unwrap_throw().into()

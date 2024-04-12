@@ -204,7 +204,10 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
-    impl<'a> From<Borrow<'a>> for JsValue {
+    impl<'a> From<Borrow<'a>> for JsValue
+    where
+        Borrow<'a>: _serde::Serialize,
+    {
         #[inline]
         fn from(value: Borrow<'a>) -> Self {
             value.into_js().unwrap_throw().into()

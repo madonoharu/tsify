@@ -1,5 +1,9 @@
 # tsify-next Changelog
 
+## v0.5.2
+
+-   Fix missing trait bounds for implemented `From` traits.
+
 ## v0.5.1
 
 -   @Pantamis contributed #22, implementing more `From` traits for more ergonomic use of Futures.

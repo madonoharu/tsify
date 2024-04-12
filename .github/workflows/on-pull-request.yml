@@ -82,6 +82,4 @@ jobs:
                   args: --all -- --check
 
             - name: Cargo clippy
-              uses: actions-rs/cargo@v1
-              with:
-                  command: clippy
+              run: cargo clippy -- -D warnings

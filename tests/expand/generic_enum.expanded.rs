@@ -193,7 +193,7 @@ const _: () = {
     }
     impl<T, U> IntoWasmAbi for GenericEnum<T, U>
     where
-        Self: _serde::Serialize,
+        GenericEnum<T, U>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
         #[inline]
@@ -203,7 +203,7 @@ const _: () = {
     }
     impl<T, U> OptionIntoWasmAbi for GenericEnum<T, U>
     where
-        Self: _serde::Serialize,
+        GenericEnum<T, U>: _serde::Serialize,
     {
         #[inline]
         fn none() -> Self::Abi {

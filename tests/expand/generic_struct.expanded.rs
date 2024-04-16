@@ -192,7 +192,7 @@ const _: () = {
     }
     impl<T> IntoWasmAbi for GenericStruct<T>
     where
-        Self: _serde::Serialize,
+        GenericStruct<T>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
         #[inline]
@@ -202,7 +202,7 @@ const _: () = {
     }
     impl<T> OptionIntoWasmAbi for GenericStruct<T>
     where
-        Self: _serde::Serialize,
+        GenericStruct<T>: _serde::Serialize,
     {
         #[inline]
         fn none() -> Self::Abi {
@@ -451,7 +451,7 @@ const _: () = {
     }
     impl<T> IntoWasmAbi for GenericNewtype<T>
     where
-        Self: _serde::Serialize,
+        GenericNewtype<T>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
         #[inline]
@@ -461,7 +461,7 @@ const _: () = {
     }
     impl<T> OptionIntoWasmAbi for GenericNewtype<T>
     where
-        Self: _serde::Serialize,
+        GenericNewtype<T>: _serde::Serialize,
     {
         #[inline]
         fn none() -> Self::Abi {

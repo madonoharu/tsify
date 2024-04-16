@@ -187,7 +187,7 @@ const _: () = {
     }
     impl<'a> IntoWasmAbi for Borrow<'a>
     where
-        Self: _serde::Serialize,
+        Borrow<'a>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
         #[inline]
@@ -197,7 +197,7 @@ const _: () = {
     }
     impl<'a> OptionIntoWasmAbi for Borrow<'a>
     where
-        Self: _serde::Serialize,
+        Borrow<'a>: _serde::Serialize,
     {
         #[inline]
         fn none() -> Self::Abi {

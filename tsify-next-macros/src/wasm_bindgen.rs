@@ -171,7 +171,11 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
             type Anchor = SelfOwner<Self>;
 
             unsafe fn ref_from_abi(js: Self::Abi) -> Self::Anchor {
-                SelfOwner(Self::from_abi(js))
+                let result = Self::from_js(&*JsType::ref_from_abi(js));
+                if let Err(err) = result {
+                    wasm_bindgen::throw_str(err.to_string().as_ref());
+                }
+                SelfOwner(result.unwrap_throw())
             }
         }
     }

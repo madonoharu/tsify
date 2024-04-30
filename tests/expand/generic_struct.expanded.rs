@@ -197,7 +197,34 @@ const _: () = {
         type Abi = <JsType as IntoWasmAbi>::Abi;
         #[inline]
         fn into_abi(self) -> Self::Abi {
-            self.into_js().unwrap_throw().into_abi()
+            match self.into_js() {
+                Ok(js) => js.into_abi(),
+                Err(err) => {
+                    let loc = core::panic::Location::caller();
+                    let msg = {
+                        let res = ::alloc::fmt::format(
+                            format_args!(
+                                "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
+                                .file(), loc.line(), loc.column(),
+                            ),
+                        );
+                        res
+                    };
+                    {
+                        #[cold]
+                        #[track_caller]
+                        #[inline(never)]
+                        #[rustc_const_panic_str]
+                        #[rustc_do_not_const_check]
+                        const fn panic_cold_display<T: ::core::fmt::Display>(
+                            arg: &T,
+                        ) -> ! {
+                            ::core::panicking::panic_display(arg)
+                        }
+                        panic_cold_display(&msg);
+                    };
+                }
+            }
         }
     }
     impl<T> OptionIntoWasmAbi for GenericStruct<T>
@@ -215,7 +242,34 @@ const _: () = {
     {
         #[inline]
         fn from(value: GenericStruct<T>) -> Self {
-            value.into_js().unwrap_throw().into()
+            match value.into_js() {
+                Ok(js) => js.into(),
+                Err(err) => {
+                    let loc = core::panic::Location::caller();
+                    let msg = {
+                        let res = ::alloc::fmt::format(
+                            format_args!(
+                                "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
+                                .file(), loc.line(), loc.column(),
+                            ),
+                        );
+                        res
+                    };
+                    {
+                        #[cold]
+                        #[track_caller]
+                        #[inline(never)]
+                        #[rustc_const_panic_str]
+                        #[rustc_do_not_const_check]
+                        const fn panic_cold_display<T: ::core::fmt::Display>(
+                            arg: &T,
+                        ) -> ! {
+                            ::core::panicking::panic_display(arg)
+                        }
+                        panic_cold_display(&msg);
+                    };
+                }
+            }
         }
     }
     impl<T> FromWasmAbi for GenericStruct<T>
@@ -460,7 +514,34 @@ const _: () = {
         type Abi = <JsType as IntoWasmAbi>::Abi;
         #[inline]
         fn into_abi(self) -> Self::Abi {
-            self.into_js().unwrap_throw().into_abi()
+            match self.into_js() {
+                Ok(js) => js.into_abi(),
+                Err(err) => {
+                    let loc = core::panic::Location::caller();
+                    let msg = {
+                        let res = ::alloc::fmt::format(
+                            format_args!(
+                                "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
+                                .file(), loc.line(), loc.column(),
+                            ),
+                        );
+                        res
+                    };
+                    {
+                        #[cold]
+                        #[track_caller]
+                        #[inline(never)]
+                        #[rustc_const_panic_str]
+                        #[rustc_do_not_const_check]
+                        const fn panic_cold_display<T: ::core::fmt::Display>(
+                            arg: &T,
+                        ) -> ! {
+                            ::core::panicking::panic_display(arg)
+                        }
+                        panic_cold_display(&msg);
+                    };
+                }
+            }
         }
     }
     impl<T> OptionIntoWasmAbi for GenericNewtype<T>
@@ -478,7 +559,34 @@ const _: () = {
     {
         #[inline]
         fn from(value: GenericNewtype<T>) -> Self {
-            value.into_js().unwrap_throw().into()
+            match value.into_js() {
+                Ok(js) => js.into(),
+                Err(err) => {
+                    let loc = core::panic::Location::caller();
+                    let msg = {
+                        let res = ::alloc::fmt::format(
+                            format_args!(
+                                "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
+                                .file(), loc.line(), loc.column(),
+                            ),
+                        );
+                        res
+                    };
+                    {
+                        #[cold]
+                        #[track_caller]
+                        #[inline(never)]
+                        #[rustc_const_panic_str]
+                        #[rustc_do_not_const_check]
+                        const fn panic_cold_display<T: ::core::fmt::Display>(
+                            arg: &T,
+                        ) -> ! {
+                            ::core::panicking::panic_display(arg)
+                        }
+                        panic_cold_display(&msg);
+                    };
+                }
+            }
         }
     }
     impl<T> FromWasmAbi for GenericNewtype<T>

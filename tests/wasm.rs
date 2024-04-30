@@ -1,3 +1,5 @@
+use core::panic;
+
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
@@ -35,7 +37,9 @@ function validate(value, validation) {
     validation(value); 
 }
 
-module.exports = { validate };
+function noop(value) {}
+
+module.exports = { validate, noop };
 "#)]
 extern "C" {
     #[wasm_bindgen(catch, js_name = "validate")]
@@ -49,6 +53,9 @@ extern "C" {
         value: SimpleData,
         validation: &dyn Fn(&SimpleData),
     ) -> Result<(), JsValue>;
+
+    #[wasm_bindgen(catch, js_name = "noop")]
+    pub fn do_not_serialize(value: CantBeSerialized) -> Result<(), JsValue>;
 }
 
 #[wasm_bindgen_test]
@@ -67,4 +74,30 @@ fn test_convert_simple_value_type() {
         assert_eq!(val_after, &val);
     })
     .unwrap_throw();
+}
+
+// Test that the error message encountered during serialization is propagated to the caller
+#[derive(Debug, PartialEq, Deserialize, Tsify, Clone)]
+#[tsify(into_wasm_abi)]
+struct CantBeSerialized {
+    value: i32,
+}
+
+impl Serialize for CantBeSerialized {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        Err(serde::ser::Error::custom(
+            "This type can't be serialized NO_SERIALIZE",
+        ))
+    }
+}
+
+#[wasm_bindgen_test]
+#[should_panic(expected = "NO_SERIALIZE")]
+fn test_data_that_cant_be_serialized_throws_an_appropriate_error() {
+    let val = CantBeSerialized { value: 42 };
+
+    let _ = do_not_serialize(val);
 }

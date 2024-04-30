@@ -1,5 +1,10 @@
 # tsify-next Changelog
 
+## v0.5.3
+
+-   Propagate errors encountered during serialization.
+-   More fixes for missing `From` trait implementations.
+
 ## v0.5.2
 
 -   Fix missing trait bounds for implemented `From` traits.

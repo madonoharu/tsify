@@ -1,6 +1,6 @@
 [package]
 name = "tsify-next-macros"
-version = "0.5.2"
+version = "0.5.3"
 edition = "2021"
 authors = [
     "Madono Haru <madonoharu@gmail.com>",

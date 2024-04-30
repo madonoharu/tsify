@@ -101,7 +101,20 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
 
             #[inline]
             fn into_abi(self) -> Self::Abi {
-                self.into_js().unwrap_throw().into_abi()
+                // wasm_bindgen doesn't forward the error message from the `into_js` result.
+                // https://github.com/rustwasm/wasm-bindgen/issues/2732
+                // Until that issue is fixed, we don't directly use `unwrap_throw()` and instead build our
+                // own error message.
+                // Convert to `self.into_js().unwrap_throw().into_abi()` when fixed.
+                match self.into_js() {
+                    Ok(js) => js.into_abi(),
+                    Err(err) => {
+                        let loc = core::panic::Location::caller();
+                        let msg = format!("(Converting type failed) {} ({}:{}:{})", err, loc.file(), loc.line(), loc.column());
+                        // In theory, `wasm_bindgen::throw_str(&msg)` should work, but the error emitted by `wasm_bindgen::throw_str` cannot be picked up by `#[should_panic(expect = ...)]` in tests, so we use a regular panic.
+                        panic!("{}", msg);
+                    }
+                }
             }
         }
 
@@ -115,7 +128,20 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
         impl #impl_generics From<#ident #ty_generics> for JsValue #where_clause {
             #[inline]
             fn from(value: #ident #ty_generics) -> Self {
-                value.into_js().unwrap_throw().into()
+                // wasm_bindgen doesn't forward the error message from the `into_js` result.
+                // https://github.com/rustwasm/wasm-bindgen/issues/2732
+                // Until that issue is fixed, we don't directly use `unwrap_throw()` and instead build our
+                // own error message.
+                // Convert to `value.into_js().unwrap_throw().into()` when fixed.
+                match value.into_js() {
+                    Ok(js) => js.into(),
+                    Err(err) => {
+                        let loc = core::panic::Location::caller();
+                        let msg = format!("(Converting type failed) {} ({}:{}:{})", err, loc.file(), loc.line(), loc.column());
+                        // In theory, `wasm_bindgen::throw_str(&msg)` should work, but the error emitted by `wasm_bindgen::throw_str` cannot be picked up by `#[should_panic(expect = ...)]` in tests, so we use a regular panic.
+                        panic!("{}", msg);
+                    }
+                }
             }
         }
     }

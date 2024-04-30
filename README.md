@@ -15,7 +15,7 @@ Click to show Cargo.toml.
 
 ```toml
 [dependencies]
-tsify-next = "0.5.2"
+tsify-next = "0.5.3"
 serde = { version = "1.0", features = ["derive"] }
 wasm-bindgen = { version = "0.2" }
 ```

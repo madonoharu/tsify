@@ -26,6 +26,13 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
                     <Self as Tsify>::JsType::describe()
                 }
             }
+
+            impl #impl_generics WasmDescribeVector for #ident #ty_generics #where_clause {
+                #[inline]
+                fn describe_vector() {
+                    <Self as Tsify>::JsType::describe_vector()
+                }
+            }
         }
     });
 
@@ -37,6 +44,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             extern crate serde as _serde;
         },
     });
+
     let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
     let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
 
@@ -52,8 +60,8 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             #use_serde
             use tsify_next::Tsify;
             use wasm_bindgen::{
-                convert::{FromWasmAbi, IntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi, RefFromWasmAbi},
-                describe::WasmDescribe,
+                convert::{FromWasmAbi, VectorFromWasmAbi, IntoWasmAbi, VectorIntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi, RefFromWasmAbi},
+                describe::WasmDescribe, describe::WasmDescribeVector,
                 prelude::*,
             };
 
@@ -144,6 +152,33 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
                 }
             }
         }
+
+        impl #impl_generics VectorIntoWasmAbi for #ident #ty_generics #where_clause {
+            type Abi = <JsType as VectorIntoWasmAbi>::Abi;
+
+            #[inline]
+            fn vector_into_abi(vector: Box<[Self]>) -> Self::Abi {
+                let values = vector
+                    .iter()
+                    .map(|value|
+                        // wasm_bindgen doesn't forward the error message from the `into_js` result.
+                        // https://github.com/rustwasm/wasm-bindgen/issues/2732
+                        // Until that issue is fixed, we don't directly use `unwrap_throw()` and instead build our
+                        // own error message.
+                        match value.into_js() {
+                        Ok(js) => js.into(),
+                        Err(err) => {
+                            let loc = core::panic::Location::caller();
+                            let msg = format!("(Converting type failed) {} ({}:{}:{})", err, loc.file(), loc.line(), loc.column());
+                            // In theory, `wasm_bindgen::throw_str(&msg)` should work, but the error emitted by `wasm_bindgen::throw_str` cannot be picked up by `#[should_panic(expect = ...)]` in tests, so we use a regular panic.
+                            panic!("{}", msg);
+                        }
+                    })
+                    .collect();
+
+                JsValue::vector_into_abi(values)
+            }
+        }
     }
 }
 
@@ -202,6 +237,24 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
                     wasm_bindgen::throw_str(err.to_string().as_ref());
                 }
                 SelfOwner(result.unwrap_throw())
+            }
+        }
+
+        impl #impl_generics VectorFromWasmAbi for #ident #ty_generics #where_clause {
+            type Abi = <JsType as VectorFromWasmAbi>::Abi;
+
+            #[inline]
+            unsafe fn vector_from_abi(js: Self::Abi) -> Box<[Self]> {
+                JsValue::vector_from_abi(js)
+                    .into_iter()
+                    .map(|value| {
+                        let result = Self::from_js(value);
+                        if let Err(err) = result {
+                            wasm_bindgen::throw_str(err.to_string().as_ref());
+                        }
+                        result.unwrap_throw()
+                    })
+                    .collect()
             }
         }
     }

@@ -1,7 +1,5 @@
 use serde_derive_internals::ast::Field;
 
-use crate::comments::extract_doc_comments;
-
 /// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
 /// E.g., through `#[tsify(into_wasm_abi)]`.
 #[derive(Debug, Default)]
@@ -14,8 +12,6 @@ pub struct TsifyContainerAttrs {
     pub namespace: bool,
     /// Information about how the type should be serialized.
     pub ty_config: TypeGenerationConfig,
-    /// Comments associated with the type. These will be written out to the generated Typescript.
-    pub comments: Vec<String>,
 }
 
 /// Configuration affecting how Typescript types are generated.
@@ -49,7 +45,6 @@ impl TsifyContainerAttrs {
             from_wasm_abi: false,
             namespace: false,
             ty_config: TypeGenerationConfig::default(),
-            comments: extract_doc_comments(&input.attrs),
         };
 
         for attr in &input.attrs {
@@ -154,7 +149,6 @@ impl TsifyContainerAttrs {
 pub struct TsifyFieldAttrs {
     pub type_override: Option<String>,
     pub optional: bool,
-    pub comments: Vec<String>,
 }
 
 impl TsifyFieldAttrs {
@@ -162,7 +156,6 @@ impl TsifyFieldAttrs {
         let mut attrs = Self {
             type_override: None,
             optional: false,
-            comments: extract_doc_comments(&field.original.attrs),
         };
 
         for attr in &field.original.attrs {

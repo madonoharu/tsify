@@ -255,7 +255,11 @@ impl<'a> Parser<'a> {
             .map(|variant| {
                 let decl = self.create_type_alias_decl(self.parse_variant(variant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
-                    type_alias.id = variant.attrs.name().serialize_name().to_owned();
+                    variant
+                        .attrs
+                        .name()
+                        .serialize_name()
+                        .clone_into(&mut type_alias.id);
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
                     type_alias

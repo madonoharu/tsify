@@ -1,5 +1,9 @@
 # tsify-next Changelog
 
+## v0.5.4
+
+-  Allow serializing of `Vec<Struct>` provided that `Struct` is serializable.
+
 ## v0.5.3
 
 -   Propagate errors encountered during serialization.

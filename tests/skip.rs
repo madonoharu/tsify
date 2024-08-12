@@ -66,6 +66,17 @@ fn test_skip() {
         C,
         /// Comment for D
         D,
+        /// Comment for Struct
+        Struct {
+            #[serde(skip)]
+            field_a: bool,
+            field_b: u8,
+            field_c: String,
+        },
+        /// Comment for Tuple
+        Tuple(#[serde(skip)] bool, u8, String),
+        /// Comment for NewType
+        NewType(#[serde(skip)] bool),
     }
 
     let expected = indoc! {r#"
@@ -77,13 +88,69 @@ fn test_skip() {
              * Comment for D
              */
             export type D = "D";
+            /**
+             * Comment for Struct
+             */
+            export type Struct = { Struct: { field_b: number; field_c: string } };
+            /**
+             * Comment for Tuple
+             */
+            export type Tuple = { Tuple: [number, string] };
+            /**
+             * Comment for NewType
+             */
+            export type NewType = "NewType";
         }
 
         /**
          * Comment for Enum
          */
-        export type Enum = "D";"#
+        export type Enum = "D" | { Struct: { field_b: number; field_c: string } } | { Tuple: [number, string] } | "NewType";"#
     };
 
     assert_eq!(Enum::DECL, expected);
+
+    /// Comment for InternalTagEnum
+    #[derive(Tsify)]
+    #[serde(tag = "type")]
+    #[tsify(namespace)]
+    enum InternalTagEnum {
+        /// Comment for Unit
+        Unit,
+        /// Comment for Struct
+        Struct {
+            #[serde(skip)]
+            field_a: bool,
+            field_b: u8,
+        },
+        /// Comment for NewType
+        NewType(#[serde(skip)] bool),
+    }
+
+    let expected = indoc! {r#"
+        /**
+         * Comment for InternalTagEnum
+         */
+        declare namespace InternalTagEnum {
+            /**
+             * Comment for Unit
+             */
+            export type Unit = { type: "Unit" };
+            /**
+             * Comment for Struct
+             */
+            export type Struct = { type: "Struct"; field_b: number };
+            /**
+             * Comment for NewType
+             */
+            export type NewType = { type: "NewType" };
+        }
+
+        /**
+         * Comment for InternalTagEnum
+         */
+        export type InternalTagEnum = { type: "Unit" } | { type: "Struct"; field_b: number } | { type: "NewType" };"#
+    };
+
+    assert_eq!(InternalTagEnum::DECL, expected);
 }

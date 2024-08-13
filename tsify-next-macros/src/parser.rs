@@ -288,7 +288,16 @@ impl<'a> Parser<'a> {
     fn parse_variant(&self, variant: &Variant) -> TsType {
         let tag_type = self.container.serde_attrs().tag();
         let name = variant.attrs.name().serialize_name().to_owned();
-        let style = variant.style;
+        // Checks for Newtype with a skip attribute and treats it as a Unit
+        let style = if matches!(variant.style, Style::Newtype)
+            && (variant.fields[0].attrs.skip_serializing()
+                || variant.fields[0].attrs.skip_deserializing()
+                || is_phantom(variant.fields[0].ty))
+        {
+            Style::Unit
+        } else {
+            variant.style
+        };
         let type_ann: TsType = self.parse_fields(style, &variant.fields).into();
         type_ann.with_tag_type(&self.container.attrs.ty_config, name, style, tag_type)
     }

@@ -2,6 +2,8 @@ use serde_derive_internals::ast::Field;
 
 #[derive(Debug, Default)]
 pub struct TsifyContainerAttars {
+    pub type_override: Option<String>,
+    pub type_params: Option<Vec<String>>,
     pub into_wasm_abi: bool,
     pub from_wasm_abi: bool,
     pub namespace: bool,
@@ -10,6 +12,8 @@ pub struct TsifyContainerAttars {
 impl TsifyContainerAttars {
     pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
         let mut attrs = Self {
+            type_override: None,
+            type_params: None,
             into_wasm_abi: false,
             from_wasm_abi: false,
             namespace: false,
@@ -21,6 +25,24 @@ impl TsifyContainerAttars {
             }
 
             attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("type") {
+                    if attrs.type_override.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit = meta.value()?.parse::<syn::LitStr>()?;
+                    attrs.type_override = Some(lit.value());
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("type_params") {
+                    if attrs.type_params.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit = meta.value()?.parse::<syn::LitStr>()?;
+                    attrs.type_params = Some(lit.value().split(',').map(|s| s.trim().to_string()).collect());
+                    return Ok(());
+                }
+
                 if meta.path.is_ident("into_wasm_abi") {
                     if attrs.into_wasm_abi {
                         return Err(meta.error("duplicate attribute"));
@@ -48,7 +70,7 @@ impl TsifyContainerAttars {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `namespace`"))
             })?;
         }
 
@@ -59,6 +81,7 @@ impl TsifyContainerAttars {
 #[derive(Debug, Default)]
 pub struct TsifyFieldAttrs {
     pub type_override: Option<String>,
+    pub type_params: Option<Vec<String>>,
     pub optional: bool,
 }
 
@@ -66,6 +89,7 @@ impl TsifyFieldAttrs {
     pub fn from_serde_field(field: &Field) -> syn::Result<Self> {
         let mut attrs = Self {
             type_override: None,
+            type_params: None,
             optional: false,
         };
 
@@ -84,6 +108,20 @@ impl TsifyFieldAttrs {
                     return Ok(());
                 }
 
+                if meta.path.is_ident("type_params") {
+                    if attrs.type_params.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit = meta.value()?.parse::<syn::LitStr>()?;
+                    attrs.type_params = Some(
+                        lit.value()
+                            .split(',')
+                            .map(|s| s.trim().to_string())
+                            .collect(),
+                    );
+                    return Ok(());
+                }
+
                 if meta.path.is_ident("optional") {
                     if attrs.optional {
                         return Err(meta.error("duplicate attribute"));
@@ -92,7 +130,7 @@ impl TsifyFieldAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type` or `optional`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params` or `optional`"))
             })?;
         }
 

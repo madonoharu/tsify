@@ -74,3 +74,62 @@ fn test_generic_struct_with_type_override() {
 
     assert_eq!(Foo::<()>::DECL, expected);
 }
+
+#[test]
+fn test_generic_struct_with_container_param_override() {
+    trait Trait {
+        type Assoc;
+    }
+
+    #[derive(Tsify)]
+    #[tsify(type_params = "T")]
+    pub struct Foo<T: Trait> {
+        #[tsify(type = "T.Assoc")]
+        bar: T::Assoc,
+    }
+
+    #[derive(Tsify)]
+    #[tsify(type = "{ Assoc: string }")]
+    pub struct Bar;
+
+    impl Trait for Bar {
+        type Assoc = String;
+    }
+
+    let expected = indoc! {r#"
+        export interface Foo<T> {
+            bar: T.Assoc;
+        }"#
+    };
+
+    assert_eq!(Foo::<Bar>::DECL, expected);
+}
+
+#[test]
+fn test_generic_struct_with_field_param_override() {
+    trait Trait {
+        type Assoc;
+    }
+
+    #[derive(Tsify)]
+    pub struct Foo<T: Trait> {
+        #[tsify(type = "T.Assoc", type_params = "T")]
+        bar: T::Assoc,
+    }
+
+    #[derive(Tsify)]
+    #[tsify(type = "{ Assoc: string }")]
+    pub struct Bar;
+
+    impl Trait for Bar {
+        type Assoc = String;
+    }
+
+    let expected = indoc! {r#"
+        export interface Foo<T> {
+            bar: T.Assoc;
+        }"#
+    };
+
+    assert_eq!(Foo::<Bar>::DECL, expected);
+}

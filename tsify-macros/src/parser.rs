@@ -84,7 +84,13 @@ impl<'a> Parser<'a> {
         Decl::TsTypeAlias(TsTypeAliasDecl {
             id: self.container.name(),
             export: true,
-            type_params: self.create_relevant_type_params(type_ann.type_ref_names()),
+            type_params: self
+                .container
+                .attrs
+                .type_params
+                .as_ref()
+                .cloned()
+                .unwrap_or_else(|| self.create_relevant_type_params(type_ann.type_ref_names())),
             type_ann,
         })
     }
@@ -100,7 +106,13 @@ impl<'a> Parser<'a> {
                 type_ref_names.extend(ty.type_ref_names());
             });
 
-            let type_params = self.create_relevant_type_params(type_ref_names);
+            let type_params = self
+                .container
+                .attrs
+                .type_params
+                .as_ref()
+                .cloned()
+                .unwrap_or_else(|| self.create_relevant_type_params(type_ref_names));
 
             Decl::TsInterface(TsInterfaceDecl {
                 id: self.container.name(),
@@ -199,8 +211,12 @@ impl<'a> Parser<'a> {
         let type_ann = TsType::from(field.ty);
 
         if let Some(t) = &ts_attrs.type_override {
-            let type_ref_names = type_ann.type_ref_names();
-            let type_params = self.create_relevant_type_params(type_ref_names);
+            let type_params = if let Some(params) = &ts_attrs.type_params {
+                params.clone()
+            } else {
+                let type_ref_names = type_ann.type_ref_names();
+                self.create_relevant_type_params(type_ref_names)
+            };
             (
                 TsType::Override {
                     type_override: t.clone(),

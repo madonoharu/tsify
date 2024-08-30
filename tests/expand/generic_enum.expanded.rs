@@ -6,7 +6,6 @@ pub enum GenericEnum<T, U> {
     Seq(T, U),
     Map { x: T, y: U },
 }
-#[automatically_derived]
 const _: () = {
     extern crate serde as _serde;
     use tsify_next::Tsify;
@@ -22,6 +21,7 @@ const _: () = {
         #[wasm_bindgen(typescript_type = "GenericEnum")]
         pub type JsType;
     }
+    #[automatically_derived]
     impl<T, U> Tsify for GenericEnum<T, U> {
         type JsType = JsType;
         const DECL: &'static str = "export type GenericEnum<T, U> = \"Unit\" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };";
@@ -33,18 +33,21 @@ const _: () = {
     }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export type GenericEnum<T, U> = \"Unit\" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };";
+    #[automatically_derived]
     impl<T, U> WasmDescribe for GenericEnum<T, U> {
         #[inline]
         fn describe() {
             <Self as Tsify>::JsType::describe()
         }
     }
+    #[automatically_derived]
     impl<T, U> WasmDescribeVector for GenericEnum<T, U> {
         #[inline]
         fn describe_vector() {
             <Self as Tsify>::JsType::describe_vector()
         }
     }
+    #[automatically_derived]
     impl<T, U> IntoWasmAbi for GenericEnum<T, U>
     where
         GenericEnum<T, U>: _serde::Serialize,
@@ -82,6 +85,7 @@ const _: () = {
             }
         }
     }
+    #[automatically_derived]
     impl<T, U> OptionIntoWasmAbi for GenericEnum<T, U>
     where
         GenericEnum<T, U>: _serde::Serialize,
@@ -91,6 +95,7 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
+    #[automatically_derived]
     impl<T, U> From<GenericEnum<T, U>> for JsValue
     where
         GenericEnum<T, U>: _serde::Serialize,
@@ -127,6 +132,7 @@ const _: () = {
             }
         }
     }
+    #[automatically_derived]
     impl<T, U> VectorIntoWasmAbi for GenericEnum<T, U>
     where
         GenericEnum<T, U>: _serde::Serialize,
@@ -168,6 +174,7 @@ const _: () = {
             JsValue::vector_into_abi(values)
         }
     }
+    #[automatically_derived]
     impl<T, U> FromWasmAbi for GenericEnum<T, U>
     where
         Self: _serde::de::DeserializeOwned,
@@ -182,6 +189,7 @@ const _: () = {
             result.unwrap_throw()
         }
     }
+    #[automatically_derived]
     impl<T, U> OptionFromWasmAbi for GenericEnum<T, U>
     where
         Self: _serde::de::DeserializeOwned,
@@ -192,12 +200,14 @@ const _: () = {
         }
     }
     pub struct SelfOwner<T>(T);
+    #[automatically_derived]
     impl<T> ::core::ops::Deref for SelfOwner<T> {
         type Target = T;
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
+    #[automatically_derived]
     impl<T, U> RefFromWasmAbi for GenericEnum<T, U>
     where
         Self: _serde::de::DeserializeOwned,
@@ -212,6 +222,7 @@ const _: () = {
             SelfOwner(result.unwrap_throw())
         }
     }
+    #[automatically_derived]
     impl<T, U> VectorFromWasmAbi for GenericEnum<T, U>
     where
         Self: _serde::de::DeserializeOwned,

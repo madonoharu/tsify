@@ -27,7 +27,6 @@ pub fn expand(item: syn::ItemType) -> syn::Result<TokenStream> {
     let decl_str = decl.to_string();
 
     let typescript_custom_section = quote! {
-        #[automatically_derived]
         const _: () = {
             use wasm_bindgen::prelude::*;
             #[wasm_bindgen(typescript_custom_section)]

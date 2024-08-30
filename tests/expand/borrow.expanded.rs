@@ -5,7 +5,6 @@ struct Borrow<'a> {
     raw: &'a str,
     cow: Cow<'a, str>,
 }
-#[automatically_derived]
 const _: () = {
     extern crate serde as _serde;
     use tsify_next::Tsify;
@@ -21,6 +20,7 @@ const _: () = {
         #[wasm_bindgen(typescript_type = "Borrow")]
         pub type JsType;
     }
+    #[automatically_derived]
     impl<'a> Tsify for Borrow<'a> {
         type JsType = JsType;
         const DECL: &'static str = "export interface Borrow {\n    raw: string;\n    cow: string;\n}";
@@ -32,18 +32,21 @@ const _: () = {
     }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export interface Borrow {\n    raw: string;\n    cow: string;\n}";
+    #[automatically_derived]
     impl<'a> WasmDescribe for Borrow<'a> {
         #[inline]
         fn describe() {
             <Self as Tsify>::JsType::describe()
         }
     }
+    #[automatically_derived]
     impl<'a> WasmDescribeVector for Borrow<'a> {
         #[inline]
         fn describe_vector() {
             <Self as Tsify>::JsType::describe_vector()
         }
     }
+    #[automatically_derived]
     impl<'a> IntoWasmAbi for Borrow<'a>
     where
         Borrow<'a>: _serde::Serialize,
@@ -81,6 +84,7 @@ const _: () = {
             }
         }
     }
+    #[automatically_derived]
     impl<'a> OptionIntoWasmAbi for Borrow<'a>
     where
         Borrow<'a>: _serde::Serialize,
@@ -90,6 +94,7 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
+    #[automatically_derived]
     impl<'a> From<Borrow<'a>> for JsValue
     where
         Borrow<'a>: _serde::Serialize,
@@ -126,6 +131,7 @@ const _: () = {
             }
         }
     }
+    #[automatically_derived]
     impl<'a> VectorIntoWasmAbi for Borrow<'a>
     where
         Borrow<'a>: _serde::Serialize,
@@ -167,6 +173,7 @@ const _: () = {
             JsValue::vector_into_abi(values)
         }
     }
+    #[automatically_derived]
     impl<'a> FromWasmAbi for Borrow<'a>
     where
         Self: _serde::de::DeserializeOwned,
@@ -181,6 +188,7 @@ const _: () = {
             result.unwrap_throw()
         }
     }
+    #[automatically_derived]
     impl<'a> OptionFromWasmAbi for Borrow<'a>
     where
         Self: _serde::de::DeserializeOwned,
@@ -191,12 +199,14 @@ const _: () = {
         }
     }
     pub struct SelfOwner<T>(T);
+    #[automatically_derived]
     impl<T> ::core::ops::Deref for SelfOwner<T> {
         type Target = T;
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
+    #[automatically_derived]
     impl<'a> RefFromWasmAbi for Borrow<'a>
     where
         Self: _serde::de::DeserializeOwned,
@@ -211,6 +221,7 @@ const _: () = {
             SelfOwner(result.unwrap_throw())
         }
     }
+    #[automatically_derived]
     impl<'a> VectorFromWasmAbi for Borrow<'a>
     where
         Self: _serde::de::DeserializeOwned,

@@ -3,7 +3,6 @@ use tsify_next::Tsify;
 pub struct GenericStruct<T> {
     x: T,
 }
-#[automatically_derived]
 const _: () = {
     extern crate serde as _serde;
     use tsify_next::Tsify;
@@ -19,6 +18,7 @@ const _: () = {
         #[wasm_bindgen(typescript_type = "GenericStruct")]
         pub type JsType;
     }
+    #[automatically_derived]
     impl<T> Tsify for GenericStruct<T> {
         type JsType = JsType;
         const DECL: &'static str = "export interface GenericStruct<T> {\n    x: T;\n}";
@@ -30,18 +30,21 @@ const _: () = {
     }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export interface GenericStruct<T> {\n    x: T;\n}";
+    #[automatically_derived]
     impl<T> WasmDescribe for GenericStruct<T> {
         #[inline]
         fn describe() {
             <Self as Tsify>::JsType::describe()
         }
     }
+    #[automatically_derived]
     impl<T> WasmDescribeVector for GenericStruct<T> {
         #[inline]
         fn describe_vector() {
             <Self as Tsify>::JsType::describe_vector()
         }
     }
+    #[automatically_derived]
     impl<T> IntoWasmAbi for GenericStruct<T>
     where
         GenericStruct<T>: _serde::Serialize,
@@ -79,6 +82,7 @@ const _: () = {
             }
         }
     }
+    #[automatically_derived]
     impl<T> OptionIntoWasmAbi for GenericStruct<T>
     where
         GenericStruct<T>: _serde::Serialize,
@@ -88,6 +92,7 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
+    #[automatically_derived]
     impl<T> From<GenericStruct<T>> for JsValue
     where
         GenericStruct<T>: _serde::Serialize,
@@ -124,6 +129,7 @@ const _: () = {
             }
         }
     }
+    #[automatically_derived]
     impl<T> VectorIntoWasmAbi for GenericStruct<T>
     where
         GenericStruct<T>: _serde::Serialize,
@@ -165,6 +171,7 @@ const _: () = {
             JsValue::vector_into_abi(values)
         }
     }
+    #[automatically_derived]
     impl<T> FromWasmAbi for GenericStruct<T>
     where
         Self: _serde::de::DeserializeOwned,
@@ -179,6 +186,7 @@ const _: () = {
             result.unwrap_throw()
         }
     }
+    #[automatically_derived]
     impl<T> OptionFromWasmAbi for GenericStruct<T>
     where
         Self: _serde::de::DeserializeOwned,
@@ -189,12 +197,14 @@ const _: () = {
         }
     }
     pub struct SelfOwner<T>(T);
+    #[automatically_derived]
     impl<T> ::core::ops::Deref for SelfOwner<T> {
         type Target = T;
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
+    #[automatically_derived]
     impl<T> RefFromWasmAbi for GenericStruct<T>
     where
         Self: _serde::de::DeserializeOwned,
@@ -209,6 +219,7 @@ const _: () = {
             SelfOwner(result.unwrap_throw())
         }
     }
+    #[automatically_derived]
     impl<T> VectorFromWasmAbi for GenericStruct<T>
     where
         Self: _serde::de::DeserializeOwned,
@@ -231,7 +242,6 @@ const _: () = {
 };
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct GenericNewtype<T>(T);
-#[automatically_derived]
 const _: () = {
     extern crate serde as _serde;
     use tsify_next::Tsify;
@@ -247,6 +257,7 @@ const _: () = {
         #[wasm_bindgen(typescript_type = "GenericNewtype")]
         pub type JsType;
     }
+    #[automatically_derived]
     impl<T> Tsify for GenericNewtype<T> {
         type JsType = JsType;
         const DECL: &'static str = "export type GenericNewtype<T> = T;";
@@ -258,18 +269,21 @@ const _: () = {
     }
     #[wasm_bindgen(typescript_custom_section)]
     const TS_APPEND_CONTENT: &'static str = "export type GenericNewtype<T> = T;";
+    #[automatically_derived]
     impl<T> WasmDescribe for GenericNewtype<T> {
         #[inline]
         fn describe() {
             <Self as Tsify>::JsType::describe()
         }
     }
+    #[automatically_derived]
     impl<T> WasmDescribeVector for GenericNewtype<T> {
         #[inline]
         fn describe_vector() {
             <Self as Tsify>::JsType::describe_vector()
         }
     }
+    #[automatically_derived]
     impl<T> IntoWasmAbi for GenericNewtype<T>
     where
         GenericNewtype<T>: _serde::Serialize,
@@ -307,6 +321,7 @@ const _: () = {
             }
         }
     }
+    #[automatically_derived]
     impl<T> OptionIntoWasmAbi for GenericNewtype<T>
     where
         GenericNewtype<T>: _serde::Serialize,
@@ -316,6 +331,7 @@ const _: () = {
             <JsType as OptionIntoWasmAbi>::none()
         }
     }
+    #[automatically_derived]
     impl<T> From<GenericNewtype<T>> for JsValue
     where
         GenericNewtype<T>: _serde::Serialize,
@@ -352,6 +368,7 @@ const _: () = {
             }
         }
     }
+    #[automatically_derived]
     impl<T> VectorIntoWasmAbi for GenericNewtype<T>
     where
         GenericNewtype<T>: _serde::Serialize,
@@ -393,6 +410,7 @@ const _: () = {
             JsValue::vector_into_abi(values)
         }
     }
+    #[automatically_derived]
     impl<T> FromWasmAbi for GenericNewtype<T>
     where
         Self: _serde::de::DeserializeOwned,
@@ -407,6 +425,7 @@ const _: () = {
             result.unwrap_throw()
         }
     }
+    #[automatically_derived]
     impl<T> OptionFromWasmAbi for GenericNewtype<T>
     where
         Self: _serde::de::DeserializeOwned,
@@ -417,12 +436,14 @@ const _: () = {
         }
     }
     pub struct SelfOwner<T>(T);
+    #[automatically_derived]
     impl<T> ::core::ops::Deref for SelfOwner<T> {
         type Target = T;
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
+    #[automatically_derived]
     impl<T> RefFromWasmAbi for GenericNewtype<T>
     where
         Self: _serde::de::DeserializeOwned,
@@ -437,6 +458,7 @@ const _: () = {
             SelfOwner(result.unwrap_throw())
         }
     }
+    #[automatically_derived]
     impl<T> VectorFromWasmAbi for GenericNewtype<T>
     where
         Self: _serde::de::DeserializeOwned,

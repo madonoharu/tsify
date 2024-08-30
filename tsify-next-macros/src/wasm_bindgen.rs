@@ -20,6 +20,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
 
     let wasm_describe = wasm_abi.then(|| {
         quote! {
+            #[automatically_derived]
             impl #impl_generics WasmDescribe for #ident #ty_generics #where_clause {
                 #[inline]
                 fn describe() {
@@ -27,6 +28,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
                 }
             }
 
+            #[automatically_derived]
             impl #impl_generics WasmDescribeVector for #ident #ty_generics #where_clause {
                 #[inline]
                 fn describe_vector() {
@@ -55,7 +57,6 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let large_number_types_as_bigints = attrs.ty_config.large_number_types_as_bigints;
 
     quote! {
-        #[automatically_derived]
         const _: () = {
             #use_serde
             use tsify_next::Tsify;
@@ -72,6 +73,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
                 pub type JsType;
             }
 
+            #[automatically_derived]
             impl #impl_generics Tsify for #ident #ty_generics #where_clause {
                 type JsType = JsType;
                 const DECL: &'static str = #decl_str;
@@ -104,6 +106,7 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     quote! {
+        #[automatically_derived]
         impl #impl_generics IntoWasmAbi for #ident #ty_generics #where_clause {
             type Abi = <JsType as IntoWasmAbi>::Abi;
 
@@ -126,6 +129,7 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
             }
         }
 
+        #[automatically_derived]
         impl #impl_generics OptionIntoWasmAbi for #ident #ty_generics #where_clause {
             #[inline]
             fn none() -> Self::Abi {
@@ -133,6 +137,7 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
             }
         }
 
+        #[automatically_derived]
         impl #impl_generics From<#ident #ty_generics> for JsValue #where_clause {
             #[inline]
             fn from(value: #ident #ty_generics) -> Self {
@@ -153,6 +158,7 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
             }
         }
 
+        #[automatically_derived]
         impl #impl_generics VectorIntoWasmAbi for #ident #ty_generics #where_clause {
             type Abi = <JsType as VectorIntoWasmAbi>::Abi;
 
@@ -196,6 +202,7 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     quote! {
+        #[automatically_derived]
         impl #impl_generics FromWasmAbi for #ident #ty_generics #where_clause {
             type Abi = <JsType as FromWasmAbi>::Abi;
 
@@ -209,6 +216,7 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
             }
         }
 
+        #[automatically_derived]
         impl #impl_generics OptionFromWasmAbi for #ident #ty_generics #where_clause {
             #[inline]
             fn is_none(js: &Self::Abi) -> bool {
@@ -218,6 +226,7 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
 
         pub struct SelfOwner<T>(T);
 
+        #[automatically_derived]
         impl<T> ::core::ops::Deref for SelfOwner<T> {
             type Target = T;
 
@@ -226,6 +235,7 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
             }
         }
 
+        #[automatically_derived]
         impl #impl_generics RefFromWasmAbi for #ident #ty_generics #where_clause {
             type Abi = <JsType as RefFromWasmAbi>::Abi;
 
@@ -240,6 +250,7 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
             }
         }
 
+        #[automatically_derived]
         impl #impl_generics VectorFromWasmAbi for #ident #ty_generics #where_clause {
             type Abi = <JsType as VectorFromWasmAbi>::Abi;
 

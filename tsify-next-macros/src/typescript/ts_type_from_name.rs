@@ -117,7 +117,9 @@ impl TsType {
                 nanos_since_epoch: Self::NUMBER;
             },
 
-            "Range" | "RangeInclusive" => {
+            // Treat as std::ops::Range or std::ops::RangeInclusive only when there is exactly one type parameter.
+            // Otherwise, consider it a user-defined type and do not perform any conversion.
+            "Range" | "RangeInclusive" if args.len() == 1 => {
                 let start = Self::from_syn_type(config, args[0]);
                 let end = start.clone();
 

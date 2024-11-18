@@ -56,7 +56,7 @@ const _: () = {
                 Ok(js) => js.into_abi(),
                 Err(err) => {
                     let loc = core::panic::Location::caller();
-                    let msg = {
+                    let msg = ::alloc::__export::must_use({
                         let res = ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
@@ -64,7 +64,7 @@ const _: () = {
                             ),
                         );
                         res
-                    };
+                    });
                     {
                         #[cold]
                         #[track_caller]
@@ -103,7 +103,7 @@ const _: () = {
                 Ok(js) => js.into(),
                 Err(err) => {
                     let loc = core::panic::Location::caller();
-                    let msg = {
+                    let msg = ::alloc::__export::must_use({
                         let res = ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
@@ -111,7 +111,7 @@ const _: () = {
                             ),
                         );
                         res
-                    };
+                    });
                     {
                         #[cold]
                         #[track_caller]
@@ -143,7 +143,7 @@ const _: () = {
                     Ok(js) => js.into(),
                     Err(err) => {
                         let loc = core::panic::Location::caller();
-                        let msg = {
+                        let msg = ::alloc::__export::must_use({
                             let res = ::alloc::fmt::format(
                                 format_args!(
                                     "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
@@ -151,7 +151,7 @@ const _: () = {
                                 ),
                             );
                             res
-                        };
+                        });
                         {
                             #[cold]
                             #[track_caller]
@@ -295,7 +295,7 @@ const _: () = {
                 Ok(js) => js.into_abi(),
                 Err(err) => {
                     let loc = core::panic::Location::caller();
-                    let msg = {
+                    let msg = ::alloc::__export::must_use({
                         let res = ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
@@ -303,7 +303,7 @@ const _: () = {
                             ),
                         );
                         res
-                    };
+                    });
                     {
                         #[cold]
                         #[track_caller]
@@ -342,7 +342,7 @@ const _: () = {
                 Ok(js) => js.into(),
                 Err(err) => {
                     let loc = core::panic::Location::caller();
-                    let msg = {
+                    let msg = ::alloc::__export::must_use({
                         let res = ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
@@ -350,7 +350,7 @@ const _: () = {
                             ),
                         );
                         res
-                    };
+                    });
                     {
                         #[cold]
                         #[track_caller]
@@ -382,7 +382,7 @@ const _: () = {
                     Ok(js) => js.into(),
                     Err(err) => {
                         let loc = core::panic::Location::caller();
-                        let msg = {
+                        let msg = ::alloc::__export::must_use({
                             let res = ::alloc::fmt::format(
                                 format_args!(
                                     "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
@@ -390,7 +390,7 @@ const _: () = {
                                 ),
                             );
                             res
-                        };
+                        });
                         {
                             #[cold]
                             #[track_caller]

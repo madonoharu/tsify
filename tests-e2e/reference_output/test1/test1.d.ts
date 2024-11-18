@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-* @returns {Point}
-*/
+ * @returns {Point}
+ */
 export function into_js(): Point;
 export interface Point {
     x: number;

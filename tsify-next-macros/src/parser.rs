@@ -216,7 +216,7 @@ impl<'a> Parser<'a> {
                 let key = field.attrs.name().serialize_name().to_owned();
                 let (type_ann, field_attrs) = self.parse_field(field);
 
-                let optional = field_attrs.map_or(false, |attrs| attrs.optional);
+                let optional = field_attrs.is_some_and(|attrs| attrs.optional);
                 let default_is_none = self.container.serde_attrs().default().is_none()
                     && field.attrs.default().is_none();
 
@@ -307,7 +307,7 @@ fn is_phantom(ty: &syn::Type) -> bool {
     if let syn::Type::Path(syn::TypePath { path, .. }) = ty {
         path.segments
             .last()
-            .map_or(false, |path| path.ident == "PhantomData")
+            .is_some_and(|path| path.ident == "PhantomData")
     } else {
         false
     }

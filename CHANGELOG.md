@@ -1,5 +1,12 @@
 # tsify-next Changelog
 
+## v0.5.5
+
+- Don't assume a struct named `Range` is automatically a `Range` type
+- Put `#[automatically_derived]` on `impl` blocks
+- Better handling of `#[serde(skip)]`
+- Bump the `wasm_bindgen` dep version
+
 ## v0.5.4
 
 -  Allow serializing of `Vec<Struct>` provided that `Struct` is serializable.

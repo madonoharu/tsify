@@ -1,5 +1,10 @@
 #![allow(clippy::wrong_self_convention)]
 
+#[cfg(not(any(feature = "json", feature = "js")))]
+compile_error!(
+    "Either the \"json\" or \"js\" feature must be enabled for tsify to function properly"
+);
+
 #[cfg(all(feature = "json", not(feature = "js")))]
 pub use gloo_utils::format::JsValueSerdeExt;
 #[cfg(feature = "js")]

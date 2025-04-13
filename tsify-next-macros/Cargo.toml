@@ -1,5 +1,5 @@
 [package]
-name = "tsify-next-macros"
+name = "tsify-macros"
 version = "0.5.5"
 edition = "2021"
 authors = [
@@ -7,9 +7,9 @@ authors = [
     "Jason Siefken <siefkenj@gmail.com>"
 ]
 license = "MIT OR Apache-2.0"
-description = "Macros for tsify-next"
-repository = "https://github.com/siefkenj/tsify"
-homepage = "https://github.com/siefkenj/tsify"
+description = "Macros for tsify"
+repository = "https://github.com/madonoharu/tsify"
+homepage = "https://github.com/madonoharu/tsify"
 keywords = ["wasm", "wasm-bindgen", "typescript"]
 categories = ["wasm"]
 

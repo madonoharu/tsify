@@ -1,5 +1,5 @@
 [package]
-name = "tsify-next"
+name = "tsify"
 version = "0.5.5"
 edition = "2021"
 authors = [
@@ -8,13 +8,13 @@ authors = [
 ]
 license = "MIT OR Apache-2.0"
 description = "Tsify-next is a library for generating TypeScript definitions from rust code."
-repository = "https://github.com/siefkenj/tsify"
-homepage = "https://github.com/siefkenj/tsify"
+repository = "https://github.com/madonoharu/tsify"
+homepage = "https://github.com/madonoharu/tsify"
 keywords = ["wasm", "wasm-bindgen", "typescript"]
 categories = ["wasm"]
 
 [dependencies]
-tsify-next-macros = { path = "tsify-next-macros", version = "0.5.5" }
+tsify-macros = { path = "tsify-macros", version = "0.5.5" }
 wasm-bindgen = { version = "0.2.100", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 serde_json = { version = "1.0", optional = true }
@@ -30,21 +30,21 @@ wasm-bindgen-test = "0.3"
 
 [features]
 default = ["json"]
-wasm-bindgen = ["tsify-next-macros/wasm-bindgen", "dep:wasm-bindgen"]
+wasm-bindgen = ["tsify-macros/wasm-bindgen", "dep:wasm-bindgen"]
 js = [
   "wasm-bindgen",
-  "tsify-next-macros/js",
+  "tsify-macros/js",
   "dep:serde",
   "dep:serde-wasm-bindgen"
 ]
 json = [
   "wasm-bindgen",
-  "tsify-next-macros/json",
+  "tsify-macros/json",
   "dep:serde",
   "dep:gloo-utils",
   "dep:serde_json",
 ]
 
 [workspace]
-members = ["tsify-next-macros", "tests-e2e/*"]
+members = ["tsify-macros", "tests-e2e/*"]
 exclude = ["tests-e2e/reference_output"]

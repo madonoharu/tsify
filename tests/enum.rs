@@ -2,7 +2,7 @@
 
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use tsify_next::Tsify;
+use tsify::Tsify;
 
 struct Foo {
     a: i32,

@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use tsify_next::Tsify;
+use tsify::Tsify;
 
 #[derive(Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]

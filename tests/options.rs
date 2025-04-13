@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use tsify_next::Tsify;
+use tsify::Tsify;
 
 #[test]
 fn test_transparent() {

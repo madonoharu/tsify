@@ -1,4 +1,4 @@
-use tsify_next::Tsify;
+use tsify::Tsify;
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub enum GenericEnum<T, U> {
     Unit,
@@ -8,7 +8,7 @@ pub enum GenericEnum<T, U> {
 }
 const _: () = {
     extern crate serde as _serde;
-    use tsify_next::Tsify;
+    use tsify::Tsify;
     use wasm_bindgen::{
         convert::{
             FromWasmAbi, VectorFromWasmAbi, IntoWasmAbi, VectorIntoWasmAbi,
@@ -25,7 +25,7 @@ const _: () = {
     impl<T, U> Tsify for GenericEnum<T, U> {
         type JsType = JsType;
         const DECL: &'static str = "export type GenericEnum<T, U> = \"Unit\" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };";
-        const SERIALIZATION_CONFIG: tsify_next::SerializationConfig = tsify_next::SerializationConfig {
+        const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
             missing_as_null: false,
             hashmap_as_object: false,
             large_number_types_as_bigints: false,

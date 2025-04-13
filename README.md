@@ -1,6 +1,6 @@
-# Tsify-next
+# Tsify
 
-Tsify-next is a library for generating TypeScript definitions from Rust code. The original [Tsify](https://github.com/madonoharu/tsify) appears to be in hibernation mode. This repository will maintain updates until main Tsify project comes back to life.
+Tsify is a library for generating TypeScript definitions from Rust code.
 
 Using this with [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) will automatically output the types to `.d.ts`.
 
@@ -24,7 +24,7 @@ wasm-bindgen = { version = "0.2" }
 
 ```rust
 use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 #[derive(Tsify, Serialize, Deserialize)]
@@ -100,7 +100,7 @@ Serde attributes
 ## Type Override
 
 ```rust
-use tsify_next::Tsify;
+use tsify::Tsify;
 
 #[derive(Tsify)]
 pub struct Foo {
@@ -211,7 +211,7 @@ export type Color =
 ## Type Aliases
 
 ```rust
-use tsify_next::{declare, Tsify};
+use tsify::{declare, Tsify};
 
 #[derive(Tsify)]
 struct Foo<T>(T);

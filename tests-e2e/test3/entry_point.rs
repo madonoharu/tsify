@@ -1,5 +1,5 @@
 use serde::Serialize;
-use tsify_next::Tsify;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize, Tsify)]

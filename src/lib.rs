@@ -9,7 +9,7 @@ compile_error!(
 pub use gloo_utils::format::JsValueSerdeExt;
 #[cfg(feature = "js")]
 pub use serde_wasm_bindgen;
-pub use tsify_next_macros::*;
+pub use tsify_macros::*;
 #[cfg(feature = "wasm-bindgen")]
 use wasm_bindgen::{JsCast, JsValue};
 

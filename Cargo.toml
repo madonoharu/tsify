@@ -7,7 +7,7 @@ authors = [
   "Jason Siefken <siefkenj@gmail.com>"
 ]
 license = "MIT OR Apache-2.0"
-description = "Tsify-next is a library for generating TypeScript definitions from rust code."
+description = "Tsify is a library for generating TypeScript definitions from rust code."
 repository = "https://github.com/madonoharu/tsify"
 homepage = "https://github.com/madonoharu/tsify"
 keywords = ["wasm", "wasm-bindgen", "typescript"]

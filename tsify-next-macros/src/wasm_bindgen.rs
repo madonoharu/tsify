@@ -59,7 +59,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     quote! {
         const _: () = {
             #use_serde
-            use tsify_next::Tsify;
+            use tsify::Tsify;
             use wasm_bindgen::{
                 convert::{FromWasmAbi, VectorFromWasmAbi, IntoWasmAbi, VectorIntoWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi, RefFromWasmAbi},
                 describe::WasmDescribe, describe::WasmDescribeVector,
@@ -77,7 +77,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             impl #impl_generics Tsify for #ident #ty_generics #where_clause {
                 type JsType = JsType;
                 const DECL: &'static str = #decl_str;
-                const SERIALIZATION_CONFIG: tsify_next::SerializationConfig = tsify_next::SerializationConfig {
+                const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
                     missing_as_null: #missing_as_null,
                     hashmap_as_object: #hashmap_as_object,
                     large_number_types_as_bigints: #large_number_types_as_bigints,

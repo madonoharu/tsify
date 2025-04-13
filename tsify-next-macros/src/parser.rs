@@ -7,6 +7,7 @@ use serde_derive_internals::{
 
 use crate::{
     attrs::TsifyFieldAttrs,
+    comments::extract_doc_comments,
     container::Container,
     decl::{Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl},
     typescript::{TsType, TsTypeElement, TsTypeLit},
@@ -62,7 +63,6 @@ impl<'a> Parser<'a> {
         self.container
             .generics()
             .type_params()
-            .into_iter()
             .map(|p| p.ident.to_string())
             .filter(|t| type_ref_names.contains(t))
             .collect()
@@ -70,10 +70,11 @@ impl<'a> Parser<'a> {
 
     fn create_type_alias_decl(&self, type_ann: TsType) -> Decl {
         Decl::TsTypeAlias(TsTypeAliasDecl {
-            id: self.container.name(),
+            id: self.container.ident_str(),
             export: true,
             type_params: self.create_relevant_type_params(type_ann.type_ref_names()),
             type_ann,
+            comments: extract_doc_comments(&self.container.serde_container.original.attrs),
         })
     }
 
@@ -91,17 +92,18 @@ impl<'a> Parser<'a> {
             let type_params = self.create_relevant_type_params(type_ref_names);
 
             Decl::TsInterface(TsInterfaceDecl {
-                id: self.container.name(),
+                id: self.container.ident_str(),
                 type_params,
                 extends,
                 body: members,
+                comments: extract_doc_comments(&self.container.serde_container.original.attrs),
             })
         } else {
             let extra = TsType::Intersection(
                 extends
                     .into_iter()
                     .map(|ty| match ty {
-                        TsType::Option(ty) => TsType::Union(vec![*ty, TsType::empty_type_lit()]),
+                        TsType::Option(ty, _) => TsType::Union(vec![*ty, TsType::empty_type_lit()]),
                         _ => ty,
                     })
                     .collect(),
@@ -124,6 +126,7 @@ impl<'a> Parser<'a> {
                     key: tag.clone(),
                     type_ann: TsType::Lit(name),
                     optional: false,
+                    comments: vec![],
                 };
 
                 let mut vec = Vec::with_capacity(members.len() + 1);
@@ -142,7 +145,9 @@ impl<'a> Parser<'a> {
             Style::Struct => FieldsStyle::Named,
             Style::Newtype => return ParsedFields::Transparent(self.parse_field(&fields[0]).0),
             Style::Tuple => FieldsStyle::Unnamed,
-            Style::Unit => return ParsedFields::Transparent(TsType::nullish()),
+            Style::Unit => {
+                return ParsedFields::Transparent(TsType::nullish(&self.container.attrs.ty_config))
+            }
         };
 
         let fields = fields
@@ -184,7 +189,7 @@ impl<'a> Parser<'a> {
             }
         };
 
-        let type_ann = TsType::from(field.ty);
+        let type_ann = TsType::from_syn_type(&self.container.attrs.ty_config, field.ty);
 
         if let Some(t) = &ts_attrs.type_override {
             let type_ref_names = type_ann.type_ref_names();
@@ -208,26 +213,29 @@ impl<'a> Parser<'a> {
         let members = members
             .into_iter()
             .map(|field| {
-                let key = field.attrs.name().serialize_name();
+                let key = field.attrs.name().serialize_name().to_owned();
                 let (type_ann, field_attrs) = self.parse_field(field);
 
-                let optional = field_attrs.map_or(false, |attrs| attrs.optional);
+                let optional = field_attrs.is_some_and(|attrs| attrs.optional);
                 let default_is_none = self.container.serde_attrs().default().is_none()
                     && field.attrs.default().is_none();
 
                 let type_ann = if optional {
                     match type_ann {
-                        TsType::Option(t) => *t,
+                        TsType::Option(t, _) => *t,
                         _ => type_ann,
                     }
                 } else {
                     type_ann
                 };
 
+                let comments = extract_doc_comments(&field.original.attrs);
+
                 TsTypeElement {
                     key,
                     type_ann,
                     optional: optional || !default_is_none,
+                    comments,
                 }
             })
             .collect();
@@ -247,7 +255,12 @@ impl<'a> Parser<'a> {
             .map(|variant| {
                 let decl = self.create_type_alias_decl(self.parse_variant(variant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
-                    type_alias.id = variant.attrs.name().serialize_name();
+                    variant
+                        .attrs
+                        .name()
+                        .serialize_name()
+                        .clone_into(&mut type_alias.id);
+                    type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
                     type_alias
                 } else {
@@ -264,19 +277,29 @@ impl<'a> Parser<'a> {
         let relevant_type_params = self.create_relevant_type_params(type_ref_names);
 
         Decl::TsEnum(TsEnumDecl {
-            id: self.container.name(),
+            id: self.container.ident_str(),
             type_params: relevant_type_params,
             members,
             namespace: self.container.attrs.namespace,
+            comments: extract_doc_comments(&self.container.serde_container.original.attrs),
         })
     }
 
     fn parse_variant(&self, variant: &Variant) -> TsType {
         let tag_type = self.container.serde_attrs().tag();
-        let name = variant.attrs.name().serialize_name();
-        let style = variant.style;
+        let name = variant.attrs.name().serialize_name().to_owned();
+        // Checks for Newtype with a skip attribute and treats it as a Unit
+        let style = if matches!(variant.style, Style::Newtype)
+            && (variant.fields[0].attrs.skip_serializing()
+                || variant.fields[0].attrs.skip_deserializing()
+                || is_phantom(variant.fields[0].ty))
+        {
+            Style::Unit
+        } else {
+            variant.style
+        };
         let type_ann: TsType = self.parse_fields(style, &variant.fields).into();
-        type_ann.with_tag_type(name, style, tag_type)
+        type_ann.with_tag_type(&self.container.attrs.ty_config, name, style, tag_type)
     }
 }
 
@@ -284,7 +307,7 @@ fn is_phantom(ty: &syn::Type) -> bool {
     if let syn::Type::Path(syn::TypePath { path, .. }) = ty {
         path.segments
             .last()
-            .map_or(false, |path| path.ident == "PhantomData")
+            .is_some_and(|path| path.ident == "PhantomData")
     } else {
         false
     }

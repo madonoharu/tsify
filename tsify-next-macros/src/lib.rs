@@ -1,8 +1,9 @@
 mod attrs;
+mod comments;
 mod container;
-mod ctxt;
 mod decl;
 mod derive;
+mod error_tracker;
 mod parser;
 mod type_alias;
 mod typescript;
@@ -15,7 +16,7 @@ fn declare_impl(
     item: syn::Item,
 ) -> syn::Result<proc_macro2::TokenStream> {
     match item {
-        syn::Item::Type(item) => type_alias::expend(item),
+        syn::Item::Type(item) => type_alias::expand(item),
         syn::Item::Enum(item) => derive::expand_by_attr(args, item.into()),
         syn::Item::Struct(item) => derive::expand_by_attr(args, item.into()),
         _ => Err(syn::Error::new_spanned(
@@ -25,6 +26,7 @@ fn declare_impl(
     }
 }
 
+/// The `declare` macro, used in `#[declare]` annotations.
 #[proc_macro_attribute]
 pub fn declare(
     args: proc_macro::TokenStream,
@@ -38,6 +40,7 @@ pub fn declare(
         .into()
 }
 
+/// The `Tsify` derive macro, used in `#[derive(Tsify, ...)]` annotations.
 #[proc_macro_derive(Tsify, attributes(tsify, serde))]
 pub fn derive_tsify(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let item: DeriveInput = parse_macro_input!(input);

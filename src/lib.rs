@@ -1,16 +1,36 @@
 #![allow(clippy::wrong_self_convention)]
 
+#[cfg(not(any(feature = "json", feature = "js")))]
+compile_error!(
+    "Either the \"json\" or \"js\" feature must be enabled for tsify to function properly"
+);
+
 #[cfg(all(feature = "json", not(feature = "js")))]
 pub use gloo_utils::format::JsValueSerdeExt;
+#[cfg(feature = "js")]
+pub use serde_wasm_bindgen;
 pub use tsify_macros::*;
 #[cfg(feature = "wasm-bindgen")]
 use wasm_bindgen::{JsCast, JsValue};
 
+pub struct SerializationConfig {
+    pub missing_as_null: bool,
+    pub hashmap_as_object: bool,
+    pub large_number_types_as_bigints: bool,
+}
+
+/// `Tsify` is a trait that allows you to convert a type to and from JavaScript.
+/// Can be implemented manually if you need to customize the serialization or deserialization.
 pub trait Tsify {
     #[cfg(feature = "wasm-bindgen")]
     type JsType: JsCast;
 
     const DECL: &'static str;
+    const SERIALIZATION_CONFIG: SerializationConfig = SerializationConfig {
+        missing_as_null: false,
+        hashmap_as_object: false,
+        large_number_types_as_bigints: false,
+    };
 
     #[cfg(all(feature = "json", not(feature = "js")))]
     #[inline]
@@ -36,7 +56,12 @@ pub trait Tsify {
     where
         Self: serde::Serialize,
     {
-        serde_wasm_bindgen::to_value(self).map(JsCast::unchecked_from_js)
+        let config = <Self as Tsify>::SERIALIZATION_CONFIG;
+        let serializer = serde_wasm_bindgen::Serializer::new()
+            .serialize_missing_as_null(config.missing_as_null)
+            .serialize_maps_as_objects(config.hashmap_as_object)
+            .serialize_large_number_types_as_bigints(config.large_number_types_as_bigints);
+        self.serialize(&serializer).map(JsCast::unchecked_from_js)
     }
 
     #[cfg(feature = "js")]

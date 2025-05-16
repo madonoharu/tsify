@@ -31,17 +31,17 @@ struct SimpleData {
 
 #[wasm_bindgen(inline_js = r#"
 function validate(value, validation) {
-    validation(value); 
+    validation(value);
 
     // Validate twice to make sure the value is not moved in any way to rust
-    validation(value); 
+    validation(value);
 }
 
 function validateArray(value, validation) {
     validation(value);
 
     // Validate twice to make sure the value is not moved in any way to rust
-    validation(value); 
+    validation(value);
 }
 
 function noop(value) {}
@@ -59,7 +59,7 @@ extern "C" {
 
     #[wasm_bindgen(catch, js_name = "validate")]
     pub fn validate_simple_data_ref(
-        value: SimpleData,
+        value: &SimpleData,
         validation: &dyn Fn(&SimpleData),
     ) -> Result<(), JsValue>;
 
@@ -98,7 +98,7 @@ fn test_convert_simple_value_type() {
     })
     .unwrap_throw();
 
-    validate_simple_data_ref(first_value.clone(), &|val_after| {
+    validate_simple_data_ref(&first_value, &|val_after| {
         assert_eq!(val_after, &first_value);
     })
     .unwrap_throw();

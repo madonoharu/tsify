@@ -47,7 +47,7 @@ const _: () = {
         }
     }
     #[automatically_derived]
-    impl<'a> IntoWasmAbi for Borrow<'a>
+    impl<'a> IntoWasmAbi for &Borrow<'a>
     where
         Borrow<'a>: _serde::Serialize,
     {
@@ -82,6 +82,17 @@ const _: () = {
                     };
                 }
             }
+        }
+    }
+    #[automatically_derived]
+    impl<'a> IntoWasmAbi for Borrow<'a>
+    where
+        Borrow<'a>: _serde::Serialize,
+    {
+        type Abi = <JsType as IntoWasmAbi>::Abi;
+        #[inline]
+        fn into_abi(self) -> Self::Abi {
+            (&self).into_abi()
         }
     }
     #[automatically_derived]

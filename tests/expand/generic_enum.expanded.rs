@@ -48,7 +48,7 @@ const _: () = {
         }
     }
     #[automatically_derived]
-    impl<T, U> IntoWasmAbi for GenericEnum<T, U>
+    impl<T, U> IntoWasmAbi for &GenericEnum<T, U>
     where
         GenericEnum<T, U>: _serde::Serialize,
     {
@@ -83,6 +83,17 @@ const _: () = {
                     };
                 }
             }
+        }
+    }
+    #[automatically_derived]
+    impl<T, U> IntoWasmAbi for GenericEnum<T, U>
+    where
+        GenericEnum<T, U>: _serde::Serialize,
+    {
+        type Abi = <JsType as IntoWasmAbi>::Abi;
+        #[inline]
+        fn into_abi(self) -> Self::Abi {
+            (&self).into_abi()
         }
     }
     #[automatically_derived]

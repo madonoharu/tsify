@@ -107,7 +107,7 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
 
     quote! {
         #[automatically_derived]
-        impl #impl_generics IntoWasmAbi for #ident #ty_generics #where_clause {
+        impl #impl_generics IntoWasmAbi for &#ident #ty_generics #where_clause {
             type Abi = <JsType as IntoWasmAbi>::Abi;
 
             #[inline]
@@ -126,6 +126,16 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
                         panic!("{}", msg);
                     }
                 }
+            }
+        }
+
+        #[automatically_derived]
+        impl #impl_generics IntoWasmAbi for #ident #ty_generics #where_clause {
+            type Abi = <JsType as IntoWasmAbi>::Abi;
+
+            #[inline]
+            fn into_abi(self) -> Self::Abi {
+                (&self).into_abi()
             }
         }
 

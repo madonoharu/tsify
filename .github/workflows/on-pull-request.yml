@@ -55,8 +55,9 @@ jobs:
             - name: Install wasm-pack
               uses: jetli/wasm-pack-action@v0.4.0
               with:
-                  # Optional version of wasm-pack to install(eg. 'v0.9.1', 'latest')
-                  version: "latest"
+                  # specify exact version to work around
+                  # https://github.com/jetli/wasm-pack-action/issues/23
+                  version: v0.13.1
 
             - name: Add cargo-expand
               run: cargo install cargo-expand

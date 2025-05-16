@@ -45,7 +45,7 @@ const _: () = {
         }
     }
     #[automatically_derived]
-    impl<T> IntoWasmAbi for GenericStruct<T>
+    impl<T> IntoWasmAbi for &GenericStruct<T>
     where
         GenericStruct<T>: _serde::Serialize,
     {
@@ -80,6 +80,17 @@ const _: () = {
                     };
                 }
             }
+        }
+    }
+    #[automatically_derived]
+    impl<T> IntoWasmAbi for GenericStruct<T>
+    where
+        GenericStruct<T>: _serde::Serialize,
+    {
+        type Abi = <JsType as IntoWasmAbi>::Abi;
+        #[inline]
+        fn into_abi(self) -> Self::Abi {
+            (&self).into_abi()
         }
     }
     #[automatically_derived]
@@ -284,7 +295,7 @@ const _: () = {
         }
     }
     #[automatically_derived]
-    impl<T> IntoWasmAbi for GenericNewtype<T>
+    impl<T> IntoWasmAbi for &GenericNewtype<T>
     where
         GenericNewtype<T>: _serde::Serialize,
     {
@@ -319,6 +330,17 @@ const _: () = {
                     };
                 }
             }
+        }
+    }
+    #[automatically_derived]
+    impl<T> IntoWasmAbi for GenericNewtype<T>
+    where
+        GenericNewtype<T>: _serde::Serialize,
+    {
+        type Abi = <JsType as IntoWasmAbi>::Abi;
+        #[inline]
+        fn into_abi(self) -> Self::Abi {
+            (&self).into_abi()
         }
     }
     #[automatically_derived]

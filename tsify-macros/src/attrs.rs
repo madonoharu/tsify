@@ -4,6 +4,8 @@ use serde_derive_internals::ast::Field;
 /// E.g., through `#[tsify(into_wasm_abi)]`.
 #[derive(Debug, Default)]
 pub struct TsifyContainerAttrs {
+    pub type_override: Option<String>,
+    pub type_params: Option<Vec<String>>,
     /// Implement `IntoWasmAbi` for the type.
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
@@ -41,6 +43,8 @@ impl TypeGenerationConfig {
 impl TsifyContainerAttrs {
     pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
         let mut attrs = Self {
+            type_override: None,
+            type_params: None,
             into_wasm_abi: false,
             from_wasm_abi: false,
             namespace: false,
@@ -53,6 +57,24 @@ impl TsifyContainerAttrs {
             }
 
             attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("type") {
+                    if attrs.type_override.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit = meta.value()?.parse::<syn::LitStr>()?;
+                    attrs.type_override = Some(lit.value());
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("type_params") {
+                    if attrs.type_params.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit = meta.value()?.parse::<syn::LitStr>()?;
+                    attrs.type_params = Some(lit.value().split(',').map(|s| s.trim().to_string()).collect());
+                    return Ok(());
+                }
+
                 if meta.path.is_ident("into_wasm_abi") {
                     if attrs.into_wasm_abi {
                         return Err(meta.error("duplicate attribute"));
@@ -137,7 +159,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
         }
 
@@ -148,6 +170,7 @@ impl TsifyContainerAttrs {
 #[derive(Debug, Default)]
 pub struct TsifyFieldAttrs {
     pub type_override: Option<String>,
+    pub type_params: Option<Vec<String>>,
     pub optional: bool,
 }
 
@@ -155,6 +178,7 @@ impl TsifyFieldAttrs {
     pub fn from_serde_field(field: &Field) -> syn::Result<Self> {
         let mut attrs = Self {
             type_override: None,
+            type_params: None,
             optional: false,
         };
 
@@ -173,6 +197,20 @@ impl TsifyFieldAttrs {
                     return Ok(());
                 }
 
+                if meta.path.is_ident("type_params") {
+                    if attrs.type_params.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit = meta.value()?.parse::<syn::LitStr>()?;
+                    attrs.type_params = Some(
+                        lit.value()
+                            .split(',')
+                            .map(|s| s.trim().to_string())
+                            .collect(),
+                    );
+                    return Ok(());
+                }
+
                 if meta.path.is_ident("optional") {
                     if attrs.optional {
                         return Err(meta.error("duplicate attribute"));
@@ -181,7 +219,7 @@ impl TsifyFieldAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type` or `optional`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params` or `optional`"))
             })?;
         }
 

@@ -57,13 +57,12 @@ const _: () = {
                 Err(err) => {
                     let loc = core::panic::Location::caller();
                     let msg = ::alloc::__export::must_use({
-                        let res = ::alloc::fmt::format(
+                        ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
                                 .file(), loc.line(), loc.column(),
                             ),
-                        );
-                        res
+                        )
                     });
                     {
                         #[cold]
@@ -115,13 +114,12 @@ const _: () = {
                 Err(err) => {
                     let loc = core::panic::Location::caller();
                     let msg = ::alloc::__export::must_use({
-                        let res = ::alloc::fmt::format(
+                        ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
                                 .file(), loc.line(), loc.column(),
                             ),
-                        );
-                        res
+                        )
                     });
                     {
                         #[cold]
@@ -155,13 +153,12 @@ const _: () = {
                     Err(err) => {
                         let loc = core::panic::Location::caller();
                         let msg = ::alloc::__export::must_use({
-                            let res = ::alloc::fmt::format(
+                            ::alloc::fmt::format(
                                 format_args!(
                                     "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
                                     .file(), loc.line(), loc.column(),
                                 ),
-                            );
-                            res
+                            )
                         });
                         {
                             #[cold]
@@ -307,13 +304,12 @@ const _: () = {
                 Err(err) => {
                     let loc = core::panic::Location::caller();
                     let msg = ::alloc::__export::must_use({
-                        let res = ::alloc::fmt::format(
+                        ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
                                 .file(), loc.line(), loc.column(),
                             ),
-                        );
-                        res
+                        )
                     });
                     {
                         #[cold]
@@ -365,13 +361,12 @@ const _: () = {
                 Err(err) => {
                     let loc = core::panic::Location::caller();
                     let msg = ::alloc::__export::must_use({
-                        let res = ::alloc::fmt::format(
+                        ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
                                 .file(), loc.line(), loc.column(),
                             ),
-                        );
-                        res
+                        )
                     });
                     {
                         #[cold]
@@ -405,13 +400,12 @@ const _: () = {
                     Err(err) => {
                         let loc = core::panic::Location::caller();
                         let msg = ::alloc::__export::must_use({
-                            let res = ::alloc::fmt::format(
+                            ::alloc::fmt::format(
                                 format_args!(
                                     "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
                                     .file(), loc.line(), loc.column(),
                                 ),
-                            );
-                            res
+                            )
                         });
                         {
                             #[cold]

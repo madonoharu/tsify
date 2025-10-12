@@ -9,6 +9,7 @@ pub struct Point {
     y: i32,
 }
 
+#[allow(unused_variables)]
 #[wasm_bindgen]
 pub fn consume(point: Point) {}
 
@@ -17,6 +18,7 @@ pub fn into_js() -> Point {
     Point { x: 0, y: 0 }
 }
 
+#[allow(unused_variables)]
 #[wasm_bindgen]
 pub fn consume_vector(points: Vec<Point>) {}
 

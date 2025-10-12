@@ -93,7 +93,7 @@ impl<'a> Container<'a> {
     }
 
     /// Information about the data fields of the type as parsed by Serde.
-    pub fn serde_data(&self) -> &ast::Data {
+    pub fn serde_data(&self) -> &ast::Data<'_> {
         &self.serde_container.data
     }
 

@@ -15,5 +15,6 @@ extern "C" {
     pub fn call_js(point: &Point);
 }
 
+#[allow(unused_variables)]
 #[wasm_bindgen]
 pub fn accept_ref_point(point: &Point) {}

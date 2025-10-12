@@ -1,0 +1,91 @@
+name: Build and Test
+
+on:
+    push:
+        branches: [main, next]
+    pull_request:
+        branches: ["*"]
+
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v3
+
+            - name: Install toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+                  override: true
+
+            - name: Check
+              uses: actions-rs/cargo@v1
+              with:
+                  command: check
+
+            - name: Build
+              uses: actions-rs/cargo@v1
+              with:
+                  command: build
+    test:
+        name: Test
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v3
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+
+            - name: Install toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+                  override: true
+                  components: rustfmt
+
+            - name: Install wasm-pack
+              uses: jetli/wasm-pack-action@v0.4.0
+              with:
+                  # specify exact version to work around
+                  # https://github.com/jetli/wasm-pack-action/issues/23
+                  version: v0.13.1
+
+            - name: Add cargo-expand
+              run: cargo install cargo-expand
+
+            # Run the ./test.sh script
+            - name: Test
+              run: ./test.sh
+    lint:
+        name: Lint
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v3
+
+            - name: Install toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+                  override: true
+                  components: rustfmt, clippy
+
+            - name: Cargo fmt
+              uses: actions-rs/cargo@v1
+              with:
+                  command: fmt
+                  args: --all -- --check
+
+            - name: Cargo clippy
+              run: cargo clippy -- -D warnings

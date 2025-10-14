@@ -2,6 +2,7 @@
 
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 
 #[test]
@@ -139,4 +140,93 @@ fn test_generic_enum_with_namespace() {
     };
 
     assert_eq!(GenericEnum::<(), ()>::DECL, expected);
+}
+
+#[test]
+fn test_generics_with_default_params() {
+    #[derive(Serialize, Tsify)]
+    #[tsify(into_wasm_abi)]
+    struct SerNamedTuple<A = i32, B = String, C = ()>(A, B, C);
+
+    let expected = indoc! {r#"
+        export type SerNamedTuple<A, B, C> = [A, B, C];"#
+    };
+
+    assert_eq!(SerNamedTuple::<(), (), ()>::DECL, expected);
+
+    #[derive(Deserialize, Tsify)]
+    #[tsify(from_wasm_abi)]
+    struct DeNamedTuple<A = i32, B = String, C = ()>(A, B, C);
+
+    let expected = indoc! {r#"
+        export type SerNamedTuple<A, B, C> = [A, B, C];"#
+    };
+
+    assert_eq!(SerNamedTuple::<(), (), ()>::DECL, expected);
+
+    #[derive(Serialize, Tsify)]
+    #[tsify(into_wasm_abi)]
+    struct SerNamedMap<A, B = (), C = i32> {
+        a: A,
+        b: B,
+        c: C,
+    }
+
+    let expected = indoc! {r#"
+        export interface SerNamedMap<A, B, C> {
+            a: A;
+            b: B;
+            c: C;
+        }"#
+    };
+
+    assert_eq!(SerNamedMap::<(), (), ()>::DECL, expected);
+
+    #[derive(Deserialize, Tsify)]
+    #[tsify(from_wasm_abi)]
+    struct DeNamedMap<A, B = (), C = i32> {
+        a: A,
+        b: B,
+        c: C,
+    }
+
+    let expected = indoc! {r#"
+        export interface DeNamedMap<A, B, C> {
+            a: A;
+            b: B;
+            c: C;
+        }"#
+    };
+
+    assert_eq!(DeNamedMap::<(), (), ()>::DECL, expected);
+
+    #[derive(Serialize, Tsify)]
+    #[tsify(into_wasm_abi)]
+    enum SerEnum<A, B = (), C = i32> {
+        Unit,
+        NewType(A),
+        Seq(i8, B),
+        Map { a: i8, b: B, c: C },
+    }
+
+    let expected = indoc! {r#"
+        export type SerEnum<A, B, C> = "Unit" | { NewType: A } | { Seq: [number, B] } | { Map: { a: number; b: B; c: C } };"#
+    };
+
+    assert_eq!(SerEnum::<(), (), ()>::DECL, expected);
+
+    #[derive(Deserialize, Tsify)]
+    #[tsify(from_wasm_abi)]
+    enum DeEnum<A, B = (), C = i32> {
+        Unit,
+        NewType(A),
+        Seq(i8, B),
+        Map { a: i8, b: B, c: C },
+    }
+
+    let expected = indoc! {r#"
+        export type DeEnum<A, B, C> = "Unit" | { NewType: A } | { Seq: [number, B] } | { Map: { a: number; b: B; c: C } };"#
+    };
+
+    assert_eq!(DeEnum::<(), (), ()>::DECL, expected);
 }

@@ -9,7 +9,8 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let ident = cont.ident();
 
     let decl_str = decl.to_string();
-    let (impl_generics, ty_generics, where_clause) = cont.generics().split_for_impl();
+    let generics = cont.generics_without_defaults();
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     let typescript_custom_section = quote! {
         #[wasm_bindgen(typescript_custom_section)]
@@ -95,9 +96,9 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
 fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
     let ident = cont.ident();
     let serde_path = cont.serde_container.attrs.serde_path();
+    let mut generics = cont.generics_without_defaults();
+    let borrowed_generics = generics.clone();
 
-    let borrowed_generics = cont.generics();
-    let mut generics = cont.generics().clone();
     generics
         .make_where_clause()
         .predicates
@@ -202,7 +203,7 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
     let ident = cont.ident();
     let serde_path = cont.serde_container.attrs.serde_path();
 
-    let mut generics = cont.generics().clone();
+    let mut generics = cont.generics_without_defaults();
 
     generics
         .make_where_clause()

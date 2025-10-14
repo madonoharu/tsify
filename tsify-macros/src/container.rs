@@ -92,6 +92,28 @@ impl<'a> Container<'a> {
         self.serde_container.generics
     }
 
+    /// Remove the default from every type parameter because in the generated impls
+    /// they look like associated types: "error: associated type bindings are not
+    /// allowed here".
+    pub fn generics_without_defaults(&self) -> syn::Generics {
+        let generics = self.generics();
+        syn::Generics {
+            params: generics
+                .params
+                .iter()
+                .map(|param| match param {
+                    syn::GenericParam::Type(param) => syn::GenericParam::Type(syn::TypeParam {
+                        eq_token: None,
+                        default: None,
+                        ..param.clone()
+                    }),
+                    _ => param.clone(),
+                })
+                .collect(),
+            ..generics.clone()
+        }
+    }
+
     /// Information about the data fields of the type as parsed by Serde.
     pub fn serde_data(&self) -> &ast::Data<'_> {
         &self.serde_container.data

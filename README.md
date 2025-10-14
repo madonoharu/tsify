@@ -76,10 +76,18 @@ Tsify container attributes
 -   `into_wasm_abi` implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`.
 -   `from_wasm_abi` implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above.
 -   `namespace` generates a namespace for the enum variants.
+-   `type` overrides at the container level.
+-   `type_params` overrides params at the container level.
+
+[Serializer configuration options](https://github.com/RReverser/serde-wasm-bindgen?tab=readme-ov-file#serializer-configuration-options)
+-   `missing_as_null` 
+-   `hashmap_as_object`
+-   `large_number_types_as_bigints`
 
 Tsify field attributes
 
 -   `type`
+-   `type_params`
 -   `optional`
 
 Serde attributes

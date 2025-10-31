@@ -70,6 +70,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
 
             #[wasm_bindgen]
             extern "C" {
+                #[derive(Clone)]
                 #[wasm_bindgen(typescript_type = #typescript_type)]
                 pub type JsType;
             }

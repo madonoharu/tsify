@@ -5,6 +5,9 @@ compile_error!(
     "Either the \"json\" or \"js\" feature must be enabled for tsify to function properly"
 );
 
+mod ts;
+pub use ts::Ts;
+
 #[cfg(all(feature = "json", not(feature = "js")))]
 pub use gloo_utils::format::JsValueSerdeExt;
 #[cfg(feature = "js")]
@@ -12,6 +15,11 @@ pub use serde_wasm_bindgen;
 pub use tsify_macros::*;
 #[cfg(feature = "wasm-bindgen")]
 use wasm_bindgen::{JsCast, JsValue};
+
+#[cfg(all(feature = "json", not(feature = "js")))]
+pub type Error = serde_json::Error;
+#[cfg(feature = "js")]
+pub type Error = serde_wasm_bindgen::Error;
 
 pub struct SerializationConfig {
     pub missing_as_null: bool,
@@ -71,5 +79,17 @@ pub trait Tsify {
         Self: serde::de::DeserializeOwned,
     {
         serde_wasm_bindgen::from_value(js.into())
+    }
+
+    /// Calls `Ts::from_rust` on self, returning a `Result<Ts<Self>, crate::Error>`.
+    ///
+    /// This can (and should) be used with the [`-> Result<_, JsError>`][wasm_bindgen::JsError]
+    /// pattern from wasm-bindgen to automatically throw any Err value returned.
+    fn into_ts(&self) -> Result<Ts<Self>, crate::Error>
+    where
+        Self: Sized,
+        Self: serde::Serialize,
+    {
+        Ts::from_rust(self)
     }
 }

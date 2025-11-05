@@ -1,5 +1,7 @@
+use std::fmt;
 use std::mem::ManuallyDrop;
 
+use crate::Error;
 use crate::Tsify;
 use wasm_bindgen::convert::{
     FromWasmAbi, IntoWasmAbi, LongRefFromWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi,
@@ -101,6 +103,12 @@ where
     ///
     pub fn new_unchecked(js: JsValue) -> Self {
         Self::new(js.unchecked_into())
+    }
+}
+
+impl<T: Tsify> fmt::Debug for Ts<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Ts").finish()
     }
 }
 
@@ -264,14 +272,23 @@ where
     <T as Tsify>::JsType: Clone,
 {
     /// Converts the inner JSType (e.g. JsValue) into T
-    pub fn to_rust(&self) -> Result<T, crate::Error> {
-        T::from_js(self.0.clone())
+    pub fn to_rust(&self) -> Result<T, Error> {
+        T::from_js(self.0.clone()).map_err(|inner| Error {
+            type_name: std::any::type_name::<T>(),
+            de: true,
+            inner,
+        })
     }
 }
 
 impl<T: Tsify + serde::Serialize> Ts<T> {
     /// Converts a rust type T into to the inner JSType (e.g. JsValue)
-    pub fn from_rust(rust: &T) -> Result<Self, crate::Error> {
-        Ok(Self(T::into_js(rust)?, std::marker::PhantomData))
+    pub fn from_rust(rust: &T) -> Result<Self, Error> {
+        let js_type = T::into_js(rust).map_err(|inner| Error {
+            type_name: std::any::type_name::<T>(),
+            de: false,
+            inner,
+        })?;
+        Ok(Self::new(js_type))
     }
 }

@@ -133,6 +133,17 @@ struct CantBeSerialized {
     value: i32,
 }
 
+impl<'de> Deserialize<'de> for CantBeSerialized {
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Err(serde::de::Error::custom(
+            "This type can't be deserialized NO_SERIALIZE",
+        ))
+    }
+}
+
 impl Serialize for CantBeSerialized {
     fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -154,3 +165,22 @@ fn test_data_that_cant_be_serialized_throws_an_appropriate_error() {
 
 // No point testing Vec<Ts<CantBeSerialized>> here, since you call the same
 // CantBeSerialized::into_ts to build such a thing.
+
+#[wasm_bindgen_test]
+fn error_includes_type_name_ser() {
+    let val = CantBeSerialized { value: 42 };
+    let err = val.into_ts().unwrap_err();
+    let err_msg = format!("{}", err);
+    wasm_bindgen_test::console_log!("Error message: {}", err_msg);
+    assert!(err_msg.contains("serialize type `ts::CantBeSerialized`"));
+}
+
+#[wasm_bindgen_test]
+fn error_includes_type_name_de() {
+    let val: Ts<CantBeSerialized> = Ts::new_unchecked(JsValue::NULL);
+    let err = val.to_rust().unwrap_err();
+    let err_msg = format!("{}", err);
+    wasm_bindgen_test::console_log!("Error message: {}", err_msg);
+    assert!(err_msg.contains("deserialize"));
+    assert!(err_msg.contains("`ts::CantBeSerialized`"));
+}

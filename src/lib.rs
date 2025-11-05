@@ -7,6 +7,8 @@ compile_error!(
 
 mod ts;
 pub use ts::Ts;
+mod error;
+pub use error::Error;
 
 #[cfg(all(feature = "json", not(feature = "js")))]
 pub use gloo_utils::format::JsValueSerdeExt;
@@ -15,11 +17,6 @@ pub use serde_wasm_bindgen;
 pub use tsify_macros::*;
 #[cfg(feature = "wasm-bindgen")]
 use wasm_bindgen::{JsCast, JsValue};
-
-#[cfg(all(feature = "json", not(feature = "js")))]
-pub type Error = serde_json::Error;
-#[cfg(feature = "js")]
-pub type Error = serde_wasm_bindgen::Error;
 
 pub struct SerializationConfig {
     pub missing_as_null: bool,

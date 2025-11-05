@@ -1,8 +1,21 @@
+use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::quote;
+use quote::quote_spanned;
 use syn::parse_quote;
 
 use crate::{container::Container, decl::Decl};
+
+fn mark_deprecated(span: Span, note: &str) -> TokenStream {
+    quote_spanned!(span =>
+        #[allow(non_upper_case_globals)]
+        const _: () = {
+            #[deprecated(note = #note)]
+            const _x: () = ();
+            _x
+        };
+    )
+}
 
 pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let attrs = &cont.attrs;
@@ -50,6 +63,12 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
 
     let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
     let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
+    let maybe_deprecated = attrs.into_wasm_abi_span
+        .clone()
+        .or(attrs.from_wasm_abi_span.clone())
+        .map(|span| {
+            mark_deprecated(span, "into_wasm_abi/from_wasm_abi are deprecated as they cause memory leaks (https://github.com/madonoharu/tsify/issues/65). Consider using `tsify::Ts` instead.")
+        });
 
     let typescript_type = decl.id();
 
@@ -90,6 +109,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             #wasm_describe
             #into_wasm_abi
             #from_wasm_abi
+            #maybe_deprecated
         };
     }
 }

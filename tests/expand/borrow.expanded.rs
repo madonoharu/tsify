@@ -252,4 +252,12 @@ const _: () = {
                 .collect()
         }
     }
+    #[allow(non_upper_case_globals)]
+    const _: () = {
+        #[deprecated(
+            note = "into_wasm_abi/from_wasm_abi are deprecated as they cause memory leaks (https://github.com/madonoharu/tsify/issues/65). Consider using `tsify::Ts` instead."
+        )]
+        const _x: () = ();
+        _x
+    };
 };

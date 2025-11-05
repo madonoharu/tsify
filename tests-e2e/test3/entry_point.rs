@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use serde::Serialize;
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;

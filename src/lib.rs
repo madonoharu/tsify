@@ -1,3 +1,4 @@
+#![doc = include_str!("../README.md")]
 #![allow(clippy::wrong_self_convention)]
 
 #[cfg(not(any(feature = "json", feature = "js")))]

@@ -128,6 +128,8 @@ export interface Foo {
 ## Optional Properties
 
 ```rust
+use tsify::Tsify;
+
 #[derive(Tsify)]
 struct Optional {
     #[tsify(optional)]
@@ -152,6 +154,8 @@ export interface Optional {
 ## Enum
 
 ```rust
+use tsify::Tsify;
+
 #[derive(Tsify)]
 enum Color {
     Red,
@@ -180,6 +184,8 @@ export type Color =
 ## Enum with namespace
 
 ```rust
+use tsify::Tsify;
+
 #[derive(Tsify)]
 #[tsify(namespace)]
 enum Color {

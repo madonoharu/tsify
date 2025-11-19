@@ -1,5 +1,4 @@
 use serde_derive_internals::{ast, ast::Container as SerdeContainer, attr};
-use syn::punctuated::Punctuated;
 
 use crate::{attrs::TsifyContainerAttrs, error_tracker::ErrorTracker};
 
@@ -106,30 +105,6 @@ impl<'a> Container<'a> {
                     syn::GenericParam::Type(param) => syn::GenericParam::Type(syn::TypeParam {
                         eq_token: None,
                         default: None,
-                        ..param.clone()
-                    }),
-                    _ => param.clone(),
-                })
-                .collect(),
-            ..generics.clone()
-        }
-    }
-
-    /// Remove the default from every type parameter because in the generated impls
-    /// they look like associated types: "error: associated type bindings are not
-    /// allowed here".
-    pub fn generics_without_defaults_or_bounds(&self) -> syn::Generics {
-        let generics = self.generics();
-        syn::Generics {
-            params: generics
-                .params
-                .iter()
-                .map(|param| match param {
-                    syn::GenericParam::Type(param) => syn::GenericParam::Type(syn::TypeParam {
-                        eq_token: None,
-                        default: None,
-                        colon_token: None,
-                        bounds: Punctuated::new(),
                         ..param.clone()
                     }),
                     _ => param.clone(),

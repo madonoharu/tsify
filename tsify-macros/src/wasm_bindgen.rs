@@ -98,7 +98,25 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
     let serde_path = cont.serde_container.attrs.serde_path();
     let mut generics = cont.generics_without_defaults();
 
-    let generics_without_bounds = cont.generics_without_defaults_or_bounds();
+    // Remove all constraints from every type parameter because in the generated impls
+    let generics_without_bounds = syn::Generics {
+        params: generics
+            .params
+            .iter()
+            .cloned()
+            .map(|param| match param {
+                syn::GenericParam::Type(param) => syn::GenericParam::Type(syn::TypeParam {
+                    eq_token: None,
+                    default: None,
+                    colon_token: None,
+                    bounds: syn::punctuated::Punctuated::new(),
+                    ..param
+                }),
+                _ => param,
+            })
+            .collect(),
+        ..generics.clone()
+    };
 
     generics
         .make_where_clause()

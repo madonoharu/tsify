@@ -1,5 +1,6 @@
 use proc_macro2::TokenTree;
 use quote::ToTokens;
+use syn::LitStr;
 
 use crate::typescript::TsType;
 
@@ -21,9 +22,11 @@ pub fn extract_doc_comments(attrs: &[syn::Attribute]) -> Vec<String> {
                                 .into_iter()
                                 .filter_map(|t| match t {
                                     TokenTree::Literal(lit) => {
-                                        // this will always return the quoted string, we deal with
-                                        // that in the cli when we read in the comments
-                                        Some(lit.to_string())
+                                        // Parse as LitStr to get the actual string value,
+                                        // regardless of raw string syntax (r"...", r#"..."#, etc.)
+                                        syn::parse2::<LitStr>(lit.into_token_stream())
+                                            .ok()
+                                            .map(|s| s.value())
                                     }
                                     _ => None,
                                 })
@@ -55,7 +58,7 @@ pub fn write_doc_comments(
 
     let comment = comments
         .iter()
-        .map(|line| format!(" *{}\n", line.trim_matches('"')))
+        .map(|line| format!(" *{}\n", line))
         .collect::<Vec<_>>()
         .join("");
 

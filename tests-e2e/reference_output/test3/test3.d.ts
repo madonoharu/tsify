@@ -4,4 +4,3 @@ export interface Identified<Id, Value> {
     id: Id;
     value: Value;
 }
-

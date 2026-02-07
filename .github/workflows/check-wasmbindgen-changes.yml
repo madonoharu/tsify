@@ -59,7 +59,7 @@ jobs:
                   git fetch origin update-expanded-test-artifacts
                   git fetch origin main
                   # make sure we match main
-                  git reset --hard ${{ github.event.pull_request.base.ref }}
+                  git reset --hard origin/${{ github.event.pull_request.base.ref }}
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

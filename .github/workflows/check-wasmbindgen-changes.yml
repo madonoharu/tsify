@@ -14,6 +14,9 @@ on:
     pull_request:
         branches: ["*"]
 
+env:
+    TARGET_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}
+
 jobs:
     test:
         name: Create Test Artifacts
@@ -57,9 +60,9 @@ jobs:
                   }
                   # Fetch the branch from the remote
                   git fetch origin update-expanded-test-artifacts
-                  git fetch origin main
-                  # make sure we match main
-                  git reset --hard origin/${{ github.event.pull_request.base.ref }}
+                  git fetch origin ${{ env.TARGET_BRANCH }}
+                  # Reset to the target branch to avoid conflicts with the existing branch
+                  git reset --hard origin/${{ env.TARGET_BRANCH }}
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

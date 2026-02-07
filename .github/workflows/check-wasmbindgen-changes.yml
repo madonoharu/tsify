@@ -1,0 +1,64 @@
+name: Check wasm-bindgen changes
+
+# Tests expand macro output. This changes a lot based on the version of wasm-bindgen that is installed
+# This cron job is meant to create a PR whenever there are changes to the expanded macro output.
+# Since all PRs that affect tsify's macro output should update their own tests, this should only detect
+# changes in other rust crates.
+
+on:
+    schedule:
+        - cron: "0 0 * * *" # every day at midnight GMT
+    workflow_dispatch:
+    push:
+        branches: [main, next]
+    pull_request:
+        branches: ["*"]
+
+jobs:
+    test:
+        name: Create Test Artifacts
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "24"
+
+            - name: Install toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+                  override: true
+                  components: rustfmt
+
+            - name: Install wasm-pack
+              uses: jetli/wasm-pack-action@v0.4.0
+              with:
+                  # specify exact version to work around
+                  # https://github.com/jetli/wasm-pack-action/issues/23
+                  version: v0.13.1
+
+            - name: Add cargo-expand
+              run: cargo install cargo-expand
+
+            # Run `MACROTEST=overwrite cargo test -p tsify --test expandtest` to rebuild the test artifacts with expanded macros.
+            - name: Expand Macros
+              run: cargo test -p tsify --test expandtest
+              env:
+                  MACROTEST: overwrite
+
+            - name: Check for changes
+              run: |
+                  git diff --quiet || {
+                    git add .
+                    git commit -m "Update expanded test artifacts"
+                    git push --set-upstream origin update-expanded-test-artifacts || true
+                    gh pr create --fill || true
+                  }
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -46,6 +46,23 @@ jobs:
             - name: Add cargo-expand
               run: cargo install cargo-expand
 
+            - name: Setup git config
+              run: |
+                  git config user.name "${{ github.actor }} via GitHub Actions"
+                  git config user.email "${{ github.actor }}@github_actions.no_reply"
+                  git checkout -b update-expanded-test-artifacts
+                  # Ensure the branch exists on the remote
+                  git ls-remote --exit-code origin update-expanded-test-artifacts || {
+                    git push -u origin update-expanded-test-artifacts
+                  }
+                  # Fetch the branch from the remote
+                  git fetch origin update-expanded-test-artifacts
+                  git fetch origin main
+                  # make sure we match main
+                  git reset --hard origin/main
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
             # Run `MACROTEST=overwrite cargo test -p tsify --test expandtest` to rebuild the test artifacts with expanded macros.
             - name: Expand Macros
               run: cargo test -p tsify --test expandtest

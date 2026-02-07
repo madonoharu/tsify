@@ -63,6 +63,7 @@ jobs:
                   git fetch origin ${{ env.TARGET_BRANCH }}
                   # Reset to the target branch to avoid conflicts with the existing branch
                   git reset --hard origin/${{ env.TARGET_BRANCH }}
+                  git branch --set-upstream-to=origin/${{ env.TARGET_BRANCH }} update-expanded-test-artifacts
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

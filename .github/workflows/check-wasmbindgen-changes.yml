@@ -61,6 +61,7 @@ jobs:
                   # Fetch the branch from the remote
                   git fetch origin update-expanded-test-artifacts
                   git fetch origin ${{ env.TARGET_BRANCH }}
+                  git fetch origin main
                   # Reset to the target branch to avoid conflicts with the existing branch
                   git reset --hard origin/${{ env.TARGET_BRANCH }}
                   git branch --set-upstream-to=origin/${{ env.TARGET_BRANCH }} update-expanded-test-artifacts
@@ -76,8 +77,11 @@ jobs:
             - name: Check for changes
               run: |
                   git diff --quiet || {
+                    echo "Available branches:"
                     git branch -a
+                    echo "Remote configuration:"
                     git remote -v
+                    echo "Creating PR with changes..."
                     git add .
                     git commit -m "Update expanded test artifacts"
                     git push --force --set-upstream origin update-expanded-test-artifacts

@@ -76,10 +76,12 @@ jobs:
             - name: Check for changes
               run: |
                   git diff --quiet || {
+                    git branch -a
+                    git remote -v
                     git add .
                     git commit -m "Update expanded test artifacts"
                     git push --force --set-upstream origin update-expanded-test-artifacts
-                    gh pr create --fill || true
+                    gh pr create --fill
                   }
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

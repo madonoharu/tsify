@@ -78,7 +78,7 @@ jobs:
                     echo "Remote configuration:"
                     git remote -v
                     echo "Creating PR with changes..."
-                    git add .
+                    git add tests
                     git commit -m "Update expanded test artifacts"
                     git push --force --set-upstream origin update-expanded-test-artifacts
                     gh pr create --fill

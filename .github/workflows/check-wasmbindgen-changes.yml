@@ -9,10 +9,6 @@ on:
     schedule:
         - cron: "0 0 * * *" # every day at midnight GMT
     workflow_dispatch:
-    push:
-        branches: [main, next]
-    pull_request:
-        branches: ["*"]
 
 env:
     TARGET_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}

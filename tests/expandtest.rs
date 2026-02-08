@@ -1,6 +1,6 @@
 //! Generates expanded code for tests in `tests/expand/` directory.
 //! To update the expected output, run with `MACROTEST=overwrite cargo test`
-//! or delete the `.expanded.rs` files.
+//! or delete the `*.expanded.rs` files.
 
 #[test]
 fn expandtest() {

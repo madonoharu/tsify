@@ -13,7 +13,7 @@ jobs:
 
         steps:
             - name: Checkout sources
-              uses: actions/checkout@v3
+              uses: actions/checkout@v6
 
             - name: Install toolchain
               uses: actions-rs/toolchain@v1
@@ -37,12 +37,12 @@ jobs:
 
         steps:
             - name: Checkout sources
-              uses: actions/checkout@v3
+              uses: actions/checkout@v6
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: '20'
+                  node-version: '24'
 
             - name: Install toolchain
               uses: actions-rs/toolchain@v1
@@ -71,7 +71,7 @@ jobs:
 
         steps:
             - name: Checkout sources
-              uses: actions/checkout@v3
+              uses: actions/checkout@v6
 
             - name: Install toolchain
               uses: actions-rs/toolchain@v1

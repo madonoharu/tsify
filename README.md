@@ -25,22 +25,27 @@ wasm-bindgen = { version = "0.2" }
 ```rust
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
+use tsify::Ts;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsError;
 
 #[derive(Tsify, Serialize, Deserialize)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct Point {
     x: i32,
     y: i32,
 }
 
 #[wasm_bindgen]
-pub fn into_js() -> Point {
-    Point { x: 0, y: 0 }
+pub fn into_js() -> Result<Ts<Point>, JsError> {
+    let point = Point { x: 0, y: 0 };
+    Ok(point.into_ts()?)
 }
 
 #[wasm_bindgen]
-pub fn from_js(point: Point) {}
+pub fn from_js(point: Ts<Point>) -> Result<(), JsError> {
+    let point: Point = point.to_rust()?;
+    Ok(())
+}
 ```
 
 Will generate the following `.d.ts` file:
@@ -73,8 +78,8 @@ This is the behavior due to [`typescript_custom_section`](https://rustwasm.githu
 
 Tsify container attributes
 
--   `into_wasm_abi` implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`.
--   `from_wasm_abi` implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above.
+-   `into_wasm_abi` (deprecated) implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`. Deprecated in favour of using `Ts<T>` as on function parameters and return type.
+-   `from_wasm_abi` (deprecated) implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above. Deprecated in favour of using `Ts<T>` as on function parameters and return type.
 -   `namespace` generates a namespace for the enum variants.
 -   `type` overrides at the container level.
 -   `type_params` overrides params at the container level.
@@ -128,6 +133,8 @@ export interface Foo {
 ## Optional Properties
 
 ```rust
+use tsify::Tsify;
+
 #[derive(Tsify)]
 struct Optional {
     #[tsify(optional)]
@@ -152,6 +159,8 @@ export interface Optional {
 ## Enum
 
 ```rust
+use tsify::Tsify;
+
 #[derive(Tsify)]
 enum Color {
     Red,
@@ -180,6 +189,8 @@ export type Color =
 ## Enum with namespace
 
 ```rust
+use tsify::Tsify;
+
 #[derive(Tsify)]
 #[tsify(namespace)]
 enum Color {

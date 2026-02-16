@@ -57,12 +57,13 @@ const _: () = {
                 Err(err) => {
                     let loc = core::panic::Location::caller();
                     let msg = ::alloc::__export::must_use({
-                        ::alloc::fmt::format(
+                        let res = ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
-                                .file(), loc.line(), loc.column(),
+                                .file(), loc.line(), loc.column()
                             ),
-                        )
+                        );
+                        res
                     });
                     {
                         ::core::panicking::panic_display(&msg);
@@ -104,12 +105,13 @@ const _: () = {
                 Err(err) => {
                     let loc = core::panic::Location::caller();
                     let msg = ::alloc::__export::must_use({
-                        ::alloc::fmt::format(
+                        let res = ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
-                                .file(), loc.line(), loc.column(),
+                                .file(), loc.line(), loc.column()
                             ),
-                        )
+                        );
+                        res
                     });
                     {
                         ::core::panicking::panic_display(&msg);
@@ -133,12 +135,13 @@ const _: () = {
                     Err(err) => {
                         let loc = core::panic::Location::caller();
                         let msg = ::alloc::__export::must_use({
-                            ::alloc::fmt::format(
+                            let res = ::alloc::fmt::format(
                                 format_args!(
                                     "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
-                                    .file(), loc.line(), loc.column(),
+                                    .file(), loc.line(), loc.column()
                                 ),
-                            )
+                            );
+                            res
                         });
                         {
                             ::core::panicking::panic_display(&msg);
@@ -217,6 +220,14 @@ const _: () = {
                 .collect()
         }
     }
+    #[allow(non_upper_case_globals)]
+    const _: () = {
+        #[deprecated(
+            note = "into_wasm_abi/from_wasm_abi are deprecated as they cause memory leaks (https://github.com/madonoharu/tsify/issues/65). Consider using `tsify::Ts` instead."
+        )]
+        const _x: () = ();
+        _x
+    };
 };
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct GenericNewtype<T>(T);
@@ -274,12 +285,13 @@ const _: () = {
                 Err(err) => {
                     let loc = core::panic::Location::caller();
                     let msg = ::alloc::__export::must_use({
-                        ::alloc::fmt::format(
+                        let res = ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
-                                .file(), loc.line(), loc.column(),
+                                .file(), loc.line(), loc.column()
                             ),
-                        )
+                        );
+                        res
                     });
                     {
                         ::core::panicking::panic_display(&msg);
@@ -321,12 +333,13 @@ const _: () = {
                 Err(err) => {
                     let loc = core::panic::Location::caller();
                     let msg = ::alloc::__export::must_use({
-                        ::alloc::fmt::format(
+                        let res = ::alloc::fmt::format(
                             format_args!(
                                 "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
-                                .file(), loc.line(), loc.column(),
+                                .file(), loc.line(), loc.column()
                             ),
-                        )
+                        );
+                        res
                     });
                     {
                         ::core::panicking::panic_display(&msg);
@@ -350,12 +363,13 @@ const _: () = {
                     Err(err) => {
                         let loc = core::panic::Location::caller();
                         let msg = ::alloc::__export::must_use({
-                            ::alloc::fmt::format(
+                            let res = ::alloc::fmt::format(
                                 format_args!(
                                     "(Converting type failed) {0} ({1}:{2}:{3})", err, loc
-                                    .file(), loc.line(), loc.column(),
+                                    .file(), loc.line(), loc.column()
                                 ),
-                            )
+                            );
+                            res
                         });
                         {
                             ::core::panicking::panic_display(&msg);
@@ -434,4 +448,12 @@ const _: () = {
                 .collect()
         }
     }
+    #[allow(non_upper_case_globals)]
+    const _: () = {
+        #[deprecated(
+            note = "into_wasm_abi/from_wasm_abi are deprecated as they cause memory leaks (https://github.com/madonoharu/tsify/issues/65). Consider using `tsify::Ts` instead."
+        )]
+        const _x: () = ();
+        _x
+    };
 };

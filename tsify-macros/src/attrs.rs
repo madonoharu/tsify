@@ -6,6 +6,7 @@ use serde_derive_internals::ast::Field;
 pub struct TsifyContainerAttrs {
     pub type_override: Option<String>,
     pub type_params: Option<Vec<String>>,
+    pub type_alias: bool,
     /// Implement `IntoWasmAbi` for the type.
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
@@ -23,6 +24,8 @@ pub struct TypeGenerationConfig {
     pub type_prefix: Option<String>,
     /// Universal suffix for generated types
     pub type_suffix: Option<String>,
+    /// Prefer type aliases over interfaces
+    pub type_alias: bool,
     /// Whether missing fields should be represented as null in Typescript
     pub missing_as_null: bool,
     /// Whether a hashmap should be represented as an object in Typescript
@@ -42,14 +45,7 @@ impl TypeGenerationConfig {
 
 impl TsifyContainerAttrs {
     pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
-        let mut attrs = Self {
-            type_override: None,
-            type_params: None,
-            into_wasm_abi: false,
-            from_wasm_abi: false,
-            namespace: false,
-            ty_config: TypeGenerationConfig::default(),
-        };
+        let mut attrs = Self::default();
 
         for attr in &input.attrs {
             if !attr.path().is_ident("tsify") {
@@ -72,6 +68,14 @@ impl TsifyContainerAttrs {
                     }
                     let lit = meta.value()?.parse::<syn::LitStr>()?;
                     attrs.type_params = Some(lit.value().split(',').map(|s| s.trim().to_string()).collect());
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("type_alias") {
+                    if attrs.type_alias {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.type_alias = true;
                     return Ok(());
                 }
 
@@ -159,7 +163,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `type_alias`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
         }
 

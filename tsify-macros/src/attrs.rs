@@ -6,6 +6,7 @@ use serde_derive_internals::ast::Field;
 pub struct TsifyContainerAttrs {
     pub type_override: Option<String>,
     pub type_params: Option<Vec<String>>,
+    /// Whether to prefer type aliases over interfaces.
     pub type_alias: bool,
     /// Implement `IntoWasmAbi` for the type.
     pub into_wasm_abi: bool,
@@ -24,8 +25,6 @@ pub struct TypeGenerationConfig {
     pub type_prefix: Option<String>,
     /// Universal suffix for generated types
     pub type_suffix: Option<String>,
-    /// Prefer type aliases over interfaces
-    pub type_alias: bool,
     /// Whether missing fields should be represented as null in Typescript
     pub missing_as_null: bool,
     /// Whether a hashmap should be represented as an object in Typescript

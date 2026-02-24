@@ -41,7 +41,7 @@ fn test_basic_types() {
     assert_ts!(config, Vec<i32> | VecDeque<i32> | LinkedList<i32> | &'a [i32], "number[]");
     assert_ts!(config, HashSet<i32> | BTreeSet<i32>, "number[]");
 
-    assert_ts!(config, Result<i32, String>, "{ Ok: number } | { Err: string }");
+    assert_ts!(config, Result<i32, String>, "{\n    Ok: number;\n} | {\n    Err: string;\n}");
     assert_ts!(config, dyn Fn(String, f64) | dyn FnOnce(String, f64) | dyn FnMut(String, f64), "(arg0: string, arg1: number) => void");
     assert_ts!(config, dyn Fn(String) -> i32 | dyn FnOnce(String) -> i32 | dyn FnMut(String) -> i32, "(arg0: string) => number");
 
@@ -57,22 +57,22 @@ fn test_basic_types() {
     assert_ts!(config, [i32; 17], "number[]");
     assert_ts!(config, [i32; 1 + 1], "number[]");
 
-    assert_ts!(config, Duration, "{ secs: number; nanos: number }");
+    assert_ts!(config, Duration, "{\n    secs: number;\n    nanos: number;\n}");
     assert_ts!(
         config,
         SystemTime,
-        "{ secs_since_epoch: number; nanos_since_epoch: number }"
+        "{\n    secs_since_epoch: number;\n    nanos_since_epoch: number;\n}"
     );
 
-    assert_ts!(config, Range<i32>, "{ start: number; end: number }");
+    assert_ts!(config, Range<i32>, "{\n    start: number;\n    end: number;\n}");
     assert_ts!(
         config,
         Range<&'static str>,
-        "{ start: string; end: string }"
+        "{\n    start: string;\n    end: string;\n}"
     );
     assert_ts!(
         config,
         RangeInclusive<usize>,
-        "{ start: number; end: number }"
+        "{\n    start: number;\n    end: number;\n}"
     );
 }

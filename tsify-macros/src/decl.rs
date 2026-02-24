@@ -58,11 +58,11 @@ impl Display for TsInterfaceDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write_doc_comments(f, &self.comments)?;
 
-        write!(f, "export interface {} ", self.id)?;
+        write!(f, "export interface {}", self.id)?;
 
         if !self.type_params.is_empty() {
             let type_params = self.type_params.join(", ");
-            write!(f, "<{type_params}> ")?;
+            write!(f, "<{type_params}>")?;
         }
 
         if !self.extends.is_empty() {
@@ -73,9 +73,10 @@ impl Display for TsInterfaceDecl {
                 .collect::<Vec<_>>()
                 .join(", ");
 
-            write!(f, "extends {extends} ")?;
+            write!(f, " extends {extends}")?;
         }
 
+        write!(f, " ")?;
         TsTypeLit::from(self.body.as_slice()).fmt(f)
     }
 }

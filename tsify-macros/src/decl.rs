@@ -1,7 +1,6 @@
 use std::ops::Deref;
 use std::{fmt::Display, vec};
 
-use crate::comments::clean_comments;
 use crate::typescript::TsType::Ref;
 use crate::{
     comments::write_doc_comments,
@@ -267,15 +266,15 @@ impl Display for TsEnumDecl {
             type_ann: TsType::Union(
                 self.members
                     .iter()
-                    .map(|member| if self.namespace {
-                        Ref {
-                            name: format!("{}.{}", self.id, member.id),
-                            type_params: vec![],
+                    .map(|member| {
+                        if self.namespace {
+                            Ref {
+                                name: format!("{}.{}", self.id, member.id),
+                                type_params: vec![],
+                            }
+                        } else {
+                            member.type_ann.clone()
                         }
-                    } else {
-                        let mut clone = member.type_ann.clone();
-                        clean_comments(&mut clone);
-                        clone
                     })
                     .collect(),
             ),

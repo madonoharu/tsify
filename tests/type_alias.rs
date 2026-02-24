@@ -62,7 +62,7 @@ fn test_named_fields() {
                  * Comment for b
                  */
                 b: Map<string, bigint>;
-            }"
+            };"
         }
     } else {
         indoc! {"
@@ -78,7 +78,7 @@ fn test_named_fields() {
                  * Comment for b
                  */
                 b: Record<string, number>;
-            }"
+            };"
         }
     };
 
@@ -163,7 +163,7 @@ fn test_nested_struct() {
                  * Comment for a
                  */
                 a: A;
-            }"
+            };"
         }
     );
 }
@@ -197,7 +197,7 @@ fn test_struct_with_borrowed_fields() {
                  * Comment for cow
                  */
                 cow: string;
-            }"
+            };"
         }
     );
 }
@@ -231,7 +231,7 @@ fn test_tagged_struct() {
                  * Comment for y
                  */
                 y: number;
-            }"#
+            };"#
         }
     );
 }

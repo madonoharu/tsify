@@ -6,6 +6,7 @@ use crate::{
     comments::write_doc_comments,
     typescript::{TsType, TsTypeElement, TsTypeLit},
 };
+use crate::comments::clean_comments;
 
 #[derive(Debug, Clone)]
 pub struct TsTypeAliasDecl {
@@ -267,13 +268,21 @@ impl Display for TsEnumDecl {
                 self.members
                     .iter()
                     .map(|member| {
+                        // TODO remove this once type_alias are properly formatted
+                        let mut clone = member.clone();
+                        clean_comments(&mut clone.type_ann);
+
                         if self.namespace {
-                            Ref {
-                                name: format!("{}.{}", self.id, member.id),
-                                type_params: vec![],
-                            }
+                            let name = if clone.type_params.is_empty() {
+                                format!("{}.{}", self.id, clone.id)
+                            } else {
+                                let type_params = clone.type_params.join(", ");
+                                format!("{}.{}<{}>", self.id, clone.id, type_params)
+                            };
+
+                            Ref { name, type_params: vec![] }
                         } else {
-                            member.type_ann.clone()
+                            clone.type_ann.clone()
                         }
                     })
                     .collect(),

@@ -1,12 +1,12 @@
-use std::ops::Deref;
-use std::{fmt::Display, vec};
-
 use crate::comments::clean_comments;
+use crate::decl::Decl::TsValueEnum;
 use crate::typescript::{ToStringWithIndent, TsValueEnumLit};
 use crate::{
     comments::write_doc_comments,
     typescript::{TsType, TsTypeElement, TsTypeLit, TsValueEnumMember},
 };
+use std::ops::Deref;
+use std::{fmt::Display, vec};
 
 #[derive(Debug, Clone)]
 pub struct TsTypeAliasDecl {
@@ -94,7 +94,7 @@ impl Display for TsValueEnumDecl {
         let constant_keyword = if self.constant { "const " } else { "" };
         write!(f, "{}enum {} {{", constant_keyword, self.id)?;
         if self.members.is_empty() {
-            writeln!(f, "}}")
+            write!(f, "}}")
         } else {
             let members = self
                 .members
@@ -102,7 +102,7 @@ impl Display for TsValueEnumDecl {
                 .map(|member| format!("\n{},", member.to_string_with_indent(4)))
                 .collect::<Vec<_>>()
                 .join("");
-            writeln!(f, "{members}\n}}")
+            write!(f, "{members}\n}}")
         }
     }
 }
@@ -114,6 +114,7 @@ pub struct TsEnumDecl {
     pub type_params: Vec<String>,
     pub members: Vec<TsTypeAliasDecl>,
     pub namespace: bool,
+    pub variants: Option<Vec<TsValueEnumMember>>,
     pub comments: Vec<String>,
 }
 
@@ -206,6 +207,16 @@ impl TsEnumDecl {
 
 impl Display for TsEnumDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(members) = self.variants.clone() {
+            TsValueEnumDecl {
+                id: self.id.clone(),
+                constant: false,
+                members,
+            }
+            .fmt(f)?;
+            write!(f, "\n\n")?;
+        }
+
         if self.namespace {
             let mut type_refs = self
                 .members

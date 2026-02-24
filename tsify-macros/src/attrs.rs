@@ -10,8 +10,12 @@ pub struct TsifyContainerAttrs {
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
     pub from_wasm_abi: bool,
-    /// Whether the type should be wrapped in a TypeScript namespace.
+    /// Must be enum. Whether the variant types should be wrapped in a TypeScript namespace.
     pub namespace: bool,
+    /// Must be enum. Whether enum with variant identifiers should be generated.
+    pub variant_identifier: bool,
+    /// Must be enum with unit variants only. Whether TypeScript should be generated.
+    pub value_enum: bool,
     /// Information about how the type should be serialized.
     pub ty_config: TypeGenerationConfig,
 }
@@ -42,14 +46,7 @@ impl TypeGenerationConfig {
 
 impl TsifyContainerAttrs {
     pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
-        let mut attrs = Self {
-            type_override: None,
-            type_params: None,
-            into_wasm_abi: false,
-            from_wasm_abi: false,
-            namespace: false,
-            ty_config: TypeGenerationConfig::default(),
-        };
+        let mut attrs = Self::default();
 
         for attr in &input.attrs {
             if !attr.path().is_ident("tsify") {
@@ -99,6 +96,28 @@ impl TsifyContainerAttrs {
                         return Err(meta.error("duplicate attribute"));
                     }
                     attrs.namespace = true;
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("variant_identifier") {
+                    if !matches!(input.data, syn::Data::Enum(_)) {
+                        return Err(meta.error("#[tsify(variant_identifier)] can only be used on enums"));
+                    }
+                    if attrs.variant_identifier {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.variant_identifier = true;
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("value_enum") {
+                    if !matches!(input.data, syn::Data::Enum(_)) {
+                        return Err(meta.error("#[tsify(value_enum)] can only be used on enums"));
+                    }
+                    if attrs.value_enum {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.value_enum = true;
                     return Ok(());
                 }
 
@@ -159,7 +178,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `variant_identifier`, `value_enum`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
         }
 

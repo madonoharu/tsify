@@ -5,6 +5,8 @@ use serde_derive_internals::{
     attr::TagType,
 };
 
+use crate::decl::TsValueEnumDecl;
+use crate::typescript::{TsValueEnumLit, TsValueEnumMember};
 use crate::{
     attrs::TsifyFieldAttrs,
     comments::extract_doc_comments,
@@ -277,18 +279,31 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_enum(&self, variants: &[Variant]) -> Decl {
+        let mut variant_identifiers = Some(vec![]);
         let members = variants
-            .iter()
+            .into_iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
                 let decl = self.create_type_alias_decl(self.parse_variant(variant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
-                    variant
-                        .attrs
-                        .name()
-                        .serialize_name()
-                        .clone_into(&mut type_alias.id);
+                    let serialized = variant.attrs.name().serialize_name();
+                    type_alias.id = variant.ident.to_string();
+                    // TODO restore default behavior
+                    // type_alias.id = variant.attrs
+                    //     .name()
+                    //     .serialize_name()
+                    //     .to_owned();
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
+
+                    if let Some(variant_identifiers) = &mut variant_identifiers {
+                        let id = type_alias.id.clone();
+
+                        variant_identifiers.push(TsValueEnumMember {
+                            id,
+                            value: TsValueEnumLit::StringLit(serialized.to_owned()),
+                            comments: type_alias.comments.clone(),
+                        })
+                    }
 
                     type_alias
                 } else {
@@ -304,13 +319,37 @@ impl<'a> Parser<'a> {
 
         let relevant_type_params = self.create_relevant_type_params(type_ref_names);
 
-        Decl::TsEnum(TsEnumDecl {
-            id: self.container.ident_str(),
-            type_params: relevant_type_params,
-            members,
-            namespace: self.container.attrs.namespace,
-            comments: extract_doc_comments(&self.container.serde_container.original.attrs),
-        })
+        if self.container.attrs.value_enum {
+            Decl::TsValueEnum(TsValueEnumDecl {
+                id: self.container.ident_str(),
+                constant: false,
+                members: members
+                    .into_iter()
+                    .map(|member| {
+                        let value = if let TsType::Lit(value) = member.type_ann {
+                            value
+                        } else {
+                            panic!("Cannot have non-unit values in value enum");
+                        };
+
+                        TsValueEnumMember {
+                            id: member.id,
+                            value: TsValueEnumLit::StringLit(value),
+                            comments: member.comments,
+                        }
+                    })
+                    .collect(),
+            })
+        } else {
+            Decl::TsEnum(TsEnumDecl {
+                id: self.container.ident_str(),
+                type_params: relevant_type_params,
+                members,
+                namespace: self.container.attrs.namespace,
+                variants: variant_identifiers,
+                comments: extract_doc_comments(&self.container.serde_container.original.attrs),
+            })
+        }
     }
 
     fn parse_variant(&self, variant: &Variant) -> TsType {

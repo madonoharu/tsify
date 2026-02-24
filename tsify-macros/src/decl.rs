@@ -1,12 +1,11 @@
 use std::ops::Deref;
 use std::{fmt::Display, vec};
 
-use crate::typescript::TsType::Ref;
+use crate::comments::clean_comments;
 use crate::{
     comments::write_doc_comments,
     typescript::{TsType, TsTypeElement, TsTypeLit},
 };
-use crate::comments::clean_comments;
 
 #[derive(Debug, Clone)]
 pub struct TsTypeAliasDecl {
@@ -280,7 +279,10 @@ impl Display for TsEnumDecl {
                                 format!("{}.{}<{}>", self.id, clone.id, type_params)
                             };
 
-                            Ref { name, type_params: vec![] }
+                            TsType::Ref {
+                                name,
+                                type_params: vec![],
+                            }
                         } else {
                             clone.type_ann.clone()
                         }

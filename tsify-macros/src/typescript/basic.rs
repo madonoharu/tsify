@@ -33,17 +33,6 @@ pub struct TsTypeElement {
     pub comments: Vec<String>,
 }
 
-impl TsTypeElement {
-    pub fn to_string_with_indent(&self, indent: usize) -> String {
-        let out = self.to_string();
-        let indent_str = " ".repeat(indent);
-        out.split('\n')
-            .map(|line| format!("{}{}", indent_str, line))
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
-}
-
 impl Display for TsTypeElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let key = &self.key;
@@ -123,6 +112,38 @@ impl Display for TsTypeLit {
         } else {
             write!(f, "{{ {members} }}")
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TsValueEnumLit {
+    None,
+    StringLit(String),
+    NumberLit(String),
+}
+
+impl Display for TsValueEnumLit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TsValueEnumLit::None => Ok(()),
+            TsValueEnumLit::StringLit(value) => write!(f, " = \"{}\"", value),
+            TsValueEnumLit::NumberLit(value) => write!(f, " = {}", value),
+        }
+    }
+}
+
+/// A member in a TypeScript enum, e.g. `Foo = 5,`
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TsValueEnumMember {
+    pub id: String,
+    pub value: TsValueEnumLit,
+    pub comments: Vec<String>,
+}
+
+impl Display for TsValueEnumMember {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write_doc_comments(f, &self.comments)?;
+        write!(f, "{}{}", self.id, self.value)
     }
 }
 

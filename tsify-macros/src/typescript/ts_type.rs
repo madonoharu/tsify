@@ -6,7 +6,7 @@ use crate::attrs::TypeGenerationConfig;
 
 use super::{NullType, TsKeywordTypeKind, TsTypeElement, TsTypeLit};
 
-/// A Typescript type
+/// A TypeScript type
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TsType {
     /// A keyword type like `number`, `string`, etc.

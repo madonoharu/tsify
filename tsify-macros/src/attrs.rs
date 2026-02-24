@@ -10,13 +10,13 @@ pub struct TsifyContainerAttrs {
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
     pub from_wasm_abi: bool,
-    /// Whether the type should be wrapped in a Typescript namespace.
+    /// Whether the type should be wrapped in a TypeScript namespace.
     pub namespace: bool,
     /// Information about how the type should be serialized.
     pub ty_config: TypeGenerationConfig,
 }
 
-/// Configuration affecting how Typescript types are generated.
+/// Configuration affecting how TypeScript types are generated.
 #[derive(Debug, Default)]
 pub struct TypeGenerationConfig {
     /// Universal prefix for generated types

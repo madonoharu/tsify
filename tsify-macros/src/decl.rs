@@ -2,9 +2,10 @@ use std::ops::Deref;
 use std::{fmt::Display, vec};
 
 use crate::comments::clean_comments;
+use crate::typescript::{ToStringWithIndent, TsValueEnumLit};
 use crate::{
     comments::write_doc_comments,
-    typescript::{TsType, TsTypeElement, TsTypeLit},
+    typescript::{TsType, TsTypeElement, TsTypeLit, TsValueEnumMember},
 };
 
 #[derive(Debug, Clone)]
@@ -14,17 +15,6 @@ pub struct TsTypeAliasDecl {
     pub type_params: Vec<String>,
     pub type_ann: TsType,
     pub comments: Vec<String>,
-}
-
-impl TsTypeAliasDecl {
-    pub fn to_string_with_indent(&self, indent: usize) -> String {
-        let out = self.to_string();
-        let indent_str = " ".repeat(indent);
-        out.split('\n')
-            .map(|line| format!("{}{}", indent_str, line))
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
 }
 
 impl Display for TsTypeAliasDecl {
@@ -87,6 +77,32 @@ impl Display for TsInterfaceDecl {
                 .join("");
 
             write!(f, " {{{members}\n}}")
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TsValueEnumDecl {
+    pub id: String,
+    /// Constant enums are entirely erased during compilation, `const enum Foo { .. }`
+    pub constant: bool,
+    pub members: Vec<TsValueEnumMember>,
+}
+
+impl Display for TsValueEnumDecl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let constant_keyword = if self.constant { "const " } else { "" };
+        write!(f, "{}enum {} {{", constant_keyword, self.id)?;
+        if self.members.is_empty() {
+            writeln!(f, "}}")
+        } else {
+            let members = self
+                .members
+                .iter()
+                .map(|member| format!("\n{},", member.to_string_with_indent(4)))
+                .collect::<Vec<_>>()
+                .join("");
+            writeln!(f, "{members}\n}}")
         }
     }
 }
@@ -229,7 +245,6 @@ impl Display for TsEnumDecl {
             }
 
             write_doc_comments(f, &self.comments)?;
-
             write!(f, "declare namespace {}", self.id)?;
 
             if self.members.is_empty() {
@@ -285,6 +300,7 @@ impl Display for TsEnumDecl {
 pub enum Decl {
     TsTypeAlias(TsTypeAliasDecl),
     TsInterface(TsInterfaceDecl),
+    TsValueEnum(TsValueEnumDecl),
     TsEnum(TsEnumDecl),
 }
 
@@ -294,6 +310,7 @@ impl Decl {
             Decl::TsTypeAlias(decl) => &decl.id,
             Decl::TsInterface(decl) => &decl.id,
             Decl::TsEnum(decl) => &decl.id,
+            Decl::TsValueEnum(decl) => &decl.id,
         }
     }
 }
@@ -304,6 +321,7 @@ impl Display for Decl {
             Decl::TsTypeAlias(decl) => decl.fmt(f),
             Decl::TsInterface(decl) => decl.fmt(f),
             Decl::TsEnum(decl) => decl.fmt(f),
+            Decl::TsValueEnum(decl) => decl.fmt(f),
         }
     }
 }

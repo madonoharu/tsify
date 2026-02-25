@@ -13,7 +13,7 @@ struct Foo {
 fn test_externally_tagged_enum() {
     /// Comment for External
     #[derive(Tsify)]
-    #[tsify(variant_identifier)]
+    #[tsify(discriminants)]
     enum External {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -70,7 +70,7 @@ fn test_externally_tagged_enum() {
 fn test_externally_tagged_enum_with_namespace() {
     /// Comment for External
     #[derive(Tsify)]
-    #[tsify(namespace, variant_identifier)]
+    #[tsify(namespace, discriminants)]
     enum External {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -87,6 +87,33 @@ fn test_externally_tagged_enum_with_namespace() {
     }
 
     let expected = indoc! {r#"
+        enum External {
+            /**
+             * Comment for Struct
+             */
+            Struct = "Struct",
+            /**
+             * Comment for EmptyStruct
+             */
+            EmptyStruct = "EmptyStruct",
+            /**
+             * Comment for Tuple
+             */
+            Tuple = "Tuple",
+            /**
+             * Comment for EmptyTuple
+             */
+            EmptyTuple = "EmptyTuple",
+            /**
+             * Comment for Newtype
+             */
+            Newtype = "Newtype",
+            /**
+             * Comment for Unit
+             */
+            Unit = "Unit",
+        }
+
         type __ExternalFoo = Foo;
         /**
          * Comment for External
@@ -131,7 +158,7 @@ fn test_externally_tagged_enum_with_namespace() {
 fn test_internally_tagged_enum() {
     /// Comment for Internal
     #[derive(Tsify)]
-    #[tsify(variant_identifier)]
+    #[tsify(discriminants)]
     #[serde(tag = "t")]
     enum Internal {
         /// Comment for Struct
@@ -159,7 +186,7 @@ fn test_internally_tagged_enum_with_namespace() {
     /// Comment for Internal
     #[derive(Tsify)]
     #[serde(tag = "t")]
-    #[tsify(namespace, variant_identifier)]
+    #[tsify(namespace, discriminants)]
     enum Internal {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -208,6 +235,7 @@ fn test_internally_tagged_enum_with_namespace() {
 fn test_adjacently_tagged_enum() {
     /// Comment for Adjacent
     #[derive(Tsify)]
+    #[tsify(discriminants)]
     #[serde(tag = "t", content = "c")]
     enum Adjacent {
         /// Comment for Struct
@@ -239,7 +267,7 @@ fn test_adjacently_tagged_enum_with_namespace() {
     /// Comment for Adjacent
     #[derive(Tsify)]
     #[serde(tag = "t", content = "c")]
-    #[tsify(namespace)]
+    #[tsify(namespace, discriminants)]
     enum Adjacent {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -300,6 +328,7 @@ fn test_adjacently_tagged_enum_with_namespace() {
 fn test_untagged_enum() {
     /// Comment for Untagged
     #[derive(Tsify)]
+    #[tsify(discriminants)]
     #[serde(untagged)]
     enum Untagged {
         /// Comment for Struct
@@ -340,7 +369,7 @@ fn test_untagged_enum_with_namespace() {
     /// Comment for Untagged
     #[derive(Tsify)]
     #[serde(untagged)]
-    #[tsify(namespace)]
+    #[tsify(namespace, discriminants)]
     enum Untagged {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -441,6 +470,7 @@ fn test_untagged_enum_with_namespace() {
 fn test_renamed_enum() {
     #[derive(Tsify)]
     #[serde(rename_all_fields = "camelCase")]
+    #[tsify(discriminants)]
     enum Renamed {
         First { foo_bar: String, baz_quoox: i32 },
         Second { asdf_asdf: String, qwer_qwer: i32 },
@@ -457,7 +487,7 @@ fn test_renamed_enum() {
 fn test_module_reimport_enum() {
     /// Comment for Internal
     #[derive(Tsify)]
-    #[tsify(namespace)]
+    #[tsify(namespace, discriminants)]
     enum Internal {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -530,7 +560,7 @@ fn test_module_template_enum() {
 
     /// Comment for Internal
     #[derive(Tsify)]
-    #[tsify(namespace)]
+    #[tsify(namespace, discriminants)]
     enum Internal<T> {
         /// Comment for Newtype
         Newtype(Test<T>),
@@ -589,7 +619,7 @@ fn test_module_template_enum_inner() {
 
     /// Comment for Internal
     #[derive(Tsify)]
-    #[tsify(namespace)]
+    #[tsify(namespace, discriminants)]
     enum Internal {
         /// Comment for Newtype
         Newtype(Test<Foo>),

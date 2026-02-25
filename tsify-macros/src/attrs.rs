@@ -16,7 +16,7 @@ pub struct TsifyContainerAttrs {
     /// Must be enum. Whether the variant types should be wrapped in a TypeScript namespace.
     pub namespace: bool,
     /// Must be enum. Whether enum with variant identifiers should be generated.
-    pub variant_identifier: Option<Option<String>>,
+    pub discriminants: Option<Option<String>>,
     /// Must be enum with unit variants only. Whether TypeScript should be generated.
     pub value_enum: bool,
     /// Information about how the type should be serialized.
@@ -113,7 +113,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                if meta.path.is_ident("variant_identifier") {
+                if meta.path.is_ident("discriminants") {
                     let value = if meta.input.peek(syn::Token![=]) {
                         // There is an '=' → parse the literal
                         let _: syn::Token![=] = meta.input.parse()?;
@@ -124,12 +124,12 @@ impl TsifyContainerAttrs {
                         None
                     };
                     if !matches!(input.data, syn::Data::Enum(_)) {
-                        return Err(meta.error("#[tsify(variant_identifier)] can only be used on enums"));
+                        return Err(meta.error("#[tsify(discriminants)] can only be used on enums"));
                     }
-                    if attrs.variant_identifier.is_some() {
+                    if attrs.discriminants.is_some() {
                         return Err(meta.error("duplicate attribute"));
                     }
-                    attrs.variant_identifier = Some(value);
+                    attrs.discriminants = Some(value);
                     return Ok(());
                 }
 
@@ -201,7 +201,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `rename_variant`, namespace`, `variant_identifier`, `value_enum`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `rename_variant`, namespace`, `discriminants`, `value_enum`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
         }
 

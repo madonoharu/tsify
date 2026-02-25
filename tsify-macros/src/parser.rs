@@ -279,7 +279,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_enum(&self, variants: &[Variant]) -> Decl {
-        let mut variant_identifiers = if self.container.attrs.variant_identifier.is_some() {
+        let mut discriminants = if self.container.attrs.discriminants.is_some() {
             Some(vec![])
         } else {
             None
@@ -299,7 +299,7 @@ impl<'a> Parser<'a> {
                     };
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
-                    if let Some(variant_identifiers) = &mut variant_identifiers {
+                    if let Some(variant_identifiers) = &mut discriminants {
                         let id = type_alias.id.clone();
 
                         variant_identifiers.push(TsValueEnumMember {
@@ -350,7 +350,7 @@ impl<'a> Parser<'a> {
                 type_params: relevant_type_params,
                 members,
                 namespace: self.container.attrs.namespace,
-                variants: variant_identifiers,
+                discriminants,
                 comments: extract_doc_comments(&self.container.serde_container.original.attrs),
             })
         }

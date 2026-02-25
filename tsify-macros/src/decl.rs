@@ -107,14 +107,14 @@ impl Display for TsValueEnumDecl {
     }
 }
 
-/// A Typescript type resulting from an enum declaration.
+/// A TypeScript type resulting from an enum declaration.
 #[derive(Debug)]
 pub struct TsEnumDecl {
     pub id: String,
     pub type_params: Vec<String>,
     pub members: Vec<TsTypeAliasDecl>,
     pub namespace: bool,
-    pub variants: Option<Vec<TsValueEnumMember>>,
+    pub discriminants: Option<Vec<TsValueEnumMember>>,
     pub comments: Vec<String>,
 }
 
@@ -207,7 +207,7 @@ impl TsEnumDecl {
 
 impl Display for TsEnumDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(members) = self.variants.clone() {
+        if let Some(members) = self.discriminants.clone() {
             TsValueEnumDecl {
                 id: self.id.clone(),
                 constant: false,

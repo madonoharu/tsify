@@ -12,7 +12,7 @@ pub struct TsifyContainerAttrs {
     /// Implement `FromWasmAbi` for the type.
     pub from_wasm_abi: bool,
     /// How to rename the variant identifier. At this stage, just defining it means it shouldn't change.
-    pub rename_variant: bool,
+    pub rename_variants: bool,
     /// Must be enum. Whether the variant types should be wrapped in a TypeScript namespace.
     pub namespace: bool,
     /// Must be enum. Whether enum with variant identifiers should be generated.
@@ -91,17 +91,6 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                if meta.path.is_ident("rename_variant") {
-                    if !matches!(input.data, syn::Data::Enum(_)) {
-                        return Err(meta.error("#[tsify(rename_variant)] can only be used on enums"));
-                    }
-                    if attrs.rename_variant {
-                        return Err(meta.error("duplicate attribute"));
-                    }
-                    attrs.rename_variant = true;
-                    return Ok(());
-                }
-
                 if meta.path.is_ident("namespace") {
                     if !matches!(input.data, syn::Data::Enum(_)) {
                         return Err(meta.error("#[tsify(namespace)] can only be used on enums"));
@@ -114,15 +103,17 @@ impl TsifyContainerAttrs {
                 }
 
                 if meta.path.is_ident("discriminants") {
-                    let value = if meta.input.peek(syn::Token![=]) {
-                        // There is an '=' → parse the literal
-                        let _: syn::Token![=] = meta.input.parse()?;
-                        let lit: syn::LitStr = meta.input.parse()?;
-                        Some(lit.value())
-                    } else {
-                        // Default value
-                        None
-                    };
+                    let value = meta
+                        .input
+                        .peek(syn::Token![=])
+                        .then(|| {
+                            let _: syn::Token![=] = meta.input.parse()?;
+                            let lit: syn::LitStr = meta.input.parse()?;
+                            Ok(lit.value())
+                        })
+                        .transpose()
+                        .map_err(|_: syn::Error| meta.error(r#"#[tsify(discriminants = "..")] if you want to specify a discriminant type name"#))?;
+
                     if !matches!(input.data, syn::Data::Enum(_)) {
                         return Err(meta.error("#[tsify(discriminants)] can only be used on enums"));
                     }
@@ -130,6 +121,17 @@ impl TsifyContainerAttrs {
                         return Err(meta.error("duplicate attribute"));
                     }
                     attrs.discriminants = Some(value);
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("rename_variants") {
+                    if !matches!(input.data, syn::Data::Enum(_)) {
+                        return Err(meta.error("#[tsify(rename_variants)] can only be used on enums"));
+                    }
+                    if attrs.rename_variants {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.rename_variants = true;
                     return Ok(());
                 }
 

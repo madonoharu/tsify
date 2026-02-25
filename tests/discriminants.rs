@@ -13,7 +13,7 @@ struct Foo {
 fn test_externally_tagged_enum() {
     /// Comment for External
     #[derive(Tsify)]
-    #[tsify(discriminants)]
+    #[tsify(discriminants = "Xoxo")]
     enum External {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -175,7 +175,7 @@ fn test_internally_tagged_enum() {
         /**
          * Comment for Internal
          */
-        export type Internal = { t: "Struct"; x: string; y: number } | { t: "EmptyStruct" } | ({ t: "Newtype" } & Foo) | { t: "Unit" };"#
+        export type Internal = { t: InternalType.Struct; x: string; y: number } | { t: InternalType.EmptyStruct } | ({ t: InternalType.Newtype } & Foo) | { t: InternalType.Unit };"#
     };
 
     assert_eq!(Internal::DECL, expected);

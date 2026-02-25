@@ -6,7 +6,7 @@ use serde_derive_internals::{
 };
 
 use crate::decl::TsValueEnumDecl;
-use crate::typescript::{TsValueEnumLit, TsValueEnumMember};
+use crate::typescript::{TsTypeElementKey, TsValueEnumLit, TsValueEnumMember};
 use crate::{
     attrs::TsifyFieldAttrs,
     comments::extract_doc_comments,
@@ -289,13 +289,24 @@ impl<'a> Parser<'a> {
             .into_iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
-                let decl = self.create_type_alias_decl(self.parse_variant(variant));
+                let serialized = variant.attrs.name().serialize_name();
+
+                let key = if let Some(named_discriminant) = &self.container.attrs.discriminants {
+                    TsTypeElementKey::Var(if let Some(name) = named_discriminant {
+                        format!("{}.{}", name.clone(), serialized)
+                    } else {
+                        format!("{}Type.{}", self.container.ident_str, serialized)
+                    })
+                } else {
+                    TsTypeElementKey::Lit(serialized.to_owned())
+                };
+
+                let decl = self.create_type_alias_decl(self.parse_variant(variant, key));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
-                    let serialized = variant.attrs.name().serialize_name();
-                    type_alias.id = if self.container.attrs.rename_variant {
+                    type_alias.id = if self.container.attrs.rename_variants {
                         variant.ident.to_string()
                     } else {
-                        variant.attrs.name().serialize_name().to_owned()
+                        serialized.to_owned()
                     };
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
@@ -356,9 +367,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_variant(&self, variant: &Variant) -> TsType {
+    fn parse_variant(&self, variant: &Variant, key: TsTypeElementKey) -> TsType {
         let tag_type = self.container.serde_attrs().tag();
-        let name = variant.attrs.name().serialize_name().to_owned();
         // Checks for Newtype with a skip attribute and treats it as a Unit
         let style = if matches!(variant.style, Style::Newtype)
             && (variant.fields[0].attrs.skip_serializing()
@@ -370,12 +380,7 @@ impl<'a> Parser<'a> {
             variant.style
         };
         let type_ann: TsType = self.parse_fields(style, &variant.fields).into();
-        type_ann.with_tag_type(
-            &self.container.attrs.ty_config,
-            name.into(),
-            style,
-            tag_type,
-        )
+        type_ann.with_tag_type(&self.container.attrs.ty_config, key, style, tag_type)
     }
 }
 

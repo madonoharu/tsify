@@ -92,7 +92,7 @@ pub struct TsValueEnumDecl {
 impl Display for TsValueEnumDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let constant_keyword = if self.constant { "const " } else { "" };
-        write!(f, "{}enum {} {{", constant_keyword, self.id)?;
+        write!(f, "export {}enum {} {{", constant_keyword, self.id)?;
         if self.members.is_empty() {
             write!(f, "}}")
         } else {

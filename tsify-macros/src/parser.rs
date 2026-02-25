@@ -149,7 +149,7 @@ impl<'a> Parser<'a> {
                 let name = self.container.name();
 
                 let tag_field = TsTypeElement {
-                    key: tag.clone(),
+                    key: tag.clone().into(),
                     type_ann: TsType::Lit(name),
                     optional: false,
                     comments: vec![],
@@ -262,7 +262,7 @@ impl<'a> Parser<'a> {
                 let comments = extract_doc_comments(&field.original.attrs);
 
                 TsTypeElement {
-                    key,
+                    key: key.into(),
                     type_ann,
                     optional: optional || !default_is_none,
                     comments,
@@ -370,7 +370,12 @@ impl<'a> Parser<'a> {
             variant.style
         };
         let type_ann: TsType = self.parse_fields(style, &variant.fields).into();
-        type_ann.with_tag_type(&self.container.attrs.ty_config, name, style, tag_type)
+        type_ann.with_tag_type(
+            &self.container.attrs.ty_config,
+            name.into(),
+            style,
+            tag_type,
+        )
     }
 }
 

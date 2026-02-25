@@ -1,5 +1,7 @@
+use crate::decl::TsValueEnumDecl;
 use serde_derive_internals::ast::Field;
 use std::any::Any;
+use std::borrow::Cow;
 
 /// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
 /// E.g., through `#[tsify(into_wasm_abi)]`.
@@ -16,11 +18,40 @@ pub struct TsifyContainerAttrs {
     /// Must be enum. Whether the variant types should be wrapped in a TypeScript namespace.
     pub namespace: bool,
     /// Must be enum. Whether enum with variant identifiers should be generated.
-    pub discriminants: Option<Option<String>>,
+    pub discriminants: DiscriminantEnumGenerationConfig,
     /// Must be enum with unit variants only. Whether TypeScript should be generated.
     pub value_enum: bool,
     /// Information about how the type should be serialized.
     pub ty_config: TypeGenerationConfig,
+}
+
+/// Configuration whether type discriminant enum is generated.
+#[derive(Debug, Default, PartialEq)]
+pub enum DiscriminantEnumGenerationConfig {
+    #[default]
+    NoGeneration,
+    InferName,
+    WithName(String),
+}
+
+impl DiscriminantEnumGenerationConfig {
+    pub fn as_name(&self, container_name: &str) -> Option<Cow<str>> {
+        match self {
+            DiscriminantEnumGenerationConfig::NoGeneration => None,
+            DiscriminantEnumGenerationConfig::InferName => {
+                Some(Cow::Owned(format!("{container_name}Type")))
+            }
+            DiscriminantEnumGenerationConfig::WithName(name) => Some(Cow::Borrowed(name)),
+        }
+    }
+
+    pub fn to_enum_decl(&self, container_name: &str) -> Option<TsValueEnumDecl> {
+        self.as_name(container_name).map(|name| TsValueEnumDecl {
+            id: name.to_string(),
+            constant: false,
+            members: vec![],
+        })
+    }
 }
 
 /// Configuration affecting how TypeScript types are generated.
@@ -117,10 +148,13 @@ impl TsifyContainerAttrs {
                     if !matches!(input.data, syn::Data::Enum(_)) {
                         return Err(meta.error("#[tsify(discriminants)] can only be used on enums"));
                     }
-                    if attrs.discriminants.is_some() {
+                    if !matches!(attrs.discriminants, DiscriminantEnumGenerationConfig::NoGeneration) {
                         return Err(meta.error("duplicate attribute"));
                     }
-                    attrs.discriminants = Some(value);
+                    attrs.discriminants = match value {
+                        None => DiscriminantEnumGenerationConfig::InferName,
+                        Some(name) => DiscriminantEnumGenerationConfig::WithName(name),
+                    };
                     return Ok(());
                 }
 

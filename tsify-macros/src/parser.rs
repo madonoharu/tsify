@@ -1,18 +1,17 @@
 use std::collections::HashSet;
 
-use serde_derive_internals::{
-    ast::{Data, Field, Style, Variant},
-    attr::TagType,
-};
-
-use crate::decl::TsValueEnumDecl;
-use crate::typescript::{TsTypeElementKey, TsValueEnumLit, TsValueEnumMember};
 use crate::{
     attrs::TsifyFieldAttrs,
     comments::extract_doc_comments,
     container::Container,
-    decl::{Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl},
-    typescript::{TsType, TsTypeElement, TsTypeLit},
+    decl::{Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl, TsValueEnumDecl},
+    typescript::{
+        TsType, TsTypeElement, TsTypeElementKey, TsTypeLit, TsValueEnumLit, TsValueEnumMember,
+    },
+};
+use serde_derive_internals::{
+    ast::{Data, Field, Style, Variant},
+    attr::TagType,
 };
 
 enum ParsedFields {
@@ -279,24 +278,19 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_enum(&self, variants: &[Variant]) -> Decl {
-        let mut discriminants = if self.container.attrs.discriminants.is_some() {
-            Some(vec![])
-        } else {
-            None
-        };
+        let mut discriminants = self
+            .container
+            .attrs
+            .discriminants
+            .to_enum_decl(self.container.ident_str.as_ref());
 
         let members = variants
             .into_iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
                 let serialized = variant.attrs.name().serialize_name();
-
-                let key = if let Some(named_discriminant) = &self.container.attrs.discriminants {
-                    TsTypeElementKey::Var(if let Some(name) = named_discriminant {
-                        format!("{}.{}", name.clone(), serialized)
-                    } else {
-                        format!("{}Type.{}", self.container.ident_str, serialized)
-                    })
+                let key = if let Some(discriminants) = &discriminants {
+                    TsTypeElementKey::Var(format!("{}.{}", discriminants.id, serialized))
                 } else {
                     TsTypeElementKey::Lit(serialized.to_owned())
                 };
@@ -310,11 +304,9 @@ impl<'a> Parser<'a> {
                     };
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
-                    if let Some(variant_identifiers) = &mut discriminants {
-                        let id = type_alias.id.clone();
-
-                        variant_identifiers.push(TsValueEnumMember {
-                            id,
+                    if let Some(discriminants) = &mut discriminants {
+                        discriminants.members.push(TsValueEnumMember {
+                            id: type_alias.id.clone(),
                             value: TsValueEnumLit::StringLit(serialized.to_owned()),
                             comments: type_alias.comments.clone(),
                         })

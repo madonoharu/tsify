@@ -114,7 +114,7 @@ pub struct TsEnumDecl {
     pub type_params: Vec<String>,
     pub members: Vec<TsTypeAliasDecl>,
     pub namespace: bool,
-    pub discriminants: Option<Vec<TsValueEnumMember>>,
+    pub discriminants: Option<TsValueEnumDecl>,
     pub comments: Vec<String>,
 }
 
@@ -207,15 +207,10 @@ impl TsEnumDecl {
 
 impl Display for TsEnumDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(members) = self.discriminants.clone() {
-            TsValueEnumDecl {
-                id: self.id.clone(),
-                constant: false,
-                members,
-            }
-            .fmt(f)?;
+        if let Some(discriminants) = &self.discriminants {
+            discriminants.fmt(f)?;
             write!(f, "\n\n")?;
-        }
+        };
 
         if self.namespace {
             let mut type_refs = self

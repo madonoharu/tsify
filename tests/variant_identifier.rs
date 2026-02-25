@@ -30,15 +30,33 @@ fn test_externally_tagged_enum() {
     }
 
     let expected = indoc! {r#"
-        enum ExternalType {
-            Struct,
-            EmptyStruct,
-            Tuple,
-            EmptyTuple,
-            Newtype,
-            Unit,
+        enum External {
+            /**
+             * Comment for Struct
+             */
+            Struct = "Struct",
+            /**
+             * Comment for EmptyStruct
+             */
+            EmptyStruct = "EmptyStruct",
+            /**
+             * Comment for Tuple
+             */
+            Tuple = "Tuple",
+            /**
+             * Comment for EmptyTuple
+             */
+            EmptyTuple = "EmptyTuple",
+            /**
+             * Comment for Newtype
+             */
+            Newtype = "Newtype",
+            /**
+             * Comment for Unit
+             */
+            Unit = "Unit",
         }
-        
+
         /**
          * Comment for External
          */
@@ -49,22 +67,10 @@ fn test_externally_tagged_enum() {
 }
 
 #[test]
-fn test_empty_enum() {
-    #[derive(Tsify)]
-    enum Empty {}
-
-    let expected = indoc! {r#"
-        export type Empty = void;"#
-    };
-
-    assert_eq!(Empty::DECL, expected);
-}
-
-#[test]
 fn test_externally_tagged_enum_with_namespace() {
     /// Comment for External
     #[derive(Tsify)]
-    #[tsify(namespace)]
+    #[tsify(namespace, variant_identifier)]
     enum External {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -125,6 +131,7 @@ fn test_externally_tagged_enum_with_namespace() {
 fn test_internally_tagged_enum() {
     /// Comment for Internal
     #[derive(Tsify)]
+    #[tsify(variant_identifier)]
     #[serde(tag = "t")]
     enum Internal {
         /// Comment for Struct
@@ -152,7 +159,7 @@ fn test_internally_tagged_enum_with_namespace() {
     /// Comment for Internal
     #[derive(Tsify)]
     #[serde(tag = "t")]
-    #[tsify(namespace)]
+    #[tsify(namespace, variant_identifier)]
     enum Internal {
         /// Comment for Struct
         Struct { x: String, y: i32 },

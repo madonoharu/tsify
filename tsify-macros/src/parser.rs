@@ -279,7 +279,12 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_enum(&self, variants: &[Variant]) -> Decl {
-        let mut variant_identifiers = Some(vec![]);
+        let mut variant_identifiers = if self.container.attrs.variant_identifier.is_some() {
+            Some(vec![])
+        } else {
+            None
+        };
+
         let members = variants
             .into_iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
@@ -287,12 +292,11 @@ impl<'a> Parser<'a> {
                 let decl = self.create_type_alias_decl(self.parse_variant(variant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
                     let serialized = variant.attrs.name().serialize_name();
-                    type_alias.id = variant.ident.to_string();
-                    // TODO restore default behavior
-                    // type_alias.id = variant.attrs
-                    //     .name()
-                    //     .serialize_name()
-                    //     .to_owned();
+                    type_alias.id = if self.container.attrs.rename_variant {
+                        variant.ident.to_string()
+                    } else {
+                        variant.attrs.name().serialize_name().to_owned()
+                    };
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
                     if let Some(variant_identifiers) = &mut variant_identifiers {

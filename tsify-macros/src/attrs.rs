@@ -1,4 +1,5 @@
 use serde_derive_internals::ast::Field;
+use std::any::Any;
 
 /// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
 /// E.g., through `#[tsify(into_wasm_abi)]`.
@@ -10,10 +11,12 @@ pub struct TsifyContainerAttrs {
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
     pub from_wasm_abi: bool,
+    /// How to rename the variant identifier. At this stage, just defining it means it shouldn't change.
+    pub rename_variant: bool,
     /// Must be enum. Whether the variant types should be wrapped in a TypeScript namespace.
     pub namespace: bool,
     /// Must be enum. Whether enum with variant identifiers should be generated.
-    pub variant_identifier: bool,
+    pub variant_identifier: Option<Option<String>>,
     /// Must be enum with unit variants only. Whether TypeScript should be generated.
     pub value_enum: bool,
     /// Information about how the type should be serialized.
@@ -88,6 +91,17 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
+                if meta.path.is_ident("rename_variant") {
+                    if !matches!(input.data, syn::Data::Enum(_)) {
+                        return Err(meta.error("#[tsify(rename_variant)] can only be used on enums"));
+                    }
+                    if attrs.rename_variant {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.rename_variant = true;
+                    return Ok(());
+                }
+
                 if meta.path.is_ident("namespace") {
                     if !matches!(input.data, syn::Data::Enum(_)) {
                         return Err(meta.error("#[tsify(namespace)] can only be used on enums"));
@@ -100,13 +114,22 @@ impl TsifyContainerAttrs {
                 }
 
                 if meta.path.is_ident("variant_identifier") {
+                    let value = if meta.input.peek(syn::Token![=]) {
+                        // There is an '=' → parse the literal
+                        let _: syn::Token![=] = meta.input.parse()?;
+                        let lit: syn::LitStr = meta.input.parse()?;
+                        Some(lit.value())
+                    } else {
+                        // Default value
+                        None
+                    };
                     if !matches!(input.data, syn::Data::Enum(_)) {
                         return Err(meta.error("#[tsify(variant_identifier)] can only be used on enums"));
                     }
-                    if attrs.variant_identifier {
+                    if attrs.variant_identifier.is_some() {
                         return Err(meta.error("duplicate attribute"));
                     }
-                    attrs.variant_identifier = true;
+                    attrs.variant_identifier = Some(value);
                     return Ok(());
                 }
 
@@ -178,7 +201,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `variant_identifier`, `value_enum`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `rename_variant`, namespace`, `variant_identifier`, `value_enum`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
         }
 

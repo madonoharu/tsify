@@ -181,7 +181,11 @@ pub struct TsValueEnumMember {
 impl Display for TsValueEnumMember {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write_doc_comments(f, &self.comments)?;
-        write!(f, "{}{}", self.id, self.value)
+        if is_js_ident(self.id.as_str()) {
+            write!(f, "{}{}", self.id, self.value)
+        } else {
+            write!(f, "\"{}\"{}", self.id, self.value)
+        }
     }
 }
 

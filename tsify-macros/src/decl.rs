@@ -1,6 +1,5 @@
 use crate::comments::clean_comments;
-use crate::decl::Decl::TsValueEnum;
-use crate::typescript::{ToStringWithIndent, TsValueEnumLit};
+use crate::typescript::ToStringWithIndent;
 use crate::{
     comments::write_doc_comments,
     typescript::{TsType, TsTypeElement, TsTypeLit, TsValueEnumMember},

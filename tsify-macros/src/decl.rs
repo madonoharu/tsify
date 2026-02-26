@@ -76,18 +76,8 @@ impl Display for TsInterfaceDecl {
             write!(f, " extends {extends}")?;
         }
 
-        if self.body.is_empty() {
-            write!(f, " {{}}")
-        } else {
-            let members = self
-                .body
-                .iter()
-                .map(|elem| format!("\n{};", elem.to_string_with_indent(4)))
-                .collect::<Vec<_>>()
-                .join("");
-
-            write!(f, " {{{members}\n}}")
-        }
+        write!(f, " ")?;
+        TsTypeLit::from(self.body.as_slice()).fmt(f)
     }
 }
 

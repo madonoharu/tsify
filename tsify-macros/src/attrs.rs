@@ -1,7 +1,8 @@
 use crate::decl::TsValueEnumDecl;
 use serde_derive_internals::ast::Field;
-use std::any::Any;
+use serde_derive_internals::attr::{Container, TagType};
 use std::borrow::Cow;
+use syn::GenericParam;
 
 /// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
 /// E.g., through `#[tsify(into_wasm_abi)]`.
@@ -79,7 +80,7 @@ impl TypeGenerationConfig {
 }
 
 impl TsifyContainerAttrs {
-    pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
+    pub fn from_derive_input(input: &syn::DeriveInput, container: &Container) -> syn::Result<Self> {
         let mut attrs = Self::default();
 
         for attr in &input.attrs {
@@ -170,12 +171,26 @@ impl TsifyContainerAttrs {
                 }
 
                 if meta.path.is_ident("value_enum") {
-                    if !matches!(input.data, syn::Data::Enum(_)) {
+                    if !matches!(container.tag(), TagType::External) {
+                        return Err(meta.error("#[tsify(value_enum)] can only be used with externally tagged enum representations"));
+                    }
+
+                    if !input.generics.params.is_empty() {
+                        return Err(meta.error("#[tsify(value_enum)] can not be used on generic generic enums"));
+                    }
+                    if let syn::Data::Enum(data_enum) = &input.data {
+                        for variant in &data_enum.variants {
+                            if !matches!(variant.fields, syn::Fields::Unit) {
+                                return Err(meta.error("#[tsify(value_enum)] can only be used on enums with exclusively unit variants"));
+                            }
+                        }
+                    } else {
                         return Err(meta.error("#[tsify(value_enum)] can only be used on enums"));
                     }
                     if attrs.value_enum {
                         return Err(meta.error("duplicate attribute"));
                     }
+
                     attrs.value_enum = true;
                     return Ok(());
                 }

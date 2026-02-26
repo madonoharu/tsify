@@ -67,7 +67,13 @@ impl<'a> Parser<'a> {
         } else {
             match self.container.serde_data() {
                 Data::Struct(style, fields) => self.parse_struct(*style, fields),
-                Data::Enum(variants) => self.parse_enum(variants),
+                Data::Enum(variants) => {
+                    if self.container.attrs.value_enum {
+                        self.parse_value_enum(variants)
+                    } else {
+                        self.parse_enum(variants)
+                    }
+                }
             }
         }
     }
@@ -277,6 +283,33 @@ impl<'a> Parser<'a> {
         (members, flatten_fields)
     }
 
+    fn parse_value_enum(&self, variants: &[Variant]) -> Decl {
+        let members = variants
+            .into_iter()
+            .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
+            .map(|variant| {
+                let variant_serialized = variant.attrs.name().serialize_name();
+                let discriminant_value = if self.container.attrs.rename_variants {
+                    variant.ident.to_string()
+                } else {
+                    variant_serialized.to_owned()
+                };
+
+                TsValueEnumMember {
+                    id: variant_serialized.to_string(),
+                    value: TsValueEnumLit::StringLit(discriminant_value),
+                    comments: extract_doc_comments(&variant.original.attrs),
+                }
+            })
+            .collect::<Vec<_>>();
+
+        Decl::TsValueEnum(TsValueEnumDecl {
+            id: self.container.ident_str(),
+            constant: false,
+            members,
+        })
+    }
+
     fn parse_enum(&self, variants: &[Variant]) -> Decl {
         let mut discriminants = self
             .container
@@ -328,37 +361,14 @@ impl<'a> Parser<'a> {
 
         let relevant_type_params = self.create_relevant_type_params(type_ref_names);
 
-        if self.container.attrs.value_enum {
-            Decl::TsValueEnum(TsValueEnumDecl {
-                id: self.container.ident_str(),
-                constant: false,
-                members: members
-                    .into_iter()
-                    .map(|member| {
-                        let value = if let TsType::Lit(value) = member.type_ann {
-                            value
-                        } else {
-                            panic!("Cannot have non-unit values in value enum");
-                        };
-
-                        TsValueEnumMember {
-                            id: member.id,
-                            value: TsValueEnumLit::StringLit(value),
-                            comments: member.comments,
-                        }
-                    })
-                    .collect(),
-            })
-        } else {
-            Decl::TsEnum(TsEnumDecl {
-                id: self.container.ident_str(),
-                type_params: relevant_type_params,
-                members,
-                namespace: self.container.attrs.namespace,
-                discriminants,
-                comments: extract_doc_comments(&self.container.serde_container.original.attrs),
-            })
-        }
+        Decl::TsEnum(TsEnumDecl {
+            id: self.container.ident_str(),
+            type_params: relevant_type_params,
+            members,
+            namespace: self.container.attrs.namespace,
+            discriminants,
+            comments: extract_doc_comments(&self.container.serde_container.original.attrs),
+        })
     }
 
     fn parse_variant(&self, variant: &Variant, key: TsTypeElementKey) -> TsType {

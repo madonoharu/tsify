@@ -325,7 +325,6 @@ impl TsType {
                 tys.iter().for_each(|t| t.visit(f));
             }
             TsType::Keyword(_) | TsType::Lit(_) | TsType::Computed(_) | TsType::Override { .. } => {
-                ()
             }
         }
     }

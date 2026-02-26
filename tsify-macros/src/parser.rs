@@ -285,7 +285,7 @@ impl<'a> Parser<'a> {
 
     fn parse_value_enum(&self, variants: &[Variant]) -> Decl {
         let members = variants
-            .into_iter()
+            .iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
                 let variant_serialized = variant.attrs.name().serialize_name();
@@ -314,7 +314,7 @@ impl<'a> Parser<'a> {
         let mut discriminants = self.container.attrs.discriminants.to_enum_decl();
 
         let members = variants
-            .into_iter()
+            .iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
                 let variant_serialized = variant.attrs.name().serialize_name();

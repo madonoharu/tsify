@@ -33,18 +33,18 @@ pub enum TsTypeElementKey {
     Var(String),
 }
 
-impl Into<TsType> for TsTypeElementKey {
-    fn into(self) -> TsType {
-        match self {
+impl From<TsTypeElementKey> for TsType {
+    fn from(value: TsTypeElementKey) -> Self {
+        match value {
             TsTypeElementKey::Lit(s) => TsType::Lit(s),
             TsTypeElementKey::Var(v) => TsType::Computed(v),
         }
     }
 }
 
-impl Into<TsTypeElementKey> for String {
-    fn into(self) -> TsTypeElementKey {
-        TsTypeElementKey::Lit(self)
+impl From<String> for TsTypeElementKey {
+    fn from(value: String) -> Self {
+        TsTypeElementKey::Lit(value)
     }
 }
 

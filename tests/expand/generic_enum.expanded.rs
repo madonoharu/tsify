@@ -24,7 +24,7 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> Tsify for GenericEnum<T, U> {
         type JsType = JsType;
-        const DECL: &'static str = "export type GenericEnum<T, U> = \"Unit\" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };";
+        const DECL: &'static str = "export type GenericEnum<T, U> = \"Unit\" | {\n    NewType: T;\n} | {\n    Seq: [T, U];\n} | {\n    Map: {\n        x: T;\n        y: U;\n    };\n};";
         const SERIALIZATION_CONFIG: tsify::SerializationConfig = tsify::SerializationConfig {
             missing_as_null: false,
             hashmap_as_object: false,
@@ -32,7 +32,7 @@ const _: () = {
         };
     }
     #[wasm_bindgen(typescript_custom_section)]
-    const TS_APPEND_CONTENT: &'static str = "export type GenericEnum<T, U> = \"Unit\" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };";
+    const TS_APPEND_CONTENT: &'static str = "export type GenericEnum<T, U> = \"Unit\" | {\n    NewType: T;\n} | {\n    Seq: [T, U];\n} | {\n    Map: {\n        x: T;\n        y: U;\n    };\n};";
     #[automatically_derived]
     impl<T, U> WasmDescribe for GenericEnum<T, U> {
         #[inline]

@@ -94,6 +94,14 @@ impl From<TsTypeElement> for TsTypeLit {
     }
 }
 
+impl From<&[TsTypeElement]> for TsTypeLit {
+    fn from(m: &[TsTypeElement]) -> Self {
+        TsTypeLit {
+            members: m.to_vec(),
+        }
+    }
+}
+
 impl From<TsTypeElement> for TsType {
     fn from(m: TsTypeElement) -> Self {
         TsType::TypeLit(m.into())
@@ -138,17 +146,17 @@ impl From<TsTypeLit> for TsType {
 
 impl Display for TsTypeLit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let members = self
-            .members
-            .iter()
-            .map(|elem| elem.to_string())
-            .collect::<Vec<_>>()
-            .join("; ");
-
-        if members.is_empty() {
+        if self.members.is_empty() {
             write!(f, "{{}}")
         } else {
-            write!(f, "{{ {members} }}")
+            let members = self
+                .members
+                .iter()
+                .map(|elem| format!("\n{};", elem.to_string_with_indent(4)))
+                .collect::<Vec<_>>()
+                .join("");
+
+            write!(f, "{{{members}\n}}")
         }
     }
 }

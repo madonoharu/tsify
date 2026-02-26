@@ -8,6 +8,8 @@ use serde_derive_internals::attr::{Container, TagType};
 pub struct TsifyContainerAttrs {
     pub type_override: Option<String>,
     pub type_params: Option<Vec<String>>,
+    /// Whether to prefer type aliases over interfaces.
+    pub type_alias: bool,
     /// Implement `IntoWasmAbi` for the type.
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
@@ -98,6 +100,14 @@ impl TsifyContainerAttrs {
                     }
                     let lit = meta.value()?.parse::<syn::LitStr>()?;
                     attrs.type_params = Some(lit.value().split(',').map(|s| s.trim().to_string()).collect());
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("type_alias") {
+                    if attrs.type_alias {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.type_alias = true;
                     return Ok(());
                 }
 
@@ -257,7 +267,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `rename_variant`, namespace`, `discriminants`, `value_enum`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `type_alias`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `discriminants`, `rename_variants`, `value_enum`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
         }
 

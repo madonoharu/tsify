@@ -105,7 +105,7 @@ impl<'a> Parser<'a> {
 
     fn create_decl(&self, members: Vec<TsTypeElement>, extends: Vec<TsType>) -> Decl {
         // An interface can only extend an identifier/qualified-name with optional type arguments.
-        if extends.iter().all(|ty| ty.is_ref()) {
+        if !self.container.attrs.type_alias && extends.iter().all(|ty| ty.is_ref()) {
             let mut type_ref_names: HashSet<&String> = HashSet::new();
             members.iter().for_each(|member| {
                 type_ref_names.extend(member.type_ann.type_ref_names());

@@ -88,7 +88,13 @@ fn test_enum_with_type_override() {
          */
         export type Enum = {
             Struct: {
+                /**
+                 * Comment for x
+                 */
                 x: `tpl_lit_${string}`;
+                /**
+                 * Comment for y
+                 */
                 y: 0 | 1 | 2;
             };
         } | {

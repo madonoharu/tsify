@@ -1,4 +1,3 @@
-use crate::comments::clean_comments;
 use crate::typescript::ToStringWithIndent;
 use crate::{
     comments::write_doc_comments,
@@ -277,16 +276,12 @@ impl Display for TsEnumDecl {
                 self.members
                     .iter()
                     .map(|member| {
-                        // TODO remove this once type_alias are properly formatted
-                        let mut clone = member.clone();
-                        clean_comments(&mut clone.type_ann);
-
                         if self.namespace {
-                            let name = if clone.type_params.is_empty() {
-                                format!("{}.{}", self.id, clone.id)
+                            let name = if member.type_params.is_empty() {
+                                format!("{}.{}", self.id, member.id)
                             } else {
-                                let type_params = clone.type_params.join(", ");
-                                format!("{}.{}<{}>", self.id, clone.id, type_params)
+                                let type_params = member.type_params.join(", ");
+                                format!("{}.{}<{}>", self.id, member.id, type_params)
                             };
 
                             TsType::Ref {
@@ -294,7 +289,7 @@ impl Display for TsEnumDecl {
                                 type_params: vec![],
                             }
                         } else {
-                            clone.type_ann.clone()
+                            member.type_ann.clone()
                         }
                     })
                     .collect(),

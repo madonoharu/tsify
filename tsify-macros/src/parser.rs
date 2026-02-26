@@ -66,8 +66,8 @@ impl<'a> Parser<'a> {
             })
         } else {
             match self.container.serde_data() {
-                Data::Struct(style, ref fields) => self.parse_struct(*style, fields),
-                Data::Enum(ref variants) => self.parse_enum(variants),
+                Data::Struct(style, fields) => self.parse_struct(*style, fields),
+                Data::Enum(variants) => self.parse_enum(variants),
             }
         }
     }
@@ -288,26 +288,28 @@ impl<'a> Parser<'a> {
             .into_iter()
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
-                let serialized = variant.attrs.name().serialize_name();
-                let key = if let Some(discriminants) = &discriminants {
-                    TsTypeElementKey::Var(format!("{}.{}", discriminants.id, serialized))
+                let variant_serialized = variant.attrs.name().serialize_name();
+                let discriminant_value = if self.container.attrs.rename_variants {
+                    variant.ident.to_string()
                 } else {
-                    TsTypeElementKey::Lit(serialized.to_owned())
+                    variant_serialized.to_owned()
                 };
 
-                let decl = self.create_type_alias_decl(self.parse_variant(variant, key));
+                let discriminant = if let Some(discriminants) = &discriminants {
+                    TsTypeElementKey::Var(format!("{}.{}", discriminants.id, discriminant_value))
+                } else {
+                    TsTypeElementKey::Lit(discriminant_value.to_owned())
+                };
+
+                let decl = self.create_type_alias_decl(self.parse_variant(variant, discriminant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
-                    type_alias.id = if self.container.attrs.rename_variants {
-                        variant.ident.to_string()
-                    } else {
-                        serialized.to_owned()
-                    };
+                    type_alias.id = discriminant_value;
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
                     if let Some(discriminants) = &mut discriminants {
                         discriminants.members.push(TsValueEnumMember {
                             id: type_alias.id.clone(),
-                            value: TsValueEnumLit::StringLit(serialized.to_owned()),
+                            value: TsValueEnumLit::StringLit(variant_serialized.to_owned()),
                             comments: type_alias.comments.clone(),
                         })
                     }

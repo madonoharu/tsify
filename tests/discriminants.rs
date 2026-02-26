@@ -10,10 +10,10 @@ struct Foo {
 }
 
 #[test]
-fn test_externally_tagged_enum() {
+fn test_externally_tagged_enum_with_discriminants() {
     /// Comment for External
     #[derive(Tsify)]
-    #[tsify(discriminants = "Xoxo")]
+    #[tsify(discriminants = "Disc")]
     enum External {
         /// Comment for Struct
         Struct { x: String, y: i32 },
@@ -30,7 +30,7 @@ fn test_externally_tagged_enum() {
     }
 
     let expected = indoc! {r#"
-        enum External {
+        export enum Disc {
             /**
              * Comment for Struct
              */
@@ -60,14 +60,14 @@ fn test_externally_tagged_enum() {
         /**
          * Comment for External
          */
-        export type External = { Struct: { x: string; y: number } } | { EmptyStruct: {} } | { Tuple: [number, string] } | { EmptyTuple: [] } | { Newtype: Foo } | "Unit";"#
+        export type External = { [Disc.Struct]: { x: string; y: number } } | { [Disc.EmptyStruct]: {} } | { [Disc.Tuple]: [number, string] } | { [Disc.EmptyTuple]: [] } | { [Disc.Newtype]: Foo } | Disc.Unit;"#
     };
 
     assert_eq!(External::DECL, expected);
 }
 
 #[test]
-fn test_externally_tagged_enum_with_namespace() {
+fn test_externally_tagged_enum_with_namespace_and_discriminants() {
     /// Comment for External
     #[derive(Tsify)]
     #[tsify(namespace, discriminants)]
@@ -87,7 +87,7 @@ fn test_externally_tagged_enum_with_namespace() {
     }
 
     let expected = indoc! {r#"
-        enum External {
+        export enum ExternalType {
             /**
              * Comment for Struct
              */
@@ -122,40 +122,40 @@ fn test_externally_tagged_enum_with_namespace() {
             /**
              * Comment for Struct
              */
-            export type Struct = { Struct: { x: string; y: number } };
+            export type Struct = { [ExternalType.Struct]: { x: string; y: number } };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { EmptyStruct: {} };
+            export type EmptyStruct = { [ExternalType.EmptyStruct]: {} };
             /**
              * Comment for Tuple
              */
-            export type Tuple = { Tuple: [number, string] };
+            export type Tuple = { [ExternalType.Tuple]: [number, string] };
             /**
              * Comment for EmptyTuple
              */
-            export type EmptyTuple = { EmptyTuple: [] };
+            export type EmptyTuple = { [ExternalType.EmptyTuple]: [] };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { Newtype: __ExternalFoo };
+            export type Newtype = { [ExternalType.Newtype]: __ExternalFoo };
             /**
              * Comment for Unit
              */
-            export type Unit = "Unit";
+            export type Unit = ExternalType.Unit;
         }
 
         /**
          * Comment for External
          */
-        export type External = { Struct: { x: string; y: number } } | { EmptyStruct: {} } | { Tuple: [number, string] } | { EmptyTuple: [] } | { Newtype: Foo } | "Unit";"#
+        export type External = { [ExternalType.Struct]: { x: string; y: number } } | { [ExternalType.EmptyStruct]: {} } | { [ExternalType.Tuple]: [number, string] } | { [ExternalType.EmptyTuple]: [] } | { [ExternalType.Newtype]: Foo } | ExternalType.Unit;"#
     };
 
     assert_eq!(External::DECL, expected);
 }
 
 #[test]
-fn test_internally_tagged_enum() {
+fn test_internally_tagged_enum_with_discriminants() {
     /// Comment for Internal
     #[derive(Tsify)]
     #[tsify(discriminants)]
@@ -172,6 +172,25 @@ fn test_internally_tagged_enum() {
     }
 
     let expected = indoc! {r#"
+        export enum InternalType {
+            /**
+             * Comment for Struct
+             */
+            Struct = "Struct",
+            /**
+             * Comment for EmptyStruct
+             */
+            EmptyStruct = "EmptyStruct",
+            /**
+             * Comment for Newtype
+             */
+            Newtype = "Newtype",
+            /**
+             * Comment for Unit
+             */
+            Unit = "Unit",
+        }
+
         /**
          * Comment for Internal
          */
@@ -182,7 +201,7 @@ fn test_internally_tagged_enum() {
 }
 
 #[test]
-fn test_internally_tagged_enum_with_namespace() {
+fn test_internally_tagged_enum_with_namespace_and_discriminants() {
     /// Comment for Internal
     #[derive(Tsify)]
     #[serde(tag = "t")]
@@ -199,6 +218,25 @@ fn test_internally_tagged_enum_with_namespace() {
     }
 
     let expected = indoc! {r#"
+        export enum InternalType {
+            /**
+             * Comment for Struct
+             */
+            Struct = "Struct",
+            /**
+             * Comment for EmptyStruct
+             */
+            EmptyStruct = "EmptyStruct",
+            /**
+             * Comment for Newtype
+             */
+            Newtype = "Newtype",
+            /**
+             * Comment for Unit
+             */
+            Unit = "Unit",
+        }
+
         type __InternalFoo = Foo;
         /**
          * Comment for Internal
@@ -207,121 +245,28 @@ fn test_internally_tagged_enum_with_namespace() {
             /**
              * Comment for Struct
              */
-            export type Struct = { t: "Struct"; x: string; y: number };
+            export type Struct = { t: InternalType.Struct; x: string; y: number };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { t: "EmptyStruct" };
+            export type EmptyStruct = { t: InternalType.EmptyStruct };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { t: "Newtype" } & __InternalFoo;
+            export type Newtype = { t: InternalType.Newtype } & __InternalFoo;
             /**
              * Comment for Unit
              */
-            export type Unit = { t: "Unit" };
+            export type Unit = { t: InternalType.Unit };
         }
 
         /**
          * Comment for Internal
          */
-        export type Internal = { t: "Struct"; x: string; y: number } | { t: "EmptyStruct" } | ({ t: "Newtype" } & Foo) | { t: "Unit" };"#
+        export type Internal = { t: InternalType.Struct; x: string; y: number } | { t: InternalType.EmptyStruct } | ({ t: InternalType.Newtype } & Foo) | { t: InternalType.Unit };"#
     };
 
     assert_eq!(Internal::DECL, expected);
-}
-
-#[test]
-fn test_adjacently_tagged_enum() {
-    /// Comment for Adjacent
-    #[derive(Tsify)]
-    #[tsify(discriminants)]
-    #[serde(tag = "t", content = "c")]
-    enum Adjacent {
-        /// Comment for Struct
-        Struct { x: String, y: i32 },
-        /// Comment for EmptyStruct
-        EmptyStruct {},
-        /// Comment for Tuple
-        Tuple(i32, String),
-        /// Comment for EmptyTuple
-        EmptyTuple(),
-        /// Comment for Newtype
-        Newtype(Foo),
-        /// Comment for Unit
-        Unit,
-    }
-
-    let expected = indoc! {r#"
-        /**
-         * Comment for Adjacent
-         */
-        export type Adjacent = { t: "Struct"; c: { x: string; y: number } } | { t: "EmptyStruct"; c: {} } | { t: "Tuple"; c: [number, string] } | { t: "EmptyTuple"; c: [] } | { t: "Newtype"; c: Foo } | { t: "Unit" };"#
-    };
-
-    assert_eq!(Adjacent::DECL, expected);
-}
-
-#[test]
-fn test_adjacently_tagged_enum_with_namespace() {
-    /// Comment for Adjacent
-    #[derive(Tsify)]
-    #[serde(tag = "t", content = "c")]
-    #[tsify(namespace, discriminants)]
-    enum Adjacent {
-        /// Comment for Struct
-        Struct { x: String, y: i32 },
-        /// Comment for EmptyStruct
-        EmptyStruct {},
-        /// Comment for Tuple
-        Tuple(i32, String),
-        /// Comment for EmptyTuple
-        EmptyTuple(),
-        /// Comment for Newtype
-        Newtype(Foo),
-        /// Comment for Unit
-        Unit,
-    }
-
-    let expected = indoc! {r#"
-        type __AdjacentFoo = Foo;
-        /**
-         * Comment for Adjacent
-         */
-        declare namespace Adjacent {
-            /**
-             * Comment for Struct
-             */
-            export type Struct = { t: "Struct"; c: { x: string; y: number } };
-            /**
-             * Comment for EmptyStruct
-             */
-            export type EmptyStruct = { t: "EmptyStruct"; c: {} };
-            /**
-             * Comment for Tuple
-             */
-            export type Tuple = { t: "Tuple"; c: [number, string] };
-            /**
-             * Comment for EmptyTuple
-             */
-            export type EmptyTuple = { t: "EmptyTuple"; c: [] };
-            /**
-             * Comment for Newtype
-             */
-            export type Newtype = { t: "Newtype"; c: __AdjacentFoo };
-            /**
-             * Comment for Unit
-             */
-            export type Unit = { t: "Unit" };
-        }
-
-        /**
-         * Comment for Adjacent
-         */
-        export type Adjacent = { t: "Struct"; c: { x: string; y: number } } | { t: "EmptyStruct"; c: {} } | { t: "Tuple"; c: [number, string] } | { t: "EmptyTuple"; c: [] } | { t: "Newtype"; c: Foo } | { t: "Unit" };"#
-    };
-
-    assert_eq!(Adjacent::DECL, expected);
 }
 
 #[test]
@@ -347,6 +292,33 @@ fn test_untagged_enum() {
 
     let expected = if cfg!(feature = "js") {
         indoc! {r#"
+            export enum UntaggedType {
+                /**
+                 * Comment for Struct
+                 */
+                Struct = "Struct",
+                /**
+                 * Comment for EmptyStruct
+                 */
+                EmptyStruct = "EmptyStruct",
+                /**
+                 * Comment for Tuple
+                 */
+                Tuple = "Tuple",
+                /**
+                 * Comment for EmptyTuple
+                 */
+                EmptyTuple = "EmptyTuple",
+                /**
+                 * Comment for Newtype
+                 */
+                Newtype = "Newtype",
+                /**
+                 * Comment for Unit
+                 */
+                Unit = "Unit",
+            }
+
             /**
              * Comment for Untagged
              */
@@ -354,6 +326,33 @@ fn test_untagged_enum() {
         }
     } else {
         indoc! {r#"
+            export enum UntaggedType {
+                /**
+                 * Comment for Struct
+                 */
+                Struct = "Struct",
+                /**
+                 * Comment for EmptyStruct
+                 */
+                EmptyStruct = "EmptyStruct",
+                /**
+                 * Comment for Tuple
+                 */
+                Tuple = "Tuple",
+                /**
+                 * Comment for EmptyTuple
+                 */
+                EmptyTuple = "EmptyTuple",
+                /**
+                 * Comment for Newtype
+                 */
+                Newtype = "Newtype",
+                /**
+                 * Comment for Unit
+                 */
+                Unit = "Unit",
+            }
+
             /**
              * Comment for Untagged
              */
@@ -387,6 +386,33 @@ fn test_untagged_enum_with_namespace() {
 
     let expected = if cfg!(feature = "js") {
         indoc! {r#"
+            export enum UntaggedType {
+                /**
+                 * Comment for Struct
+                 */
+                Struct = "Struct",
+                /**
+                 * Comment for EmptyStruct
+                 */
+                EmptyStruct = "EmptyStruct",
+                /**
+                 * Comment for Tuple
+                 */
+                Tuple = "Tuple",
+                /**
+                 * Comment for EmptyTuple
+                 */
+                EmptyTuple = "EmptyTuple",
+                /**
+                 * Comment for Newtype
+                 */
+                Newtype = "Newtype",
+                /**
+                 * Comment for Unit
+                 */
+                Unit = "Unit",
+            }
+
             type __UntaggedFoo = Foo;
             /**
              * Comment for Untagged
@@ -425,6 +451,33 @@ fn test_untagged_enum_with_namespace() {
         }
     } else {
         indoc! {r#"
+            export enum UntaggedType {
+                /**
+                 * Comment for Struct
+                 */
+                Struct = "Struct",
+                /**
+                 * Comment for EmptyStruct
+                 */
+                EmptyStruct = "EmptyStruct",
+                /**
+                 * Comment for Tuple
+                 */
+                Tuple = "Tuple",
+                /**
+                 * Comment for EmptyTuple
+                 */
+                EmptyTuple = "EmptyTuple",
+                /**
+                 * Comment for Newtype
+                 */
+                Newtype = "Newtype",
+                /**
+                 * Comment for Unit
+                 */
+                Unit = "Unit",
+            }
+
             type __UntaggedFoo = Foo;
             /**
              * Comment for Untagged
@@ -467,7 +520,7 @@ fn test_untagged_enum_with_namespace() {
 }
 
 #[test]
-fn test_renamed_enum() {
+fn test_enum_rename_all_fields_with_discriminants() {
     #[derive(Tsify)]
     #[serde(rename_all_fields = "camelCase")]
     #[tsify(discriminants)]
@@ -477,16 +530,22 @@ fn test_renamed_enum() {
     }
 
     let expected = indoc! {r#"
-        export type Renamed = { First: { fooBar: string; bazQuoox: number } } | { Second: { asdfAsdf: string; qwerQwer: number } };"#
+        export enum RenamedType {
+            First = "First",
+            Second = "Second",
+        }
+
+        export type Renamed = { [RenamedType.First]: { fooBar: string; bazQuoox: number } } | { [RenamedType.Second]: { asdfAsdf: string; qwerQwer: number } };"#
     };
 
     assert_eq!(Renamed::DECL, expected);
 }
 
 #[test]
-fn test_module_reimport_enum() {
+fn test_enum_rename_all_with_discriminants() {
     /// Comment for Internal
     #[derive(Tsify)]
+    #[serde(rename_all = "camelCase")]
     #[tsify(namespace, discriminants)]
     enum Internal {
         /// Comment for Struct
@@ -499,13 +558,38 @@ fn test_module_reimport_enum() {
         EmptyTuple(),
         /// Comment for Newtype
         Newtype(Foo),
-        /// Comment for Newtype2
-        Newtype2(Foo),
         /// Comment for Unit
         Unit,
     }
 
     let expected = indoc! {r#"
+        export enum InternalType {
+            /**
+             * Comment for Struct
+             */
+            struct = "struct",
+            /**
+             * Comment for EmptyStruct
+             */
+            emptyStruct = "emptyStruct",
+            /**
+             * Comment for Tuple
+             */
+            tuple = "tuple",
+            /**
+             * Comment for EmptyTuple
+             */
+            emptyTuple = "emptyTuple",
+            /**
+             * Comment for Newtype
+             */
+            newtype = "newtype",
+            /**
+             * Comment for Unit
+             */
+            unit = "unit",
+        }
+
         type __InternalFoo = Foo;
         /**
          * Comment for Internal
@@ -514,140 +598,122 @@ fn test_module_reimport_enum() {
             /**
              * Comment for Struct
              */
-            export type Struct = { Struct: { x: string; y: number } };
+            export type struct = { [InternalType.struct]: { x: string; y: number } };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { EmptyStruct: {} };
+            export type emptyStruct = { [InternalType.emptyStruct]: {} };
             /**
              * Comment for Tuple
              */
-            export type Tuple = { Tuple: [number, string] };
+            export type tuple = { [InternalType.tuple]: [number, string] };
             /**
              * Comment for EmptyTuple
              */
-            export type EmptyTuple = { EmptyTuple: [] };
+            export type emptyTuple = { [InternalType.emptyTuple]: [] };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { Newtype: __InternalFoo };
-            /**
-             * Comment for Newtype2
-             */
-            export type Newtype2 = { Newtype2: __InternalFoo };
+            export type newtype = { [InternalType.newtype]: __InternalFoo };
             /**
              * Comment for Unit
              */
-            export type Unit = "Unit";
+            export type unit = InternalType.unit;
         }
 
         /**
          * Comment for Internal
          */
-        export type Internal = { Struct: { x: string; y: number } } | { EmptyStruct: {} } | { Tuple: [number, string] } | { EmptyTuple: [] } | { Newtype: Foo } | { Newtype2: Foo } | "Unit";"#
+        export type Internal = { [InternalType.struct]: { x: string; y: number } } | { [InternalType.emptyStruct]: {} } | { [InternalType.tuple]: [number, string] } | { [InternalType.emptyTuple]: [] } | { [InternalType.newtype]: Foo } | InternalType.unit;"#
     };
 
     assert_eq!(Internal::DECL, expected);
 }
 
 #[test]
-fn test_module_template_enum() {
-    /// Comment for Test
-    struct Test<T> {
-        /// Comment for inner
-        inner: T,
-    }
-
+fn test_enum_rename_all_rename_variants_with_discriminants() {
     /// Comment for Internal
     #[derive(Tsify)]
-    #[tsify(namespace, discriminants)]
-    enum Internal<T> {
-        /// Comment for Newtype
-        Newtype(Test<T>),
-        /// Comment for NewtypeF
-        NewtypeF(Test<Foo>),
-        /// Comment for NewtypeL
-        NewtypeL(Test<Foo>),
-        /// Comment for Unit
-        Unit,
-    }
-    let expected = indoc! {r#"
-        type __InternalFoo = Foo;
-        type __InternalTest<A> = Test<A>;
-        /**
-         * Comment for Internal
-         */
-        declare namespace Internal {
-            /**
-             * Comment for Newtype
-             */
-            export type Newtype<T> = { Newtype: __InternalTest<T> };
-            /**
-             * Comment for NewtypeF
-             */
-            export type NewtypeF = { NewtypeF: __InternalTest<__InternalFoo> };
-            /**
-             * Comment for NewtypeL
-             */
-            export type NewtypeL = { NewtypeL: __InternalTest<__InternalFoo> };
-            /**
-             * Comment for Unit
-             */
-            export type Unit = "Unit";
-        }
-
-        /**
-         * Comment for Internal
-         */
-        export type Internal<T> = { Newtype: Test<T> } | { NewtypeF: Test<Foo> } | { NewtypeL: Test<Foo> } | "Unit";"#
-    };
-
-    assert_eq!(expected, Internal::<Foo>::DECL);
-}
-
-struct Test<T> {
-    inner: T,
-}
-
-#[test]
-fn test_module_template_enum_inner() {
-    /// Comment for Test
-    struct Test<T> {
-        /// Comment for inner
-        inner: T,
-    }
-
-    /// Comment for Internal
-    #[derive(Tsify)]
-    #[tsify(namespace, discriminants)]
+    #[serde(rename_all = "camelCase")]
+    #[tsify(namespace, discriminants, rename_variants)]
     enum Internal {
+        /// Comment for Struct
+        Struct { x: String, y: i32 },
+        /// Comment for EmptyStruct
+        EmptyStruct {},
+        /// Comment for Tuple
+        Tuple(i32, String),
+        /// Comment for EmptyTuple
+        EmptyTuple(),
         /// Comment for Newtype
-        Newtype(Test<Foo>),
+        Newtype(Foo),
         /// Comment for Unit
         Unit,
     }
 
     let expected = indoc! {r#"
+        export enum InternalType {
+            /**
+             * Comment for Struct
+             */
+            Struct = "struct",
+            /**
+             * Comment for EmptyStruct
+             */
+            EmptyStruct = "emptyStruct",
+            /**
+             * Comment for Tuple
+             */
+            Tuple = "tuple",
+            /**
+             * Comment for EmptyTuple
+             */
+            EmptyTuple = "emptyTuple",
+            /**
+             * Comment for Newtype
+             */
+            Newtype = "newtype",
+            /**
+             * Comment for Unit
+             */
+            Unit = "unit",
+        }
+
         type __InternalFoo = Foo;
-        type __InternalTest<A> = Test<A>;
         /**
          * Comment for Internal
          */
         declare namespace Internal {
             /**
+             * Comment for Struct
+             */
+            export type Struct = { [InternalType.Struct]: { x: string; y: number } };
+            /**
+             * Comment for EmptyStruct
+             */
+            export type EmptyStruct = { [InternalType.EmptyStruct]: {} };
+            /**
+             * Comment for Tuple
+             */
+            export type Tuple = { [InternalType.Tuple]: [number, string] };
+            /**
+             * Comment for EmptyTuple
+             */
+            export type EmptyTuple = { [InternalType.EmptyTuple]: [] };
+            /**
              * Comment for Newtype
              */
-            export type Newtype = { Newtype: __InternalTest<__InternalFoo> };
+            export type Newtype = { [InternalType.Newtype]: __InternalFoo };
             /**
              * Comment for Unit
              */
-            export type Unit = "Unit";
+            export type Unit = InternalType.Unit;
         }
 
         /**
          * Comment for Internal
          */
-        export type Internal = { Newtype: Test<Foo> } | "Unit";"#
+        export type Internal = { [InternalType.Struct]: { x: string; y: number } } | { [InternalType.EmptyStruct]: {} } | { [InternalType.Tuple]: [number, string] } | { [InternalType.EmptyTuple]: [] } | { [InternalType.Newtype]: Foo } | InternalType.Unit;"#
     };
 
     assert_eq!(Internal::DECL, expected);

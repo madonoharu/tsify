@@ -605,3 +605,65 @@ fn test_module_template_enum_inner() {
 
     assert_eq!(Internal::DECL, expected);
 }
+
+#[test]
+fn test_rename_all_rename_variants() {
+    /// Comment for Internal
+    #[derive(Tsify)]
+    #[serde(rename_all = "camelCase")]
+    #[tsify(namespace, rename_variants)]
+    enum Internal {
+        /// Comment for Struct
+        Struct { x: String, y: i32 },
+        /// Comment for EmptyStruct
+        EmptyStruct {},
+        /// Comment for Tuple
+        Tuple(i32, String),
+        /// Comment for EmptyTuple
+        EmptyTuple(),
+        /// Comment for Newtype
+        Newtype(Foo),
+        /// Comment for Unit
+        Unit,
+    }
+
+    let expected = indoc! {r#"
+        type __InternalFoo = Foo;
+        /**
+         * Comment for Internal
+         */
+        declare namespace Internal {
+            /**
+             * Comment for Struct
+             */
+            export type Struct = { struct: { x: string; y: number } };
+            /**
+             * Comment for EmptyStruct
+             */
+            export type EmptyStruct = { emptyStruct: {} };
+            /**
+             * Comment for Tuple
+             */
+            export type Tuple = { tuple: [number, string] };
+            /**
+             * Comment for EmptyTuple
+             */
+            export type EmptyTuple = { emptyTuple: [] };
+            /**
+             * Comment for Newtype
+             */
+            export type Newtype = { newtype: __InternalFoo };
+            /**
+             * Comment for Unit
+             */
+            export type Unit = "unit";
+        }
+
+        /**
+         * Comment for Internal
+         */
+        export type Internal = { struct: { x: string; y: number } } | { emptyStruct: {} } | { tuple: [number, string] } | { emptyTuple: [] } | { newtype: Foo } | "unit";"#
+    };
+
+    assert_eq!(Internal::DECL, expected);
+}

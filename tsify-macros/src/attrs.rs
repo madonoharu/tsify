@@ -1,8 +1,6 @@
 use crate::decl::TsValueEnumDecl;
 use serde_derive_internals::ast::Field;
 use serde_derive_internals::attr::{Container, TagType};
-use std::borrow::Cow;
-use syn::GenericParam;
 
 /// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
 /// E.g., through `#[tsify(into_wasm_abi)]`.
@@ -35,10 +33,10 @@ pub enum DiscriminantEnumGenerationConfig {
 }
 
 impl DiscriminantEnumGenerationConfig {
-    pub fn as_name(&'_ self) -> Option<Cow<'_, str>> {
+    pub fn as_name(&'_ self) -> Option<&str> {
         match self {
             DiscriminantEnumGenerationConfig::NoGeneration => None,
-            DiscriminantEnumGenerationConfig::WithName(name) => Some(Cow::Borrowed(name)),
+            DiscriminantEnumGenerationConfig::WithName(name) => Some(name),
         }
     }
 

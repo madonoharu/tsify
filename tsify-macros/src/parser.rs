@@ -318,21 +318,21 @@ impl<'a> Parser<'a> {
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
                 let variant_serialized = variant.attrs.name().serialize_name();
-                let discriminant_value = if self.container.attrs.rename_variants {
+                let variant_name = if self.container.attrs.rename_variants {
                     variant.ident.to_string()
                 } else {
                     variant_serialized.to_owned()
                 };
 
                 let discriminant = if let Some(discriminants) = &discriminants {
-                    TsTypeElementKey::Var(format!("{}.{}", discriminants.id, discriminant_value))
+                    TsTypeElementKey::Var(format!("{}.{}", discriminants.id, variant_name))
                 } else {
-                    TsTypeElementKey::Lit(discriminant_value.to_owned())
+                    TsTypeElementKey::Lit(variant_serialized.to_owned())
                 };
 
                 let decl = self.create_type_alias_decl(self.parse_variant(variant, discriminant));
                 if let Decl::TsTypeAlias(mut type_alias) = decl {
-                    type_alias.id = discriminant_value;
+                    type_alias.id = variant_name;
                     type_alias.comments = extract_doc_comments(&variant.original.attrs);
 
                     if let Some(discriminants) = &mut discriminants {

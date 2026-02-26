@@ -153,6 +153,7 @@ impl Display for TsTypeLit {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TsValueEnumLit {
     None,

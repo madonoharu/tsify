@@ -289,15 +289,15 @@ impl<'a> Parser<'a> {
             .filter(|v| !v.attrs.skip_serializing() && !v.attrs.skip_deserializing())
             .map(|variant| {
                 let variant_serialized = variant.attrs.name().serialize_name();
-                let discriminant_value = if self.container.attrs.rename_variants {
+                let member_value = if self.container.attrs.rename_variants {
                     variant.ident.to_string()
                 } else {
                     variant_serialized.to_owned()
                 };
 
                 TsValueEnumMember {
-                    id: variant_serialized.to_string(),
-                    value: TsValueEnumLit::StringLit(discriminant_value),
+                    id: member_value,
+                    value: TsValueEnumLit::StringLit(variant_serialized.to_owned()),
                     comments: extract_doc_comments(&variant.original.attrs),
                 }
             })

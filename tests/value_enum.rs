@@ -42,7 +42,7 @@ fn value_enum() {
 fn value_enum_renamed() {
     /// Comment for External
     #[derive(Tsify)]
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "kebab-case")]
     #[tsify(value_enum)]
     enum External {
         /// Comment for Struct
@@ -66,7 +66,7 @@ fn value_enum_renamed() {
             /**
              * Comment for Tuple
              */
-            gammaDelta = "gammaDelta",
+            "gamma-delta" = "gamma-delta",
         }"#
     };
 

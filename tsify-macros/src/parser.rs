@@ -311,11 +311,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_enum(&self, variants: &[Variant]) -> Decl {
-        let mut discriminants = self
-            .container
-            .attrs
-            .discriminants
-            .to_enum_decl(self.container.ident_str.as_ref());
+        let mut discriminants = self.container.attrs.discriminants.to_enum_decl();
 
         let members = variants
             .into_iter()

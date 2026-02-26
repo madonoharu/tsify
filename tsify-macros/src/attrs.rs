@@ -31,23 +31,19 @@ pub struct TsifyContainerAttrs {
 pub enum DiscriminantEnumGenerationConfig {
     #[default]
     NoGeneration,
-    InferName,
     WithName(String),
 }
 
 impl DiscriminantEnumGenerationConfig {
-    pub fn as_name(&self, container_name: &str) -> Option<Cow<str>> {
+    pub fn as_name(&'_ self) -> Option<Cow<'_, str>> {
         match self {
             DiscriminantEnumGenerationConfig::NoGeneration => None,
-            DiscriminantEnumGenerationConfig::InferName => {
-                Some(Cow::Owned(format!("{container_name}Type")))
-            }
             DiscriminantEnumGenerationConfig::WithName(name) => Some(Cow::Borrowed(name)),
         }
     }
 
-    pub fn to_enum_decl(&self, container_name: &str) -> Option<TsValueEnumDecl> {
-        self.as_name(container_name).map(|name| TsValueEnumDecl {
+    pub fn to_enum_decl(&self) -> Option<TsValueEnumDecl> {
+        self.as_name().map(|name| TsValueEnumDecl {
             id: name.to_string(),
             constant: false,
             members: vec![],
@@ -153,7 +149,18 @@ impl TsifyContainerAttrs {
                         return Err(meta.error("duplicate attribute"));
                     }
                     attrs.discriminants = match value {
-                        None => DiscriminantEnumGenerationConfig::InferName,
+                        None => match container.tag() {
+                            TagType::Internal { tag } |
+                            TagType::Adjacent { tag, .. } => {
+                                let mut chars = tag.chars();
+                                let tag = match chars.next() {
+                                    None => String::new(),
+                                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                                };
+                                DiscriminantEnumGenerationConfig::WithName(format!("{}{}", input.ident, tag))
+                            },
+                            _ => DiscriminantEnumGenerationConfig::WithName(format!("{}Type", input.ident)),
+                        }
                         Some(name) => DiscriminantEnumGenerationConfig::WithName(name),
                     };
                     return Ok(());

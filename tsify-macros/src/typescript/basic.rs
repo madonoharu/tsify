@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{attrs::TypeGenerationConfig, comments::write_doc_comments};
 
-use super::TsType;
+use super::{ToStringWithIndent, TsType};
 
 /// Built-in TypeScript types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

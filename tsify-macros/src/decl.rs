@@ -277,9 +277,25 @@ impl Display for TsEnumDecl {
                 self.members
                     .iter()
                     .map(|member| {
-                        let mut clone = member.type_ann.clone();
-                        clean_comments(&mut clone);
-                        clone
+                        // TODO remove this once type_alias are properly formatted
+                        let mut clone = member.clone();
+                        clean_comments(&mut clone.type_ann);
+
+                        if self.namespace {
+                            let name = if clone.type_params.is_empty() {
+                                format!("{}.{}", self.id, clone.id)
+                            } else {
+                                let type_params = clone.type_params.join(", ");
+                                format!("{}.{}<{}>", self.id, clone.id, type_params)
+                            };
+
+                            TsType::Ref {
+                                name,
+                                type_params: vec![],
+                            }
+                        } else {
+                            clone.type_ann.clone()
+                        }
                     })
                     .collect(),
             ),

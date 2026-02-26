@@ -112,14 +112,7 @@ fn test_skip() {
         /**
          * Comment for Enum
          */
-        export type Enum = "D" | {
-            Struct: {
-                field_b: number;
-                field_c: string;
-            };
-        } | {
-            Tuple: [number, string];
-        } | "NewType";"#
+        export type Enum = Enum.D | Enum.Struct | Enum.Tuple | Enum.NewType;"#
     };
 
     assert_eq!(Enum::DECL, expected);
@@ -170,14 +163,7 @@ fn test_skip() {
         /**
          * Comment for InternalTagEnum
          */
-        export type InternalTagEnum = {
-            type: "Unit";
-        } | {
-            type: "Struct";
-            field_b: number;
-        } | {
-            type: "NewType";
-        };"#
+        export type InternalTagEnum = InternalTagEnum.Unit | InternalTagEnum.Struct | InternalTagEnum.NewType;"#
     };
 
     assert_eq!(InternalTagEnum::DECL, expected);

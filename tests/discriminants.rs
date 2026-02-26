@@ -60,7 +60,20 @@ fn test_externally_tagged_enum_with_discriminants() {
         /**
          * Comment for External
          */
-        export type External = { [Disc.Struct]: { x: string; y: number } } | { [Disc.EmptyStruct]: {} } | { [Disc.Tuple]: [number, string] } | { [Disc.EmptyTuple]: [] } | { [Disc.Newtype]: Foo } | Disc.Unit;"#
+        export type External = {
+            [Disc.Struct]: {
+                x: string;
+                y: number;
+            };
+        } | {
+            [Disc.EmptyStruct]: {};
+        } | {
+            [Disc.Tuple]: [number, string];
+        } | {
+            [Disc.EmptyTuple]: [];
+        } | {
+            [Disc.Newtype]: Foo;
+        } | Disc.Unit;"#
     };
 
     assert_eq!(External::DECL, expected);
@@ -122,23 +135,36 @@ fn test_externally_tagged_enum_with_namespace_and_discriminants() {
             /**
              * Comment for Struct
              */
-            export type Struct = { [ExternalType.Struct]: { x: string; y: number } };
+            export type Struct = {
+                [ExternalType.Struct]: {
+                    x: string;
+                    y: number;
+                };
+            };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { [ExternalType.EmptyStruct]: {} };
+            export type EmptyStruct = {
+                [ExternalType.EmptyStruct]: {};
+            };
             /**
              * Comment for Tuple
              */
-            export type Tuple = { [ExternalType.Tuple]: [number, string] };
+            export type Tuple = {
+                [ExternalType.Tuple]: [number, string];
+            };
             /**
              * Comment for EmptyTuple
              */
-            export type EmptyTuple = { [ExternalType.EmptyTuple]: [] };
+            export type EmptyTuple = {
+                [ExternalType.EmptyTuple]: [];
+            };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { [ExternalType.Newtype]: __ExternalFoo };
+            export type Newtype = {
+                [ExternalType.Newtype]: __ExternalFoo;
+            };
             /**
              * Comment for Unit
              */
@@ -148,7 +174,8 @@ fn test_externally_tagged_enum_with_namespace_and_discriminants() {
         /**
          * Comment for External
          */
-        export type External = { [ExternalType.Struct]: { x: string; y: number } } | { [ExternalType.EmptyStruct]: {} } | { [ExternalType.Tuple]: [number, string] } | { [ExternalType.EmptyTuple]: [] } | { [ExternalType.Newtype]: Foo } | ExternalType.Unit;"#
+        export type External = External.Struct | External.EmptyStruct | External.Tuple | External.EmptyTuple | External.Newtype | External.Unit;"#
+
     };
 
     assert_eq!(External::DECL, expected);
@@ -194,7 +221,17 @@ fn test_internally_tagged_enum_with_discriminants() {
         /**
          * Comment for Internal
          */
-        export type Internal = { t: InternalT.Struct; x: string; y: number } | { t: InternalT.EmptyStruct } | ({ t: InternalT.Newtype } & Foo) | { t: InternalT.Unit };"#
+        export type Internal = {
+            t: InternalT.Struct;
+            x: string;
+            y: number;
+        } | {
+            t: InternalT.EmptyStruct;
+        } | ({
+            t: InternalT.Newtype;
+        } & Foo) | {
+            t: InternalT.Unit;
+        };"#
     };
 
     assert_eq!(Internal::DECL, expected);
@@ -245,25 +282,35 @@ fn test_internally_tagged_enum_with_namespace_and_discriminants() {
             /**
              * Comment for Struct
              */
-            export type Struct = { t: InternalT.Struct; x: string; y: number };
+            export type Struct = {
+                t: InternalT.Struct;
+                x: string;
+                y: number;
+            };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { t: InternalT.EmptyStruct };
+            export type EmptyStruct = {
+                t: InternalT.EmptyStruct;
+            };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { t: InternalT.Newtype } & __InternalFoo;
+            export type Newtype = {
+                t: InternalT.Newtype;
+            } & __InternalFoo;
             /**
              * Comment for Unit
              */
-            export type Unit = { t: InternalT.Unit };
+            export type Unit = {
+                t: InternalT.Unit;
+            };
         }
 
         /**
          * Comment for Internal
          */
-        export type Internal = { t: InternalT.Struct; x: string; y: number } | { t: InternalT.EmptyStruct } | ({ t: InternalT.Newtype } & Foo) | { t: InternalT.Unit };"#
+        export type Internal = Internal.Struct | Internal.EmptyStruct | Internal.Newtype | Internal.Unit;"#
     };
 
     assert_eq!(Internal::DECL, expected);
@@ -322,7 +369,10 @@ fn test_untagged_enum() {
             /**
              * Comment for Untagged
              */
-            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | undefined;"#
+            export type Untagged = {
+                x: string;
+                y: number;
+            } | {} | [number, string] | [] | Foo | undefined;"#
         }
     } else {
         indoc! {r#"
@@ -356,7 +406,10 @@ fn test_untagged_enum() {
             /**
              * Comment for Untagged
              */
-            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | null;"#
+            export type Untagged = {
+                x: string;
+                y: number;
+            } | {} | [number, string] | [] | Foo | null;"#
         }
     };
 
@@ -421,7 +474,10 @@ fn test_untagged_enum_with_namespace() {
                 /**
                  * Comment for Struct
                  */
-                export type Struct = { x: string; y: number };
+                export type Struct = {
+                    x: string;
+                    y: number;
+                };
                 /**
                  * Comment for EmptyStruct
                  */
@@ -447,7 +503,7 @@ fn test_untagged_enum_with_namespace() {
             /**
              * Comment for Untagged
              */
-            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | undefined;"#
+            export type Untagged = Untagged.Struct | Untagged.EmptyStruct | Untagged.Tuple | Untagged.EmptyTuple | Untagged.Newtype | Untagged.Unit;"#
         }
     } else {
         indoc! {r#"
@@ -486,7 +542,10 @@ fn test_untagged_enum_with_namespace() {
                 /**
                  * Comment for Struct
                  */
-                export type Struct = { x: string; y: number };
+                export type Struct = {
+                    x: string;
+                    y: number;
+                };
                 /**
                  * Comment for EmptyStruct
                  */
@@ -512,7 +571,7 @@ fn test_untagged_enum_with_namespace() {
             /**
              * Comment for Untagged
              */
-            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | null;"#
+            export type Untagged = Untagged.Struct | Untagged.EmptyStruct | Untagged.Tuple | Untagged.EmptyTuple | Untagged.Newtype | Untagged.Unit;"#
         }
     };
 
@@ -535,7 +594,17 @@ fn test_enum_rename_all_fields_with_discriminants() {
             Second = "Second",
         }
 
-        export type Renamed = { [RenamedType.First]: { fooBar: string; bazQuoox: number } } | { [RenamedType.Second]: { asdfAsdf: string; qwerQwer: number } };"#
+        export type Renamed = {
+            [RenamedType.First]: {
+                fooBar: string;
+                bazQuoox: number;
+            };
+        } | {
+            [RenamedType.Second]: {
+                asdfAsdf: string;
+                qwerQwer: number;
+            };
+        };"#
     };
 
     assert_eq!(Renamed::DECL, expected);
@@ -598,23 +667,36 @@ fn test_enum_rename_all_with_discriminants() {
             /**
              * Comment for Struct
              */
-            export type struct = { [InternalType.struct]: { x: string; y: number } };
+            export type struct = {
+                [InternalType.struct]: {
+                    x: string;
+                    y: number;
+                };
+            };
             /**
              * Comment for EmptyStruct
              */
-            export type emptyStruct = { [InternalType.emptyStruct]: {} };
+            export type emptyStruct = {
+                [InternalType.emptyStruct]: {};
+            };
             /**
              * Comment for Tuple
              */
-            export type tuple = { [InternalType.tuple]: [number, string] };
+            export type tuple = {
+                [InternalType.tuple]: [number, string];
+            };
             /**
              * Comment for EmptyTuple
              */
-            export type emptyTuple = { [InternalType.emptyTuple]: [] };
+            export type emptyTuple = {
+                [InternalType.emptyTuple]: [];
+            };
             /**
              * Comment for Newtype
              */
-            export type newtype = { [InternalType.newtype]: __InternalFoo };
+            export type newtype = {
+                [InternalType.newtype]: __InternalFoo;
+            };
             /**
              * Comment for Unit
              */
@@ -624,7 +706,7 @@ fn test_enum_rename_all_with_discriminants() {
         /**
          * Comment for Internal
          */
-        export type Internal = { [InternalType.struct]: { x: string; y: number } } | { [InternalType.emptyStruct]: {} } | { [InternalType.tuple]: [number, string] } | { [InternalType.emptyTuple]: [] } | { [InternalType.newtype]: Foo } | InternalType.unit;"#
+        export type Internal = Internal.struct | Internal.emptyStruct | Internal.tuple | Internal.emptyTuple | Internal.newtype | Internal.unit;"#
     };
 
     assert_eq!(Internal::DECL, expected);
@@ -687,23 +769,36 @@ fn test_enum_rename_all_rename_variants_with_discriminants() {
             /**
              * Comment for Struct
              */
-            export type Struct = { [InternalType.Struct]: { x: string; y: number } };
+            export type Struct = {
+                [InternalType.Struct]: {
+                    x: string;
+                    y: number;
+                };
+            };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { [InternalType.EmptyStruct]: {} };
+            export type EmptyStruct = {
+                [InternalType.EmptyStruct]: {};
+            };
             /**
              * Comment for Tuple
              */
-            export type Tuple = { [InternalType.Tuple]: [number, string] };
+            export type Tuple = {
+                [InternalType.Tuple]: [number, string];
+            };
             /**
              * Comment for EmptyTuple
              */
-            export type EmptyTuple = { [InternalType.EmptyTuple]: [] };
+            export type EmptyTuple = {
+                [InternalType.EmptyTuple]: [];
+            };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { [InternalType.Newtype]: __InternalFoo };
+            export type Newtype = {
+                [InternalType.Newtype]: __InternalFoo;
+            };
             /**
              * Comment for Unit
              */
@@ -713,7 +808,7 @@ fn test_enum_rename_all_rename_variants_with_discriminants() {
         /**
          * Comment for Internal
          */
-        export type Internal = { [InternalType.Struct]: { x: string; y: number } } | { [InternalType.EmptyStruct]: {} } | { [InternalType.Tuple]: [number, string] } | { [InternalType.EmptyTuple]: [] } | { [InternalType.Newtype]: Foo } | InternalType.Unit;"#
+        export type Internal = Internal.Struct | Internal.EmptyStruct | Internal.Tuple | Internal.EmptyTuple | Internal.Newtype | Internal.Unit;"#
     };
 
     assert_eq!(Internal::DECL, expected);

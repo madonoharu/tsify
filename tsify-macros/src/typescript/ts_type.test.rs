@@ -57,14 +57,22 @@ fn test_basic_types() {
     assert_ts!(config, [i32; 17], "number[]");
     assert_ts!(config, [i32; 1 + 1], "number[]");
 
-    assert_ts!(config, Duration, "{\n    secs: number;\n    nanos: number;\n}");
+    assert_ts!(
+        config,
+        Duration,
+        "{\n    secs: number;\n    nanos: number;\n}"
+    );
     assert_ts!(
         config,
         SystemTime,
         "{\n    secs_since_epoch: number;\n    nanos_since_epoch: number;\n}"
     );
 
-    assert_ts!(config, Range<i32>, "{\n    start: number;\n    end: number;\n}");
+    assert_ts!(
+        config,
+        Range<i32>,
+        "{\n    start: number;\n    end: number;\n}"
+    );
     assert_ts!(
         config,
         Range<&'static str>,

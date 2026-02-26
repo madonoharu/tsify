@@ -10,7 +10,7 @@ macro_rules! type_lit {
         TsType::TypeLit(TsTypeLit {
             members: vec![$(
                 TsTypeElement {
-                    key: stringify!($k).to_string(),
+                    key: stringify!($k).to_string().into(),
                     type_ann: $t,
                     optional: false,
                     comments: vec![],

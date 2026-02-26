@@ -1,4 +1,6 @@
+use crate::decl::TsValueEnumDecl;
 use serde_derive_internals::ast::Field;
+use serde_derive_internals::attr::{Container, TagType};
 
 /// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
 /// E.g., through `#[tsify(into_wasm_abi)]`.
@@ -10,13 +12,44 @@ pub struct TsifyContainerAttrs {
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
     pub from_wasm_abi: bool,
-    /// Whether the type should be wrapped in a Typescript namespace.
+    /// How to rename the variant identifier. At this stage, just defining it means it shouldn't change.
+    pub rename_variants: bool,
+    /// Must be enum. Whether the variant types should be wrapped in a TypeScript namespace.
     pub namespace: bool,
+    /// Must be enum. Whether enum with variant identifiers should be generated.
+    pub discriminants: DiscriminantEnumGenerationConfig,
+    /// Must be enum with unit variants only. Whether TypeScript should be generated.
+    pub value_enum: bool,
     /// Information about how the type should be serialized.
     pub ty_config: TypeGenerationConfig,
 }
 
-/// Configuration affecting how Typescript types are generated.
+/// Configuration whether type discriminant enum is generated.
+#[derive(Debug, Default, PartialEq)]
+pub enum DiscriminantEnumGenerationConfig {
+    #[default]
+    NoGeneration,
+    WithName(String),
+}
+
+impl DiscriminantEnumGenerationConfig {
+    pub fn as_name(&'_ self) -> Option<&str> {
+        match self {
+            DiscriminantEnumGenerationConfig::NoGeneration => None,
+            DiscriminantEnumGenerationConfig::WithName(name) => Some(name),
+        }
+    }
+
+    pub fn to_enum_decl(&self) -> Option<TsValueEnumDecl> {
+        self.as_name().map(|name| TsValueEnumDecl {
+            id: name.to_string(),
+            constant: false,
+            members: vec![],
+        })
+    }
+}
+
+/// Configuration affecting how TypeScript types are generated.
 #[derive(Debug, Default)]
 pub struct TypeGenerationConfig {
     /// Universal prefix for generated types
@@ -41,15 +74,8 @@ impl TypeGenerationConfig {
 }
 
 impl TsifyContainerAttrs {
-    pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
-        let mut attrs = Self {
-            type_override: None,
-            type_params: None,
-            into_wasm_abi: false,
-            from_wasm_abi: false,
-            namespace: false,
-            ty_config: TypeGenerationConfig::default(),
-        };
+    pub fn from_derive_input(input: &syn::DeriveInput, container: &Container) -> syn::Result<Self> {
+        let mut attrs = Self::default();
 
         for attr in &input.attrs {
             if !attr.path().is_ident("tsify") {
@@ -99,6 +125,78 @@ impl TsifyContainerAttrs {
                         return Err(meta.error("duplicate attribute"));
                     }
                     attrs.namespace = true;
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("discriminants") {
+                    let value = meta
+                        .input
+                        .peek(syn::Token![=])
+                        .then(|| {
+                            let _: syn::Token![=] = meta.input.parse()?;
+                            let lit: syn::LitStr = meta.input.parse()?;
+                            Ok(lit.value())
+                        })
+                        .transpose()
+                        .map_err(|_: syn::Error| meta.error(r#"#[tsify(discriminants = "..")] if you want to specify a discriminant type name"#))?;
+
+                    if !matches!(input.data, syn::Data::Enum(_)) {
+                        return Err(meta.error("#[tsify(discriminants)] can only be used on enums"));
+                    }
+                    if !matches!(attrs.discriminants, DiscriminantEnumGenerationConfig::NoGeneration) {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.discriminants = match value {
+                        None => match container.tag() {
+                            TagType::Internal { tag } |
+                            TagType::Adjacent { tag, .. } => {
+                                let mut chars = tag.chars();
+                                let tag = match chars.next() {
+                                    None => String::new(),
+                                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                                };
+                                DiscriminantEnumGenerationConfig::WithName(format!("{}{}", input.ident, tag))
+                            },
+                            _ => DiscriminantEnumGenerationConfig::WithName(format!("{}Type", input.ident)),
+                        }
+                        Some(name) => DiscriminantEnumGenerationConfig::WithName(name),
+                    };
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("rename_variants") {
+                    if !matches!(input.data, syn::Data::Enum(_)) {
+                        return Err(meta.error("#[tsify(rename_variants)] can only be used on enums"));
+                    }
+                    if attrs.rename_variants {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    attrs.rename_variants = true;
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("value_enum") {
+                    if !matches!(container.tag(), TagType::External) {
+                        return Err(meta.error("#[tsify(value_enum)] can only be used with externally tagged enum representations"));
+                    }
+
+                    if !input.generics.params.is_empty() {
+                        return Err(meta.error("#[tsify(value_enum)] can not be used on generic generic enums"));
+                    }
+                    if let syn::Data::Enum(data_enum) = &input.data {
+                        for variant in &data_enum.variants {
+                            if !matches!(variant.fields, syn::Fields::Unit) {
+                                return Err(meta.error("#[tsify(value_enum)] can only be used on enums with exclusively unit variants"));
+                            }
+                        }
+                    } else {
+                        return Err(meta.error("#[tsify(value_enum)] can only be used on enums"));
+                    }
+                    if attrs.value_enum {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+
+                    attrs.value_enum = true;
                     return Ok(());
                 }
 
@@ -159,7 +257,7 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `rename_variant`, namespace`, `discriminants`, `value_enum`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
         }
 

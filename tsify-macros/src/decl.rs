@@ -1,11 +1,11 @@
-use std::ops::Deref;
-use std::{fmt::Display, vec};
-
 use crate::comments::clean_comments;
+use crate::typescript::ToStringWithIndent;
 use crate::{
     comments::write_doc_comments,
-    typescript::{TsType, TsTypeElement, TsTypeLit},
+    typescript::{TsType, TsTypeElement, TsTypeLit, TsValueEnumMember},
 };
+use std::ops::Deref;
+use std::{fmt::Display, vec};
 
 #[derive(Debug, Clone)]
 pub struct TsTypeAliasDecl {
@@ -14,17 +14,6 @@ pub struct TsTypeAliasDecl {
     pub type_params: Vec<String>,
     pub type_ann: TsType,
     pub comments: Vec<String>,
-}
-
-impl TsTypeAliasDecl {
-    pub fn to_string_with_indent(&self, indent: usize) -> String {
-        let out = self.to_string();
-        let indent_str = " ".repeat(indent);
-        out.split('\n')
-            .map(|line| format!("{}{}", indent_str, line))
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
 }
 
 impl Display for TsTypeAliasDecl {
@@ -91,13 +80,40 @@ impl Display for TsInterfaceDecl {
     }
 }
 
-/// A Typescript type resulting from an enum declaration.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TsValueEnumDecl {
+    pub id: String,
+    /// Constant enums are entirely erased during compilation, `const enum Foo { .. }`
+    pub constant: bool,
+    pub members: Vec<TsValueEnumMember>,
+}
+
+impl Display for TsValueEnumDecl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let constant_keyword = if self.constant { "const " } else { "" };
+        write!(f, "export {}enum {} {{", constant_keyword, self.id)?;
+        if self.members.is_empty() {
+            write!(f, "}}")
+        } else {
+            let members = self
+                .members
+                .iter()
+                .map(|member| format!("\n{},", member.to_string_with_indent(4)))
+                .collect::<Vec<_>>()
+                .join("");
+            write!(f, "{members}\n}}")
+        }
+    }
+}
+
+/// A TypeScript type resulting from an enum declaration.
 #[derive(Debug)]
 pub struct TsEnumDecl {
     pub id: String,
     pub type_params: Vec<String>,
     pub members: Vec<TsTypeAliasDecl>,
     pub namespace: bool,
+    pub discriminants: Option<TsValueEnumDecl>,
     pub comments: Vec<String>,
 }
 
@@ -190,6 +206,11 @@ impl TsEnumDecl {
 
 impl Display for TsEnumDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(discriminants) = &self.discriminants {
+            discriminants.fmt(f)?;
+            write!(f, "\n\n")?;
+        };
+
         if self.namespace {
             let mut type_refs = self
                 .members
@@ -229,7 +250,6 @@ impl Display for TsEnumDecl {
             }
 
             write_doc_comments(f, &self.comments)?;
-
             write!(f, "declare namespace {}", self.id)?;
 
             if self.members.is_empty() {
@@ -285,6 +305,7 @@ impl Display for TsEnumDecl {
 pub enum Decl {
     TsTypeAlias(TsTypeAliasDecl),
     TsInterface(TsInterfaceDecl),
+    TsValueEnum(TsValueEnumDecl),
     TsEnum(TsEnumDecl),
 }
 
@@ -294,6 +315,7 @@ impl Decl {
             Decl::TsTypeAlias(decl) => &decl.id,
             Decl::TsInterface(decl) => &decl.id,
             Decl::TsEnum(decl) => &decl.id,
+            Decl::TsValueEnum(decl) => &decl.id,
         }
     }
 }
@@ -304,6 +326,7 @@ impl Display for Decl {
             Decl::TsTypeAlias(decl) => decl.fmt(f),
             Decl::TsInterface(decl) => decl.fmt(f),
             Decl::TsEnum(decl) => decl.fmt(f),
+            Decl::TsValueEnum(decl) => decl.fmt(f),
         }
     }
 }

@@ -4,15 +4,17 @@ use serde_derive_internals::{ast::Style, attr::TagType};
 
 use crate::attrs::TypeGenerationConfig;
 
-use super::{NullType, TsKeywordTypeKind, TsTypeElement, TsTypeLit};
+use super::{NullType, TsKeywordTypeKind, TsTypeElement, TsTypeElementKey, TsTypeLit};
 
-/// A Typescript type
+/// A TypeScript type
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TsType {
     /// A keyword type like `number`, `string`, etc.
     Keyword(TsKeywordTypeKind),
     /// A literal type like `"foo"`, `42`, etc.
     Lit(String),
+    /// A computed type like `foo_bar`, etc.
+    Computed(String),
     /// An array type like `number[]`, `(number | string)[]`, etc.
     Array(Box<Self>),
     /// A tuple type like `[number, string]`, `[number, string, boolean]`, etc.
@@ -224,7 +226,7 @@ impl TsType {
     pub fn with_tag_type(
         self,
         config: &TypeGenerationConfig,
-        name: String,
+        key: TsTypeElementKey,
         style: Style,
         tag_type: &TagType,
     ) -> Self {
@@ -233,10 +235,13 @@ impl TsType {
         match tag_type {
             TagType::External => {
                 if matches!(style, Style::Unit) {
-                    TsType::Lit(name)
+                    match key {
+                        TsTypeElementKey::Lit(s) => TsType::Lit(s),
+                        TsTypeElementKey::Var(v) => TsType::Computed(v),
+                    }
                 } else {
                     TsTypeElement {
-                        key: name,
+                        key,
                         type_ann,
                         optional: false,
                         comments: vec![],
@@ -247,8 +252,8 @@ impl TsType {
             TagType::Internal { tag } => {
                 if type_ann == TsType::nullish(config) {
                     let tag_field: TsType = TsTypeElement {
-                        key: tag.clone(),
-                        type_ann: TsType::Lit(name),
+                        key: tag.clone().into(),
+                        type_ann: key.into(),
                         optional: false,
                         comments: vec![],
                     }
@@ -257,8 +262,8 @@ impl TsType {
                     tag_field
                 } else {
                     let tag_field: TsType = TsTypeElement {
-                        key: tag.clone(),
-                        type_ann: TsType::Lit(name),
+                        key: tag.clone().into(),
+                        type_ann: key.into(),
                         optional: false,
                         comments: vec![],
                     }
@@ -269,8 +274,8 @@ impl TsType {
             }
             TagType::Adjacent { tag, content } => {
                 let tag_field = TsTypeElement {
-                    key: tag.clone(),
-                    type_ann: TsType::Lit(name),
+                    key: tag.clone().into(),
+                    type_ann: key.into(),
                     optional: false,
                     comments: vec![],
                 };
@@ -279,7 +284,7 @@ impl TsType {
                     tag_field.into()
                 } else {
                     let content_field = TsTypeElement {
-                        key: content.clone(),
+                        key: content.clone().into(),
                         type_ann,
                         optional: false,
                         comments: vec![],
@@ -319,7 +324,9 @@ impl TsType {
             TsType::Intersection(tys) | TsType::Union(tys) => {
                 tys.iter().for_each(|t| t.visit(f));
             }
-            TsType::Keyword(_) | TsType::Lit(_) | TsType::Override { .. } => (),
+            TsType::Keyword(_) | TsType::Lit(_) | TsType::Computed(_) | TsType::Override { .. } => {
+                ()
+            }
         }
     }
 

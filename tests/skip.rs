@@ -91,11 +91,18 @@ fn test_skip() {
             /**
              * Comment for Struct
              */
-            export type Struct = { Struct: { field_b: number; field_c: string } };
+            export type Struct = {
+                Struct: {
+                    field_b: number;
+                    field_c: string;
+                };
+            };
             /**
              * Comment for Tuple
              */
-            export type Tuple = { Tuple: [number, string] };
+            export type Tuple = {
+                Tuple: [number, string];
+            };
             /**
              * Comment for NewType
              */
@@ -105,7 +112,7 @@ fn test_skip() {
         /**
          * Comment for Enum
          */
-        export type Enum = "D" | { Struct: { field_b: number; field_c: string } } | { Tuple: [number, string] } | "NewType";"#
+        export type Enum = Enum.D | Enum.Struct | Enum.Tuple | Enum.NewType;"#
     };
 
     assert_eq!(Enum::DECL, expected);
@@ -135,21 +142,28 @@ fn test_skip() {
             /**
              * Comment for Unit
              */
-            export type Unit = { type: "Unit" };
+            export type Unit = {
+                type: "Unit";
+            };
             /**
              * Comment for Struct
              */
-            export type Struct = { type: "Struct"; field_b: number };
+            export type Struct = {
+                type: "Struct";
+                field_b: number;
+            };
             /**
              * Comment for NewType
              */
-            export type NewType = { type: "NewType" };
+            export type NewType = {
+                type: "NewType";
+            };
         }
 
         /**
          * Comment for InternalTagEnum
          */
-        export type InternalTagEnum = { type: "Unit" } | { type: "Struct"; field_b: number } | { type: "NewType" };"#
+        export type InternalTagEnum = InternalTagEnum.Unit | InternalTagEnum.Struct | InternalTagEnum.NewType;"#
     };
 
     assert_eq!(InternalTagEnum::DECL, expected);

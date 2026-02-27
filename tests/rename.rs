@@ -57,7 +57,13 @@ fn test_rename() {
         /**
          * Comment for RenamedEnum
          */
-        export type RenamedEnum = { X: boolean } | { Y: number } | { Z: string };"#
+        export type RenamedEnum = {
+            X: boolean;
+        } | {
+            Y: number;
+        } | {
+            Z: string;
+        };"#
 
     };
 
@@ -113,25 +119,45 @@ fn test_rename_all() {
             /**
              * Comment for snake_case
              */
-            export type snake_case = { snake_case: { foo: boolean; foo_bar: boolean } };
+            export type snake_case = {
+                snake_case: {
+                    foo: boolean;
+                    foo_bar: boolean;
+                };
+            };
             /**
              * Comment for camel_case
              */
-            export type camel_case = { camel_case: { foo: boolean; fooBar: boolean } };
+            export type camel_case = {
+                camel_case: {
+                    foo: boolean;
+                    fooBar: boolean;
+                };
+            };
             /**
              * Comment for kebab_case
              */
-            export type kebab_case = { kebab_case: { foo: boolean; "foo-bar": boolean } };
+            export type kebab_case = {
+                kebab_case: {
+                    foo: boolean;
+                    "foo-bar": boolean;
+                };
+            };
             /**
              * Comment for screaming_snake_case
              */
-            export type screaming_snake_case = { screaming_snake_case: { FOO: boolean; FOO_BAR: boolean } };
+            export type screaming_snake_case = {
+                screaming_snake_case: {
+                    FOO: boolean;
+                    FOO_BAR: boolean;
+                };
+            };
         }
 
         /**
          * Comment for Enum
          */
-        export type Enum = { snake_case: { foo: boolean; foo_bar: boolean } } | { camel_case: { foo: boolean; fooBar: boolean } } | { kebab_case: { foo: boolean; "foo-bar": boolean } } | { screaming_snake_case: { FOO: boolean; FOO_BAR: boolean } };"#
+        export type Enum = Enum.snake_case | Enum.camel_case | Enum.kebab_case | Enum.screaming_snake_case;"#
     };
 
     assert_eq!(Enum::DECL, expected);
@@ -225,8 +251,17 @@ fn test_quote_non_identifiers() {
     }
 
     let expected = indoc! {r#"
-        export type NonIdentifierRenameEnum = { "hello-world": boolean } | { "hel#&*world": number } | { "hello world": string } | { "": number } | { should_not_quote: string };"#
-
+        export type NonIdentifierRenameEnum = {
+            "hello-world": boolean;
+        } | {
+            "hel#&*world": number;
+        } | {
+            "hello world": string;
+        } | {
+            "": number;
+        } | {
+            should_not_quote: string;
+        };"#
     };
 
     assert_eq!(NonIdentifierRenameEnum::DECL, expected);

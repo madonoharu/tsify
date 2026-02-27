@@ -1,7 +1,9 @@
-use proc_macro2::TokenStream;
-use quote::quote;
+use proc_macro2::{Span, TokenStream};
+use quote::{format_ident, quote};
 use syn::parse_quote;
 
+use crate::decl::TsValueEnumDecl;
+use crate::typescript::ToStringWithIndent;
 use crate::{container::Container, decl::Decl};
 
 pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
@@ -51,6 +53,15 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
     let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
 
+    let inline_enum = match &decl {
+        Decl::TsValueEnum(value) => Some(expand_inline_enum(value)),
+        Decl::TsEnum(value) => value
+            .discriminants
+            .as_ref()
+            .map(|value| expand_inline_enum(&value)),
+        _ => None,
+    };
+
     let typescript_type = decl.id();
 
     let missing_as_null = attrs.ty_config.missing_as_null;
@@ -89,6 +100,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             #wasm_describe
             #into_wasm_abi
             #from_wasm_abi
+            #inline_enum
         };
     }
 }
@@ -278,6 +290,36 @@ fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
                     })
                     .collect()
             }
+        }
+    }
+}
+
+fn expand_inline_enum(enum_value: &TsValueEnumDecl) -> TokenStream {
+    let ident_string = &enum_value.id;
+
+    let members = enum_value
+        .members
+        .iter()
+        .map(|member| {
+            let prefix = ident_string.to_string_with_indent(4);
+            format!("{}[\"{}\"]{};", prefix, member.id, member.value)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let js = format!(
+        "export var {0};\n(function ({0}) {{\n{1}\n}})({0} || ({0} = {{}}));",
+        ident_string, members
+    );
+    let js_lit = syn::LitStr::new(js.as_str(), Span::call_site());
+    let ident = syn::Ident::new(ident_string, Span::call_site());
+    let fn_name = format_ident!("__inline_enum_tsify_helper_{}", ident);
+
+    quote! {
+        #[wasm_bindgen::prelude::wasm_bindgen(inline_js = #js_lit)]
+        extern "C" {
+            #[wasm_bindgen(reexport, js_name = #ident, skip_typescript)]
+            fn #fn_name();
         }
     }
 }

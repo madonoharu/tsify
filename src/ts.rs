@@ -192,10 +192,10 @@ where
     type Anchor = ManuallyDrop<Ts<T>>;
     type Abi = <JsValue as RefFromWasmAbi>::Abi; // i.e. u32
     unsafe fn ref_from_abi(js: Self::Abi) -> Self::Anchor {
-        let jstype_anchor = JsValue::ref_from_abi(js);
-        let anchor_inner = ManuallyDrop::into_inner(jstype_anchor);
-        let jstype: <T as Tsify>::JsType = anchor_inner.unchecked_into();
-        ManuallyDrop::new(Ts::new(jstype))
+        let js_type_anchor = JsValue::ref_from_abi(js);
+        let anchor_inner = ManuallyDrop::into_inner(js_type_anchor);
+        let js_type: <T as Tsify>::JsType = anchor_inner.unchecked_into();
+        ManuallyDrop::new(Ts::new(js_type))
     }
 }
 
@@ -207,9 +207,9 @@ where
     type Abi = <JsValue as LongRefFromWasmAbi>::Abi;
     type Anchor = Ts<T>;
     unsafe fn long_ref_from_abi(js: Self::Abi) -> Self::Anchor {
-        let jsvalue = <JsValue as LongRefFromWasmAbi>::long_ref_from_abi(js);
-        let jstype: <T as Tsify>::JsType = jsvalue.unchecked_into();
-        Self::new(jstype)
+        let js_value = <JsValue as LongRefFromWasmAbi>::long_ref_from_abi(js);
+        let js_type: <T as Tsify>::JsType = js_value.unchecked_into();
+        Self::new(js_type)
     }
 }
 

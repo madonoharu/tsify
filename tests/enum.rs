@@ -105,7 +105,7 @@ fn test_externally_tagged_enum_with_namespace() {
         /**
          * Comment for External
          */
-        export type External = { Struct: { x: string; y: number } } | { EmptyStruct: {} } | { Tuple: [number, string] } | { EmptyTuple: [] } | { Newtype: Foo } | "Unit";"#
+        export type External = External.Struct | External.EmptyStruct | External.Tuple | External.EmptyTuple | External.Newtype | External.Unit;"#
     };
 
     assert_eq!(External::DECL, expected);
@@ -181,7 +181,7 @@ fn test_internally_tagged_enum_with_namespace() {
         /**
          * Comment for Internal
          */
-        export type Internal = { t: "Struct"; x: string; y: number } | { t: "EmptyStruct" } | ({ t: "Newtype" } & Foo) | { t: "Unit" };"#
+        export type Internal = Internal.Struct | Internal.EmptyStruct | Internal.Newtype | Internal.Unit;"#
     };
 
     assert_eq!(Internal::DECL, expected);
@@ -273,7 +273,7 @@ fn test_adjacently_tagged_enum_with_namespace() {
         /**
          * Comment for Adjacent
          */
-        export type Adjacent = { t: "Struct"; c: { x: string; y: number } } | { t: "EmptyStruct"; c: {} } | { t: "Tuple"; c: [number, string] } | { t: "EmptyTuple"; c: [] } | { t: "Newtype"; c: Foo } | { t: "Unit" };"#
+        export type Adjacent = Adjacent.Struct | Adjacent.EmptyStruct | Adjacent.Tuple | Adjacent.EmptyTuple | Adjacent.Newtype | Adjacent.Unit;"#
     };
 
     assert_eq!(Adjacent::DECL, expected);
@@ -375,7 +375,7 @@ fn test_untagged_enum_with_namespace() {
             /**
              * Comment for Untagged
              */
-            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | undefined;"#
+            export type Untagged = Untagged.Struct | Untagged.EmptyStruct | Untagged.Tuple | Untagged.EmptyTuple | Untagged.Newtype | Untagged.Unit;"#
         }
     } else {
         indoc! {r#"
@@ -413,7 +413,7 @@ fn test_untagged_enum_with_namespace() {
             /**
              * Comment for Untagged
              */
-            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | null;"#
+            export type Untagged = Untagged.Struct | Untagged.EmptyStruct | Untagged.Tuple | Untagged.EmptyTuple | Untagged.Newtype | Untagged.Unit;"#
         }
     };
 
@@ -497,7 +497,7 @@ fn test_module_reimport_enum() {
         /**
          * Comment for Internal
          */
-        export type Internal = { Struct: { x: string; y: number } } | { EmptyStruct: {} } | { Tuple: [number, string] } | { EmptyTuple: [] } | { Newtype: Foo } | { Newtype2: Foo } | "Unit";"#
+        export type Internal = Internal.Struct | Internal.EmptyStruct | Internal.Tuple | Internal.EmptyTuple | Internal.Newtype | Internal.Newtype2 | Internal.Unit;"#
     };
 
     assert_eq!(Internal::DECL, expected);
@@ -552,7 +552,7 @@ fn test_module_template_enum() {
         /**
          * Comment for Internal
          */
-        export type Internal<T> = { Newtype: Test<T> } | { NewtypeF: Test<Foo> } | { NewtypeL: Test<Foo> } | "Unit";"#
+        export type Internal<T> = Internal.Newtype<T> | Internal.NewtypeF | Internal.NewtypeL | Internal.Unit;"#
     };
 
     assert_eq!(expected, Internal::<Foo>::DECL);
@@ -600,7 +600,7 @@ fn test_module_template_enum_inner() {
         /**
          * Comment for Internal
          */
-        export type Internal = { Newtype: Test<Foo> } | "Unit";"#
+        export type Internal = Internal.Newtype | Internal.Unit;"#
     };
 
     assert_eq!(Internal::DECL, expected);

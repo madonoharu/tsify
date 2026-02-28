@@ -183,16 +183,6 @@ where
     }
 }
 
-pub struct TsSelfOwner<T: Tsify>(Ts<T>);
-
-impl<T: Tsify> ::core::ops::Deref for TsSelfOwner<T> {
-    type Target = Ts<T>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 impl<T> RefFromWasmAbi for Ts<T>
 where
     T: Tsify,

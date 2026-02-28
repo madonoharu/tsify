@@ -1,4 +1,6 @@
+use proc_macro2::Span;
 use serde_derive_internals::ast::Field;
+use syn::spanned::Spanned;
 
 /// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
 /// E.g., through `#[tsify(into_wasm_abi)]`.
@@ -10,10 +12,16 @@ pub struct TsifyContainerAttrs {
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
     pub from_wasm_abi: bool,
+
     /// Whether the type should be wrapped in a Typescript namespace.
     pub namespace: bool,
     /// Information about how the type should be serialized.
     pub ty_config: TypeGenerationConfig,
+
+    /// Span of the `into_wasm_abi` attribute, if present.
+    pub into_wasm_abi_span: Option<Span>,
+    /// Span of the `from_wasm_abi` attribute, if present.
+    pub from_wasm_abi_span: Option<Span>,
 }
 
 /// Configuration affecting how Typescript types are generated.
@@ -47,6 +55,8 @@ impl TsifyContainerAttrs {
             type_params: None,
             into_wasm_abi: false,
             from_wasm_abi: false,
+            from_wasm_abi_span: None,
+            into_wasm_abi_span: None,
             namespace: false,
             ty_config: TypeGenerationConfig::default(),
         };
@@ -80,6 +90,7 @@ impl TsifyContainerAttrs {
                         return Err(meta.error("duplicate attribute"));
                     }
                     attrs.into_wasm_abi = true;
+                    attrs.into_wasm_abi_span = Some(meta.path.span());
                     return Ok(());
                 }
 
@@ -88,6 +99,7 @@ impl TsifyContainerAttrs {
                         return Err(meta.error("duplicate attribute"));
                     }
                     attrs.from_wasm_abi = true;
+                    attrs.from_wasm_abi_span = Some(meta.path.span());
                     return Ok(());
                 }
 

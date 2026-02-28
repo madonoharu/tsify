@@ -144,6 +144,8 @@ fn test_generic_enum_with_namespace() {
 
 #[test]
 fn test_generics_with_default_params() {
+    #![allow(deprecated)]
+
     #[derive(Serialize, Tsify)]
     #[tsify(into_wasm_abi)]
     struct SerNamedTuple<A = i32, B = String, C = ()>(A, B, C);

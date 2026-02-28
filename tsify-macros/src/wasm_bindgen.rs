@@ -64,8 +64,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
     let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
     let maybe_deprecated = attrs.into_wasm_abi_span
-        .clone()
-        .or(attrs.from_wasm_abi_span.clone())
+        .or(attrs.from_wasm_abi_span)
         .map(|span| {
             mark_deprecated(span, "into_wasm_abi/from_wasm_abi are deprecated as they cause memory leaks (https://github.com/madonoharu/tsify/issues/65). Consider using `tsify::Ts` instead.")
         });

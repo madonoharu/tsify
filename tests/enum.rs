@@ -32,7 +32,20 @@ fn test_externally_tagged_enum() {
         /**
          * Comment for External
          */
-        export type External = { Struct: { x: string; y: number } } | { EmptyStruct: {} } | { Tuple: [number, string] } | { EmptyTuple: [] } | { Newtype: Foo } | "Unit";"#
+        export type External = {
+            Struct: {
+                x: string;
+                y: number;
+            };
+        } | {
+            EmptyStruct: {};
+        } | {
+            Tuple: [number, string];
+        } | {
+            EmptyTuple: [];
+        } | {
+            Newtype: Foo;
+        } | "Unit";"#
     };
 
     assert_eq!(External::DECL, expected);
@@ -79,23 +92,36 @@ fn test_externally_tagged_enum_with_namespace() {
             /**
              * Comment for Struct
              */
-            export type Struct = { Struct: { x: string; y: number } };
+            export type Struct = {
+                Struct: {
+                    x: string;
+                    y: number;
+                };
+            };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { EmptyStruct: {} };
+            export type EmptyStruct = {
+                EmptyStruct: {};
+            };
             /**
              * Comment for Tuple
              */
-            export type Tuple = { Tuple: [number, string] };
+            export type Tuple = {
+                Tuple: [number, string];
+            };
             /**
              * Comment for EmptyTuple
              */
-            export type EmptyTuple = { EmptyTuple: [] };
+            export type EmptyTuple = {
+                EmptyTuple: [];
+            };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { Newtype: __ExternalFoo };
+            export type Newtype = {
+                Newtype: __ExternalFoo;
+            };
             /**
              * Comment for Unit
              */
@@ -131,7 +157,17 @@ fn test_internally_tagged_enum() {
         /**
          * Comment for Internal
          */
-        export type Internal = { t: "Struct"; x: string; y: number } | { t: "EmptyStruct" } | ({ t: "Newtype" } & Foo) | { t: "Unit" };"#
+        export type Internal = {
+            t: "Struct";
+            x: string;
+            y: number;
+        } | {
+            t: "EmptyStruct";
+        } | ({
+            t: "Newtype";
+        } & Foo) | {
+            t: "Unit";
+        };"#
     };
 
     assert_eq!(Internal::DECL, expected);
@@ -163,19 +199,29 @@ fn test_internally_tagged_enum_with_namespace() {
             /**
              * Comment for Struct
              */
-            export type Struct = { t: "Struct"; x: string; y: number };
+            export type Struct = {
+                t: "Struct";
+                x: string;
+                y: number;
+            };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { t: "EmptyStruct" };
+            export type EmptyStruct = {
+                t: "EmptyStruct";
+            };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { t: "Newtype" } & __InternalFoo;
+            export type Newtype = {
+                t: "Newtype";
+            } & __InternalFoo;
             /**
              * Comment for Unit
              */
-            export type Unit = { t: "Unit" };
+            export type Unit = {
+                t: "Unit";
+            };
         }
 
         /**
@@ -211,7 +257,27 @@ fn test_adjacently_tagged_enum() {
         /**
          * Comment for Adjacent
          */
-        export type Adjacent = { t: "Struct"; c: { x: string; y: number } } | { t: "EmptyStruct"; c: {} } | { t: "Tuple"; c: [number, string] } | { t: "EmptyTuple"; c: [] } | { t: "Newtype"; c: Foo } | { t: "Unit" };"#
+        export type Adjacent = {
+            t: "Struct";
+            c: {
+                x: string;
+                y: number;
+            };
+        } | {
+            t: "EmptyStruct";
+            c: {};
+        } | {
+            t: "Tuple";
+            c: [number, string];
+        } | {
+            t: "EmptyTuple";
+            c: [];
+        } | {
+            t: "Newtype";
+            c: Foo;
+        } | {
+            t: "Unit";
+        };"#
     };
 
     assert_eq!(Adjacent::DECL, expected);
@@ -247,27 +313,47 @@ fn test_adjacently_tagged_enum_with_namespace() {
             /**
              * Comment for Struct
              */
-            export type Struct = { t: "Struct"; c: { x: string; y: number } };
+            export type Struct = {
+                t: "Struct";
+                c: {
+                    x: string;
+                    y: number;
+                };
+            };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { t: "EmptyStruct"; c: {} };
+            export type EmptyStruct = {
+                t: "EmptyStruct";
+                c: {};
+            };
             /**
              * Comment for Tuple
              */
-            export type Tuple = { t: "Tuple"; c: [number, string] };
+            export type Tuple = {
+                t: "Tuple";
+                c: [number, string];
+            };
             /**
              * Comment for EmptyTuple
              */
-            export type EmptyTuple = { t: "EmptyTuple"; c: [] };
+            export type EmptyTuple = {
+                t: "EmptyTuple";
+                c: [];
+            };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { t: "Newtype"; c: __AdjacentFoo };
+            export type Newtype = {
+                t: "Newtype";
+                c: __AdjacentFoo;
+            };
             /**
              * Comment for Unit
              */
-            export type Unit = { t: "Unit" };
+            export type Unit = {
+                t: "Unit";
+            };
         }
 
         /**
@@ -304,14 +390,20 @@ fn test_untagged_enum() {
             /**
              * Comment for Untagged
              */
-            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | undefined;"#
+            export type Untagged = {
+                x: string;
+                y: number;
+            } | {} | [number, string] | [] | Foo | undefined;"#
         }
     } else {
         indoc! {r#"
             /**
              * Comment for Untagged
              */
-            export type Untagged = { x: string; y: number } | {} | [number, string] | [] | Foo | null;"#
+            export type Untagged = {
+                x: string;
+                y: number;
+            } | {} | [number, string] | [] | Foo | null;"#
         }
     };
 
@@ -349,7 +441,10 @@ fn test_untagged_enum_with_namespace() {
                 /**
                  * Comment for Struct
                  */
-                export type Struct = { x: string; y: number };
+                export type Struct = {
+                    x: string;
+                    y: number;
+                };
                 /**
                  * Comment for EmptyStruct
                  */
@@ -387,7 +482,10 @@ fn test_untagged_enum_with_namespace() {
                 /**
                  * Comment for Struct
                  */
-                export type Struct = { x: string; y: number };
+                export type Struct = {
+                    x: string;
+                    y: number;
+                };
                 /**
                  * Comment for EmptyStruct
                  */
@@ -430,7 +528,17 @@ fn test_renamed_enum() {
     }
 
     let expected = indoc! {r#"
-        export type Renamed = { First: { fooBar: string; bazQuoox: number } } | { Second: { asdfAsdf: string; qwerQwer: number } };"#
+        export type Renamed = {
+            First: {
+                fooBar: string;
+                bazQuoox: number;
+            };
+        } | {
+            Second: {
+                asdfAsdf: string;
+                qwerQwer: number;
+            };
+        };"#
     };
 
     assert_eq!(Renamed::DECL, expected);
@@ -467,27 +575,42 @@ fn test_module_reimport_enum() {
             /**
              * Comment for Struct
              */
-            export type Struct = { Struct: { x: string; y: number } };
+            export type Struct = {
+                Struct: {
+                    x: string;
+                    y: number;
+                };
+            };
             /**
              * Comment for EmptyStruct
              */
-            export type EmptyStruct = { EmptyStruct: {} };
+            export type EmptyStruct = {
+                EmptyStruct: {};
+            };
             /**
              * Comment for Tuple
              */
-            export type Tuple = { Tuple: [number, string] };
+            export type Tuple = {
+                Tuple: [number, string];
+            };
             /**
              * Comment for EmptyTuple
              */
-            export type EmptyTuple = { EmptyTuple: [] };
+            export type EmptyTuple = {
+                EmptyTuple: [];
+            };
             /**
              * Comment for Newtype
              */
-            export type Newtype = { Newtype: __InternalFoo };
+            export type Newtype = {
+                Newtype: __InternalFoo;
+            };
             /**
              * Comment for Newtype2
              */
-            export type Newtype2 = { Newtype2: __InternalFoo };
+            export type Newtype2 = {
+                Newtype2: __InternalFoo;
+            };
             /**
              * Comment for Unit
              */
@@ -534,15 +657,21 @@ fn test_module_template_enum() {
             /**
              * Comment for Newtype
              */
-            export type Newtype<T> = { Newtype: __InternalTest<T> };
+            export type Newtype<T> = {
+                Newtype: __InternalTest<T>;
+            };
             /**
              * Comment for NewtypeF
              */
-            export type NewtypeF = { NewtypeF: __InternalTest<__InternalFoo> };
+            export type NewtypeF = {
+                NewtypeF: __InternalTest<__InternalFoo>;
+            };
             /**
              * Comment for NewtypeL
              */
-            export type NewtypeL = { NewtypeL: __InternalTest<__InternalFoo> };
+            export type NewtypeL = {
+                NewtypeL: __InternalTest<__InternalFoo>;
+            };
             /**
              * Comment for Unit
              */
@@ -590,7 +719,9 @@ fn test_module_template_enum_inner() {
             /**
              * Comment for Newtype
              */
-            export type Newtype = { Newtype: __InternalTest<__InternalFoo> };
+            export type Newtype = {
+                Newtype: __InternalTest<__InternalFoo>;
+            };
             /**
              * Comment for Unit
              */

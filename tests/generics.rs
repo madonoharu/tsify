@@ -88,7 +88,16 @@ fn test_generic_enum() {
         /**
          * Comment for GenericEnum
          */
-        export type GenericEnum<T, U> = "Unit" | { NewType: T } | { Seq: [T, U] } | { Map: { x: T; y: U } };"#
+        export type GenericEnum<T, U> = "Unit" | {
+            NewType: T;
+        } | {
+            Seq: [T, U];
+        } | {
+            Map: {
+                x: T;
+                y: U;
+            };
+        };"#
     };
 
     assert_eq!(GenericEnum::<(), ()>::DECL, expected);
@@ -122,15 +131,24 @@ fn test_generic_enum_with_namespace() {
             /**
              * Comment for NewType
              */
-            export type NewType<T> = { NewType: T };
+            export type NewType<T> = {
+                NewType: T;
+            };
             /**
              * Comment for Seq
              */
-            export type Seq<T, U> = { Seq: [T, U] };
+            export type Seq<T, U> = {
+                Seq: [T, U];
+            };
             /**
              * Comment for Map
              */
-            export type Map<T, U> = { Map: { x: T; y: U } };
+            export type Map<T, U> = {
+                Map: {
+                    x: T;
+                    y: U;
+                };
+            };
         }
 
         /**
@@ -212,7 +230,17 @@ fn test_generics_with_default_params() {
     }
 
     let expected = indoc! {r#"
-        export type SerEnum<A, B, C> = "Unit" | { NewType: A } | { Seq: [number, B] } | { Map: { a: number; b: B; c: C } };"#
+        export type SerEnum<A, B, C> = "Unit" | {
+            NewType: A;
+        } | {
+            Seq: [number, B];
+        } | {
+            Map: {
+                a: number;
+                b: B;
+                c: C;
+            };
+        };"#
     };
 
     assert_eq!(SerEnum::<(), (), ()>::DECL, expected);
@@ -227,7 +255,17 @@ fn test_generics_with_default_params() {
     }
 
     let expected = indoc! {r#"
-        export type DeEnum<A, B, C> = "Unit" | { NewType: A } | { Seq: [number, B] } | { Map: { a: number; b: B; c: C } };"#
+        export type DeEnum<A, B, C> = "Unit" | {
+            NewType: A;
+        } | {
+            Seq: [number, B];
+        } | {
+            Map: {
+                a: number;
+                b: B;
+                c: C;
+            };
+        };"#
     };
 
     assert_eq!(DeEnum::<(), (), ()>::DECL, expected);

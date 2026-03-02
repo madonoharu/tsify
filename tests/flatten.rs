@@ -68,7 +68,9 @@ fn test_flatten_option() {
             /**
              * Comment for B
              */
-            export type B = { c: number } & (A | {});"
+            export type B = {
+                c: number;
+            } & (A | {});"
         }
     );
 }

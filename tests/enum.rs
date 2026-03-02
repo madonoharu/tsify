@@ -131,7 +131,6 @@ fn test_externally_tagged_enum_with_namespace() {
         /**
          * Comment for External
          */
-
         export type External = External.Struct | External.EmptyStruct | External.Tuple | External.EmptyTuple | External.Newtype | External.Unit;"#
     };
 
@@ -228,7 +227,6 @@ fn test_internally_tagged_enum_with_namespace() {
         /**
          * Comment for Internal
          */
-
         export type Internal = Internal.Struct | Internal.EmptyStruct | Internal.Newtype | Internal.Unit;"#
     };
 
@@ -472,7 +470,6 @@ fn test_untagged_enum_with_namespace() {
             /**
              * Comment for Untagged
              */
-
             export type Untagged = Untagged.Struct | Untagged.EmptyStruct | Untagged.Tuple | Untagged.EmptyTuple | Untagged.Newtype | Untagged.Unit;"#
         }
     } else {

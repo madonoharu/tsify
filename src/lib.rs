@@ -1,9 +1,15 @@
+#![doc = include_str!("../README.md")]
 #![allow(clippy::wrong_self_convention)]
 
 #[cfg(not(any(feature = "json", feature = "js")))]
 compile_error!(
     "Either the \"json\" or \"js\" feature must be enabled for tsify to function properly"
 );
+
+mod ts;
+pub use ts::Ts;
+mod error;
+pub use error::Error;
 
 #[cfg(all(feature = "json", not(feature = "js")))]
 pub use gloo_utils::format::JsValueSerdeExt;
@@ -71,5 +77,17 @@ pub trait Tsify {
         Self: serde::de::DeserializeOwned,
     {
         serde_wasm_bindgen::from_value(js.into())
+    }
+
+    /// Calls `Ts::from_rust` on self, returning a `Result<Ts<Self>, crate::Error>`.
+    ///
+    /// This can (and should) be used with the [`-> Result<_, JsError>`][wasm_bindgen::JsError]
+    /// pattern from wasm-bindgen to automatically throw any Err value returned.
+    fn into_ts(&self) -> Result<Ts<Self>, crate::Error>
+    where
+        Self: Sized,
+        Self: serde::Serialize,
+    {
+        Ts::from_rust(self)
     }
 }

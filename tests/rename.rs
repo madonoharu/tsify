@@ -157,27 +157,7 @@ fn test_rename_all() {
         /**
          * Comment for Enum
          */
-        export type Enum = {
-            snake_case: {
-                foo: boolean;
-                foo_bar: boolean;
-            };
-        } | {
-            camel_case: {
-                foo: boolean;
-                fooBar: boolean;
-            };
-        } | {
-            kebab_case: {
-                foo: boolean;
-                "foo-bar": boolean;
-            };
-        } | {
-            screaming_snake_case: {
-                FOO: boolean;
-                FOO_BAR: boolean;
-            };
-        };"#
+        export type Enum = Enum.snake_case | Enum.camel_case | Enum.kebab_case | Enum.screaming_snake_case;"#
     };
 
     assert_eq!(Enum::DECL, expected);

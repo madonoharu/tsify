@@ -1,10 +1,22 @@
 use proc_macro2::{Span, TokenStream};
+use quote::quote_spanned;
 use quote::{format_ident, quote};
 use syn::parse_quote;
 
 use crate::decl::TsValueEnumDecl;
 use crate::typescript::ToStringWithIndent;
 use crate::{container::Container, decl::Decl};
+
+fn mark_deprecated(span: Span, note: &str) -> TokenStream {
+    quote_spanned!(span =>
+        #[allow(non_upper_case_globals)]
+        const _: () = {
+            #[deprecated(note = #note)]
+            const _x: () = ();
+            _x
+        };
+    )
+}
 
 pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let attrs = &cont.attrs;
@@ -52,6 +64,11 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
 
     let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
     let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
+    let maybe_deprecated = attrs.into_wasm_abi_span
+        .or(attrs.from_wasm_abi_span)
+        .map(|span| {
+            mark_deprecated(span, "into_wasm_abi/from_wasm_abi are deprecated as they cause memory leaks (https://github.com/madonoharu/tsify/issues/65). Consider using `tsify::Ts` instead.")
+        });
 
     let inline_enum = match &decl {
         Decl::TsValueEnum(value) => Some(expand_inline_enum(value)),
@@ -81,6 +98,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
 
             #[wasm_bindgen]
             extern "C" {
+                #[derive(Clone)]
                 #[wasm_bindgen(typescript_type = #typescript_type)]
                 pub type JsType;
             }
@@ -101,6 +119,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             #into_wasm_abi
             #from_wasm_abi
             #inline_enum
+            #maybe_deprecated
         };
     }
 }

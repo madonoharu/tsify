@@ -40,7 +40,7 @@ jobs:
               with:
                   # specify exact version to work around
                   # https://github.com/jetli/wasm-pack-action/issues/23
-                  version: v0.13.1
+                  version: v0.14.0
 
             - name: Add cargo-expand
               run: cargo install cargo-expand

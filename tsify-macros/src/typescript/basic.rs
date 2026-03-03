@@ -2,9 +2,9 @@ use std::fmt::Display;
 
 use crate::{attrs::TypeGenerationConfig, comments::write_doc_comments};
 
-use super::TsType;
+use super::{ToStringWithIndent, TsType};
 
-/// Built-in Typescript types.
+/// Built-in TypeScript types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TsKeywordTypeKind {
     /// The `number` type.
@@ -26,44 +26,79 @@ pub enum TsKeywordTypeKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TsTypeElementKey {
+    /// Types members like `x: number` or "x_x": string`
+    Lit(String),
+    /// Types members like `[MyConstants.x]: number` or `"[x]": string`
+    Var(String),
+}
+
+impl From<TsTypeElementKey> for TsType {
+    fn from(value: TsTypeElementKey) -> Self {
+        match value {
+            TsTypeElementKey::Lit(s) => TsType::Lit(s),
+            TsTypeElementKey::Var(v) => TsType::Computed(v),
+        }
+    }
+}
+
+impl From<String> for TsTypeElementKey {
+    fn from(value: String) -> Self {
+        TsTypeElementKey::Lit(value)
+    }
+}
+
+fn is_js_ident(string: &str) -> bool {
+    !string.is_empty()
+        && !string.starts_with(|c: char| c.is_ascii_digit())
+        && !string.contains(|c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '$')
+}
+
+impl Display for TsTypeElementKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TsTypeElementKey::Lit(key) => {
+                if is_js_ident(key) {
+                    write!(f, "{key}")
+                } else {
+                    write!(f, "\"{key}\"")
+                }
+            }
+            TsTypeElementKey::Var(key) => write!(f, "[{}]", key),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TsTypeElement {
-    pub key: String,
+    pub key: TsTypeElementKey,
     pub type_ann: TsType,
     pub optional: bool,
     pub comments: Vec<String>,
 }
 
-impl TsTypeElement {
-    pub fn to_string_with_indent(&self, indent: usize) -> String {
-        let out = self.to_string();
-        let indent_str = " ".repeat(indent);
-        out.split('\n')
-            .map(|line| format!("{}{}", indent_str, line))
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
-}
-
 impl Display for TsTypeElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let key = &self.key;
+        let optional_ann = if self.optional { "?" } else { "" };
         let type_ann = &self.type_ann;
 
-        let optional_ann = if self.optional { "?" } else { "" };
-
         write_doc_comments(f, &self.comments)?;
-
-        if is_js_ident(key) {
-            write!(f, "{key}{optional_ann}: {type_ann}")
-        } else {
-            write!(f, "\"{key}\"{optional_ann}: {type_ann}")
-        }
+        write!(f, "{}{}: {}", key, optional_ann, type_ann)
     }
 }
 
 impl From<TsTypeElement> for TsTypeLit {
     fn from(m: TsTypeElement) -> Self {
         TsTypeLit { members: vec![m] }
+    }
+}
+
+impl From<&[TsTypeElement]> for TsTypeLit {
+    fn from(m: &[TsTypeElement]) -> Self {
+        TsTypeLit {
+            members: m.to_vec(),
+        }
     }
 }
 
@@ -79,8 +114,8 @@ pub struct TsTypeLit {
 }
 
 impl TsTypeLit {
-    pub fn get_mut(&mut self, key: &String) -> Option<&mut TsTypeElement> {
-        self.members.iter_mut().find(|member| &member.key == key)
+    pub fn get_mut(&mut self, key: &TsTypeElementKey) -> Option<&mut TsTypeElement> {
+        self.members.iter_mut().find(|member| member.key == *key)
     }
 
     pub fn and(self, other: Self) -> Self {
@@ -111,17 +146,54 @@ impl From<TsTypeLit> for TsType {
 
 impl Display for TsTypeLit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let members = self
-            .members
-            .iter()
-            .map(|elem| elem.to_string())
-            .collect::<Vec<_>>()
-            .join("; ");
-
-        if members.is_empty() {
+        if self.members.is_empty() {
             write!(f, "{{}}")
         } else {
-            write!(f, "{{ {members} }}")
+            let members = self
+                .members
+                .iter()
+                .map(|elem| format!("\n{};", elem.to_string_with_indent(4)))
+                .collect::<Vec<_>>()
+                .join("");
+
+            write!(f, "{{{members}\n}}")
+        }
+    }
+}
+
+#[allow(unused)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TsValueEnumLit {
+    None,
+    StringLit(String),
+    NumberLit(String),
+}
+
+impl Display for TsValueEnumLit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TsValueEnumLit::None => Ok(()),
+            TsValueEnumLit::StringLit(value) => write!(f, " = \"{}\"", value),
+            TsValueEnumLit::NumberLit(value) => write!(f, " = {}", value),
+        }
+    }
+}
+
+/// A member in a TypeScript enum, e.g. `Foo = 5,`
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TsValueEnumMember {
+    pub id: String,
+    pub value: TsValueEnumLit,
+    pub comments: Vec<String>,
+}
+
+impl Display for TsValueEnumMember {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write_doc_comments(f, &self.comments)?;
+        if is_js_ident(self.id.as_str()) {
+            write!(f, "{}{}", self.id, self.value)
+        } else {
+            write!(f, "\"{}\"{}", self.id, self.value)
         }
     }
 }
@@ -147,10 +219,4 @@ impl NullType {
             Self::Undefined => TsType::UNDEFINED,
         }
     }
-}
-
-fn is_js_ident(string: &str) -> bool {
-    !string.is_empty()
-        && !string.starts_with(|c: char| c.is_ascii_digit())
-        && !string.contains(|c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '$')
 }

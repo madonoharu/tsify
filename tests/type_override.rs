@@ -86,7 +86,22 @@ fn test_enum_with_type_override() {
         /**
          * Comment for Enum
          */
-        export type Enum = { Struct: { x: `tpl_lit_${string}`; y: 0 | 1 | 2 } } | { Tuple: [`tpl_lit_${string}`, 0 | 1 | 2] } | { Newtype: number };"#
+        export type Enum = {
+            Struct: {
+                /**
+                 * Comment for x
+                 */
+                x: `tpl_lit_${string}`;
+                /**
+                 * Comment for y
+                 */
+                y: 0 | 1 | 2;
+            };
+        } | {
+            Tuple: [`tpl_lit_${string}`, 0 | 1 | 2];
+        } | {
+            Newtype: number;
+        };"#
     };
 
     assert_eq!(Enum::DECL, expected);

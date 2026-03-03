@@ -14,6 +14,10 @@ impl Display for TsType {
                 write!(f, "\"{lit}\"")
             }
 
+            TsType::Computed(comp) => {
+                write!(f, "{comp}")
+            }
+
             TsType::Array(elem) => match elem.as_ref() {
                 TsType::Union(_) | TsType::Intersection(_) | &TsType::Option(_, _) => {
                     write!(f, "({elem})[]")

@@ -36,7 +36,11 @@ fn test_prefix() {
     assert_eq!(
         PrefixedEnum::DECL,
         indoc! {"
-            export type SpecialPrefixedEnum = { VariantA: SpecialMyType } | { VariantB: number };"
+            export type SpecialPrefixedEnum = {
+                VariantA: SpecialMyType;
+            } | {
+                VariantB: number;
+            };"
         }
     );
 }
@@ -73,7 +77,11 @@ fn test_suffix() {
     assert_eq!(
         SuffixedEnum::DECL,
         indoc! {"
-            export type SuffixedEnumSpecial = { VariantA: MyTypeSpecial } | { VariantB: number };"
+            export type SuffixedEnumSpecial = {
+                VariantA: MyTypeSpecial;
+            } | {
+                VariantB: number;
+            };"
         }
     );
 }
@@ -110,7 +118,11 @@ fn test_prefix_suffix() {
     assert_eq!(
         DoubleAffixedEnum::DECL,
         indoc! {"
-            export type PreDoubleAffixedEnumSuf = { VariantA: PreMyTypeSuf } | { VariantB: number };"
+            export type PreDoubleAffixedEnumSuf = {
+                VariantA: PreMyTypeSuf;
+            } | {
+                VariantB: number;
+            };"
         }
     );
 }

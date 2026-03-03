@@ -2,14 +2,12 @@ use proc_macro2::TokenTree;
 use quote::ToTokens;
 use syn::LitStr;
 
-use crate::typescript::TsType;
-
 /// Extract the documentation comments from a Vec of attributes
 pub fn extract_doc_comments(attrs: &[syn::Attribute]) -> Vec<String> {
     attrs
         .iter()
         .filter_map(|a| {
-            // if the path segments include an ident of "doc" we know this
+            // if the path segments include an ident of "doc" we know
             // this is a doc comment
             if a.path().segments.iter().any(|s| s.ident == "doc") {
                 Some(a.to_token_stream().into_iter().filter_map(|t| match t {
@@ -63,15 +61,4 @@ pub fn write_doc_comments(
         .join("");
 
     write!(f, "{}", format_args!("/**\n{} */\n", comment))
-}
-
-/// Remove all comments from a `TsType::TypeLit`
-pub fn clean_comments(typ: &mut TsType) {
-    if let TsType::TypeLit(ref mut lit) = typ {
-        lit.members.iter_mut().for_each(|elem| {
-            elem.comments = vec![];
-            // Recurse
-            clean_comments(&mut elem.type_ann);
-        });
-    }
 }

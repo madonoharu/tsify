@@ -20,7 +20,8 @@ pub struct Container<'a> {
 impl<'a> Container<'a> {
     pub fn new(serde_container: SerdeContainer<'a>) -> Self {
         let input = &serde_container.original;
-        let attrs = TsifyContainerAttrs::from_derive_input(input);
+        let container = &serde_container.attrs;
+        let attrs = TsifyContainerAttrs::from_derive_input(input, container);
         let errors = ErrorTracker::new();
 
         let attrs = match attrs {

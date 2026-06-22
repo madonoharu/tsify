@@ -106,6 +106,12 @@ where
     }
 }
 
+impl <T: Tsify> From<Ts<T>> for JsValue {
+    fn from(value: Ts<T>) -> Self {
+        value.js_value()
+    }
+}
+
 impl<T: Tsify> fmt::Debug for Ts<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Ts").finish()

@@ -106,7 +106,7 @@ where
     }
 }
 
-impl <T: Tsify> From<Ts<T>> for JsValue {
+impl<T: Tsify> From<Ts<T>> for JsValue {
     fn from(value: Ts<T>) -> Self {
         value.js_value()
     }

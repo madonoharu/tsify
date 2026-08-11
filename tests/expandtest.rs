@@ -4,5 +4,8 @@
 
 #[test]
 fn expandtest() {
-    macrotest::expand_args("tests/expand/*.rs", ["--features", "tsify/json"]);
+    // Enable the test project's own `json` and `wasm-bindgen` features (not
+    // just tsify's) so the `serde` and `wasm-bindgen` optional dependencies
+    // are resolvable from the code emitted by `#[derive(Tsify)]`.
+    macrotest::expand_args("tests/expand/*.rs", ["--features", "json,wasm-bindgen"]);
 }

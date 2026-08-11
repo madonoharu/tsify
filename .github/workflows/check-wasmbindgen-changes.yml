@@ -4,6 +4,9 @@ name: Check wasm-bindgen changes
 # This cron job is meant to create a PR whenever there are changes to the expanded macro output.
 # Since all PRs that affect tsify's macro output should update their own tests, this should only detect
 # changes in other rust crates.
+#
+# If this job fails (e.g. the expansion itself errors out), it opens a tracking
+# issue so the failure is not silently lost in the Actions tab.
 
 on:
     schedule:
@@ -12,6 +15,11 @@ on:
 
 env:
     TARGET_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}
+
+permissions:
+    contents: write
+    pull-requests: write
+    issues: write
 
 jobs:
     test:
@@ -45,6 +53,19 @@ jobs:
             - name: Add cargo-expand
               run: cargo install cargo-expand
 
+            # The expansion snapshots track the *latest* wasm-bindgen release
+            # (Cargo.lock is gitignored, so this resolves fresh every run).
+            # Log the resolved version so failures can be attributed to a
+            # dependency release vs. a toolchain change.
+            - name: Resolve dependencies
+              id: deps
+              run: |
+                  cargo generate-lockfile
+                  WB_VERSION=$(grep -A 1 '^name = "wasm-bindgen"$' Cargo.lock | grep '^version' | head -1 | cut -d'"' -f2)
+                  echo "wasm_bindgen=$WB_VERSION" >> "$GITHUB_OUTPUT"
+                  echo "Resolved wasm-bindgen: $WB_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
+                  rustc --version | tee -a "$GITHUB_STEP_SUMMARY"
+
             - name: Setup git config
               run: |
                   git config user.name "${{ github.actor }} via GitHub Actions"
@@ -72,16 +93,36 @@ jobs:
 
             - name: Check for changes
               run: |
-                  git diff --quiet || {
-                    echo "Available branches:"
-                    git branch -a
-                    echo "Remote configuration:"
-                    git remote -v
+                  git diff --quiet -- tests || {
                     echo "Creating PR with changes..."
                     git add tests
-                    git commit -m "Update expanded test artifacts"
+                    git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.deps.outputs.wasm_bindgen }}"
                     git push --force --set-upstream origin update-expanded-test-artifacts
-                    gh pr create --fill
+                    gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" 2>/dev/null || true
+                    gh pr create --fill --assignee madonoharu --label automated-pr \
+                      || echo "PR already exists; the branch push above updated it."
                   }
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            # A red run in the Actions tab notifies no one; 75 consecutive
+            # failures went unnoticed in 2026. Open a tracking issue instead
+            # (only once per breakage: skipped while one is already open).
+            - name: Notify on failure
+              if: failure()
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  TITLE="CI: nightly wasm-bindgen expand check is failing"
+                  EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  if [ -z "$EXISTING" ]; then
+                    gh label create ci-failure --color D93F0B --description "Automated CI failure report" 2>/dev/null || true
+                    gh issue create --title "$TITLE" --label ci-failure --assignee madonoharu --body "The scheduled expand check failed.
+
+                  Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+                  Resolved wasm-bindgen: ${{ steps.deps.outputs.wasm_bindgen || 'unknown' }}
+
+                  This usually means either a new wasm-bindgen release changed the macro output in a way that broke expansion, or a toolchain change altered \`-Zunpretty=expanded\` behavior. See CONTRIBUTING.md for how to regenerate the snapshots."
+                  else
+                    echo "Tracking issue #$EXISTING already open; not filing another."
+                  fi

@@ -1,4 +1,8 @@
 /target
+# Intentionally not committed: the expansion snapshots in tests/expand/ track
+# the latest wasm-bindgen release, and CI resolves dependencies fresh on every
+# run. See "Why Cargo.lock is not committed" in CONTRIBUTING.md before
+# changing this.
 Cargo.lock
 .vscode
 tests-e2e/*/pkg

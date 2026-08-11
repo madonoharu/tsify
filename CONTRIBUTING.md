@@ -51,9 +51,9 @@ Two consequences:
 
 ## Why `Cargo.lock` is not committed
 
-This is a deliberate decision, revisited in 2026 (not a leftover default):
-the expansion snapshots and the full test suite are meant to verify tsify
-against the dependency versions users actually resolve, not against a pinned
-set. The trade-offs and the conditions under which this may change are
-tracked by the maintainers. If you think a lockfile should be committed,
-please open an issue rather than including the change in an unrelated PR.
+Keeping the lockfile out of version control means CI always resolves
+dependencies fresh, so the test suite and the expansion snapshots verify
+tsify against the dependency versions users actually get. The trade-off is
+deliberate: a committed lockfile would make CI reproducible but silently
+stale. If you think this should change, please open an issue rather than
+including the change in an unrelated PR.

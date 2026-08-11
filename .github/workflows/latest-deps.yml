@@ -1,12 +1,16 @@
 name: Latest deps
 
-# Compiles and tests the whole workspace against the newest compatible
-# dependency versions, without overwriting any expansion snapshots.
+# Compiles and tests the workspace against the newest compatible dependency
+# versions on a schedule, so a breaking dependency release is noticed even
+# when no PR is being pushed. (PR CI also resolves dependencies fresh, but
+# it only runs when someone opens a PR.)
 #
-# The nightly "Check wasm-bindgen changes" job only exercises the expand
-# snapshots; this job is the only place the full test suite (real
-# compilation, wasm tests, e2e output comparison) runs against the latest
-# dependency resolution — the configuration downstream users actually get.
+# Expansion-snapshot drift is deliberately excluded from the pass/fail
+# signal here: a new wasm-bindgen release that changes its codegen makes
+# the snapshots stale by design, and the nightly check-wasmbindgen-changes
+# workflow owns that signal (it regenerates them and opens an update PR).
+# Mixing the two would make this job fail — and notify — on every routine
+# wasm-bindgen release.
 
 on:
     schedule:
@@ -58,8 +62,24 @@ jobs:
                   echo "Resolved wasm-bindgen: $WB_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
                   rustc --version | tee -a "$GITHUB_STEP_SUMMARY"
 
-            - name: Run full test suite
-              run: ./test.sh
+            # Same commands as ./test.sh, but with the expandtest snapshot
+            # comparison skipped (see the header comment). `--skip expandtest`
+            # filters the test *function* named expandtest inside each test
+            # binary.
+            - name: Run test suite (excluding expand snapshots)
+              run: |
+                  cargo test --all -- --skip expandtest
+                  cargo test --all -F js -- --skip expandtest
+                  wasm-pack test --node
+                  wasm-pack test --node -F js
+                  ./tests-e2e/build_all.sh
+                  ./tests-e2e/reference_output/compare_output.sh
+
+            - name: Check expand snapshots (informational only)
+              # Failure here means routine snapshot drift that the nightly
+              # cron will pick up; it must not fail this job.
+              continue-on-error: true
+              run: cargo test -p tsify --test expandtest
 
             - name: Notify on failure
               if: failure()
@@ -75,7 +95,21 @@ jobs:
                   Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
                   Resolved wasm-bindgen: ${{ steps.deps.outputs.wasm_bindgen || 'unknown' }}
 
-                  This means tsify no longer builds or passes tests against the newest compatible dependency versions — the configuration downstream users get. If only the expandtest snapshot comparison failed, the nightly cron should shortly open an update PR; otherwise this is a real compatibility break."
+                  Compilation or tests are broken against the newest compatible dependency versions — the configuration downstream users actually get. Expansion-snapshot drift is excluded from this job, so it cannot be the cause; this is a real compatibility break."
                   else
                     echo "Tracking issue #$EXISTING already open; not filing another."
+                  fi
+
+            # Counterpart of "Notify on failure": once a run succeeds again,
+            # close the tracking issue so the next real breakage can notify
+            # again (an issue that stays open would mute all future alerts).
+            - name: Close failure tracking issue on success
+              if: success()
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  TITLE="CI: weekly latest-deps check is failing"
+                  EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  if [ -n "$EXISTING" ]; then
+                    gh issue close "$EXISTING" --comment "Resolved by a successful run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   fi

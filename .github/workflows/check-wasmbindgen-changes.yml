@@ -98,12 +98,38 @@ jobs:
                     git add tests
                     git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.deps.outputs.wasm_bindgen }}"
                     git push --force --set-upstream origin update-expanded-test-artifacts
-                    gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" 2>/dev/null || true
-                    gh pr create --fill --assignee madonoharu --label automated-pr \
-                      || echo "PR already exists; the branch push above updated it."
+                    # Check for an existing PR explicitly instead of catching
+                    # `gh pr create` errors: a catch-all would also swallow real
+                    # failures (missing label, 403 from repo settings, ...) and
+                    # report success with a misleading message.
+                    EXISTING_PR=$(gh pr list --head update-expanded-test-artifacts --state open --json number --jq '.[0].number')
+                    if [ -n "$EXISTING_PR" ]; then
+                      echo "PR #$EXISTING_PR already open; the push above updated it."
+                    else
+                      gh pr create --fill
+                      # Assignee/label are decoration; apply after creation so
+                      # their failure cannot prevent the PR itself.
+                      gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" 2>/dev/null || true
+                      gh pr edit --add-assignee madonoharu --add-label automated-pr \
+                        || echo "::warning::PR created but assignee/label could not be applied"
+                    fi
                   }
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            # Counterpart of "Notify on failure": once a run succeeds again,
+            # close the tracking issue so the next real breakage can notify
+            # again (an issue that stays open would mute all future alerts).
+            - name: Close failure tracking issue on success
+              if: success()
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  TITLE="CI: nightly wasm-bindgen expand check is failing"
+                  EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  if [ -n "$EXISTING" ]; then
+                    gh issue close "$EXISTING" --comment "Resolved by a successful run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  fi
 
             # A red run in the Actions tab notifies no one; 75 consecutive
             # failures went unnoticed in 2026. Open a tracking issue instead

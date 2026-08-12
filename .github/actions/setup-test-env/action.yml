@@ -2,8 +2,8 @@ name: Setup test environment
 description: >
     Everything ./test.sh needs (Node.js, stable Rust, wasm-pack,
     cargo-expand), plus a fresh dependency resolution: Cargo.lock is
-    gitignored, so generating it here pins this run to the latest compatible
-    versions — the configuration downstream users actually get.
+    gitignored, so every run resolves the latest compatible versions —
+    what downstream users actually get.
 
 outputs:
     wasm-bindgen-version:

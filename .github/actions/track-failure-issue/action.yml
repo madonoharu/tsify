@@ -3,15 +3,15 @@ description: >
     A red run in the Actions tab notifies no one (75 consecutive failures
     went unnoticed in 2026). Instead, `mode: notify` opens a tracking issue
     on failure — once per breakage, deduped by exact title — and
-    `mode: close` closes it again on the next success, so the alert re-arms
-    instead of staying muted forever.
+    `mode: close` closes it on the next success, re-arming the alert: one
+    left open would mute every later breakage.
 
 inputs:
     mode:
         description: '"notify" (open unless one exists) or "close" (close if open).'
         required: true
     title:
-        description: Exact issue title. Both modes search for this string, so it must not vary between them.
+        description: Exact issue title. Both modes must search for the exact same string, or a stale issue would mute all future alerts.
         required: true
     body:
         description: Issue body (notify mode only).

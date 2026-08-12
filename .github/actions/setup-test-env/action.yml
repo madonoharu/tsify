@@ -1,0 +1,51 @@
+name: Setup test environment
+description: >
+    Everything ./test.sh needs (Node.js, stable Rust, wasm-pack,
+    cargo-expand), plus a fresh dependency resolution: Cargo.lock is
+    gitignored, so generating it here pins this run to the latest compatible
+    versions — the configuration downstream users actually get.
+
+outputs:
+    wasm-bindgen-version:
+        description: The wasm-bindgen version this run resolved.
+        value: ${{ steps.resolve.outputs.wasm_bindgen }}
+
+runs:
+    using: composite
+    steps:
+        - name: Setup Node.js
+          uses: actions/setup-node@v4
+          with:
+              node-version: "24"
+
+        - name: Install toolchain
+          uses: actions-rs/toolchain@v1
+          with:
+              profile: minimal
+              toolchain: stable
+              override: true
+              components: rustfmt
+
+        - name: Install wasm-pack
+          uses: jetli/wasm-pack-action@v0.4.0
+          with:
+              # specify exact version to work around
+              # https://github.com/jetli/wasm-pack-action/issues/23
+              version: v0.14.0
+
+        - name: Add cargo-expand
+          shell: bash
+          run: cargo install cargo-expand
+
+        # Log the resolved wasm-bindgen version so failures can be attributed
+        # to a dependency release vs. a toolchain change.
+        - name: Resolve dependencies
+          id: resolve
+          shell: bash
+          run: |
+              cargo generate-lockfile
+              WB_VERSION="$(cargo pkgid wasm-bindgen)"
+              WB_VERSION="${WB_VERSION##*@}"
+              echo "wasm_bindgen=$WB_VERSION" >> "$GITHUB_OUTPUT"
+              echo "Resolved wasm-bindgen: $WB_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
+              rustc --version | tee -a "$GITHUB_STEP_SUMMARY"

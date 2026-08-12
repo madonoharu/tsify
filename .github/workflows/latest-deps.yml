@@ -35,38 +35,9 @@ jobs:
             - name: Checkout sources
               uses: actions/checkout@v6
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "24"
-
-            - name: Install toolchain
-              uses: actions-rs/toolchain@v1
-              with:
-                  profile: minimal
-                  toolchain: stable
-                  override: true
-                  components: rustfmt
-
-            - name: Install wasm-pack
-              uses: jetli/wasm-pack-action@v0.4.0
-              with:
-                  # specify exact version to work around
-                  # https://github.com/jetli/wasm-pack-action/issues/23
-                  version: v0.14.0
-
-            - name: Add cargo-expand
-              run: cargo install cargo-expand
-
-            - name: Resolve latest dependencies
-              id: deps
-              run: |
-                  cargo update
-                  WB_VERSION="$(cargo pkgid wasm-bindgen)"
-                  WB_VERSION="${WB_VERSION##*@}"
-                  echo "wasm_bindgen=$WB_VERSION" >> "$GITHUB_OUTPUT"
-                  echo "Resolved wasm-bindgen: $WB_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
-                  rustc --version | tee -a "$GITHUB_STEP_SUMMARY"
+            - name: Setup test environment
+              id: setup
+              uses: ./.github/actions/setup-test-env
 
             # Same commands as ./test.sh, minus the expandtest snapshot
             # comparison (see the header comment). `--skip expandtest` matches
@@ -86,32 +57,25 @@ jobs:
               continue-on-error: true
               run: cargo test -p tsify --test expandtest
 
-            - name: Notify on failure
-              if: failure()
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
-                  if [ -z "$EXISTING" ]; then
-                    gh label create ci-failure --color D93F0B --description "Automated CI failure report" 2>/dev/null || true
-                    gh issue create --title "$ISSUE_TITLE" --label ci-failure --assignee madonoharu --body "The weekly latest-deps run failed.
-
-                  Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-                  Resolved wasm-bindgen: ${{ steps.deps.outputs.wasm_bindgen || 'unknown' }}
-
-                  Compilation or tests are broken against the newest compatible dependency versions — what downstream users actually get. Expansion-snapshot drift is excluded from this job, so it cannot be the cause — this is a real compatibility break."
-                  else
-                    echo "Tracking issue #$EXISTING already open; not filing another."
-                  fi
-
-            # Counterpart of "Notify on failure": closing the issue on success
-            # re-arms the alert — one left open would mute every later breakage.
             - name: Close failure tracking issue on success
               if: success()
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
-                  if [ -n "$EXISTING" ]; then
-                    gh issue close "$EXISTING" --comment "Resolved by a successful run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  fi
+              uses: ./.github/actions/track-failure-issue
+              with:
+                  mode: close
+                  title: ${{ env.ISSUE_TITLE }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Notify on failure
+              if: failure()
+              uses: ./.github/actions/track-failure-issue
+              with:
+                  mode: notify
+                  title: ${{ env.ISSUE_TITLE }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  body: |
+                      The weekly latest-deps run failed.
+
+                      Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+                      Resolved wasm-bindgen: ${{ steps.setup.outputs.wasm-bindgen-version || 'unknown' }}
+
+                      Compilation or tests are broken against the newest compatible dependency versions — what downstream users actually get. Expansion-snapshot drift is excluded from this job, so it cannot be the cause — this is a real compatibility break.

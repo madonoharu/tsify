@@ -1,0 +1,54 @@
+name: Track failure via issue
+description: >
+    A red run in the Actions tab notifies no one (75 consecutive failures
+    went unnoticed in 2026). Instead, `mode: notify` opens a tracking issue
+    on failure — once per breakage, deduped by exact title — and
+    `mode: close` closes it again on the next success, so the alert re-arms
+    instead of staying muted forever.
+
+inputs:
+    mode:
+        description: '"notify" (open unless one exists) or "close" (close if open).'
+        required: true
+    title:
+        description: Exact issue title. Both modes search for this string, so it must not vary between them.
+        required: true
+    body:
+        description: Issue body (notify mode only).
+        required: false
+        default: ""
+    github-token:
+        description: Token with issues write access.
+        required: true
+
+runs:
+    using: composite
+    steps:
+        - name: Find, open, or close the tracking issue
+          shell: bash
+          env:
+              GITHUB_TOKEN: ${{ inputs.github-token }}
+              MODE: ${{ inputs.mode }}
+              ISSUE_TITLE: ${{ inputs.title }}
+              ISSUE_BODY: ${{ inputs.body }}
+              RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          run: |
+              EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
+              case "$MODE" in
+                notify)
+                  if [ -n "$EXISTING" ]; then
+                    echo "Tracking issue #$EXISTING already open; not filing another."
+                  else
+                    gh label create ci-failure --color D93F0B --description "Automated CI failure report" 2>/dev/null || true
+                    gh issue create --title "$ISSUE_TITLE" --label ci-failure --assignee madonoharu --body "$ISSUE_BODY"
+                  fi
+                  ;;
+                close)
+                  if [ -n "$EXISTING" ]; then
+                    gh issue close "$EXISTING" --comment "Resolved by a successful run: $RUN_URL"
+                  fi
+                  ;;
+                *)
+                  echo "::error::unknown mode: $MODE" && exit 1
+                  ;;
+              esac

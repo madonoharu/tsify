@@ -36,42 +36,9 @@ jobs:
             - name: Checkout sources
               uses: actions/checkout@v6
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "24"
-
-            - name: Install toolchain
-              uses: actions-rs/toolchain@v1
-              with:
-                  profile: minimal
-                  toolchain: stable
-                  override: true
-                  components: rustfmt
-
-            - name: Install wasm-pack
-              uses: jetli/wasm-pack-action@v0.4.0
-              with:
-                  # specify exact version to work around
-                  # https://github.com/jetli/wasm-pack-action/issues/23
-                  version: v0.14.0
-
-            - name: Add cargo-expand
-              run: cargo install cargo-expand
-
-            # The expansion snapshots track the *latest* wasm-bindgen release
-            # (Cargo.lock is gitignored, so this resolves fresh every run).
-            # Log the resolved version so failures can be attributed to a
-            # dependency release vs. a toolchain change.
-            - name: Resolve dependencies
-              id: deps
-              run: |
-                  cargo generate-lockfile
-                  WB_VERSION="$(cargo pkgid wasm-bindgen)"
-                  WB_VERSION="${WB_VERSION##*@}"
-                  echo "wasm_bindgen=$WB_VERSION" >> "$GITHUB_OUTPUT"
-                  echo "Resolved wasm-bindgen: $WB_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
-                  rustc --version | tee -a "$GITHUB_STEP_SUMMARY"
+            - name: Setup test environment
+              id: setup
+              uses: ./.github/actions/setup-test-env
 
             - name: Setup git config
               run: |
@@ -107,7 +74,7 @@ jobs:
 
                   echo "Creating PR with changes..."
                   git add tests
-                  git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.deps.outputs.wasm_bindgen }}"
+                  git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.setup.outputs.wasm-bindgen-version }}"
                   git push --force --set-upstream origin update-expanded-test-artifacts
 
                   # Check for an existing PR explicitly instead of catching
@@ -129,35 +96,25 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            # Counterpart of "Notify on failure": closing the issue on success
-            # re-arms the alert — one left open would mute every later breakage.
             - name: Close failure tracking issue on success
               if: success()
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
-                  if [ -n "$EXISTING" ]; then
-                    gh issue close "$EXISTING" --comment "Resolved by a successful run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  fi
+              uses: ./.github/actions/track-failure-issue
+              with:
+                  mode: close
+                  title: ${{ env.ISSUE_TITLE }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
 
-            # A red run in the Actions tab notifies no one; 75 consecutive
-            # failures went unnoticed in 2026. Open a tracking issue instead
-            # (only once per breakage: skipped while one is already open).
             - name: Notify on failure
               if: failure()
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
-                  if [ -z "$EXISTING" ]; then
-                    gh label create ci-failure --color D93F0B --description "Automated CI failure report" 2>/dev/null || true
-                    gh issue create --title "$ISSUE_TITLE" --label ci-failure --assignee madonoharu --body "The scheduled expand check failed.
+              uses: ./.github/actions/track-failure-issue
+              with:
+                  mode: notify
+                  title: ${{ env.ISSUE_TITLE }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  body: |
+                      The scheduled expand check failed.
 
-                  Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-                  Resolved wasm-bindgen: ${{ steps.deps.outputs.wasm_bindgen || 'unknown' }}
+                      Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+                      Resolved wasm-bindgen: ${{ steps.setup.outputs.wasm-bindgen-version || 'unknown' }}
 
-                  Likely causes: a new wasm-bindgen release whose changed macro output breaks expansion, or a toolchain change that altered \`-Zunpretty=expanded\` behavior. See CONTRIBUTING.md for how to regenerate the snapshots."
-                  else
-                    echo "Tracking issue #$EXISTING already open; not filing another."
-                  fi
+                      Likely causes: a new wasm-bindgen release whose changed macro output breaks expansion, or a toolchain change that altered `-Zunpretty=expanded` behavior. See CONTRIBUTING.md for how to regenerate the snapshots.

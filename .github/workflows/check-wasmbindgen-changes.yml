@@ -90,7 +90,8 @@ jobs:
                   gh pr create --fill
                   # Assignee/label are decoration; apply after creation so
                   # a failure there cannot block the PR itself.
-                  gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" 2>/dev/null || true
+                  gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" --force \
+                    || echo "::warning::automated-pr label could not be created or updated"
                   gh pr edit --add-assignee madonoharu --add-label automated-pr \
                     || echo "::warning::PR created but assignee/label could not be applied"
               env:

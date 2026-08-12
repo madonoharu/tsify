@@ -18,13 +18,11 @@ runs:
           with:
               node-version: "24"
 
+        # rustup ships on the runner; the archived actions-rs/toolchain action
+        # (node12) only wrapped these same rustup calls.
         - name: Install toolchain
-          uses: actions-rs/toolchain@v1
-          with:
-              profile: minimal
-              toolchain: stable
-              override: true
-              components: rustfmt
+          shell: bash
+          run: rustup toolchain install stable --profile minimal --component rustfmt --override
 
         - name: Install wasm-pack
           uses: jetli/wasm-pack-action@v0.4.0
@@ -47,5 +45,7 @@ runs:
               WB_VERSION="$(cargo pkgid wasm-bindgen)"
               WB_VERSION="${WB_VERSION##*@}"
               echo "wasm_bindgen=$WB_VERSION" >> "$GITHUB_OUTPUT"
-              echo "Resolved wasm-bindgen: $WB_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
-              rustc --version | tee -a "$GITHUB_STEP_SUMMARY"
+              {
+                echo "Resolved wasm-bindgen: $WB_VERSION"
+                rustc --version
+              } | tee -a "$GITHUB_STEP_SUMMARY"

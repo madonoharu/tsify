@@ -26,6 +26,12 @@ jobs:
         name: Create Test Artifacts
         runs-on: ubuntu-latest
 
+        # Single source of truth for the tracking-issue title: "Notify on
+        # failure" and its "Close ... on success" counterpart must search for
+        # the exact same string, or a stale issue would mute all future alerts.
+        env:
+            ISSUE_TITLE: "CI: nightly wasm-bindgen expand check is failing"
+
         steps:
             - name: Checkout sources
               uses: actions/checkout@v6
@@ -93,40 +99,43 @@ jobs:
 
             - name: Check for changes
               run: |
-                  git diff --quiet -- tests || {
-                    echo "Creating PR with changes..."
-                    git add tests
-                    git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.deps.outputs.wasm_bindgen }}"
-                    git push --force --set-upstream origin update-expanded-test-artifacts
-                    # Check for an existing PR explicitly instead of catching
-                    # `gh pr create` errors: a catch-all would also swallow real
-                    # failures (missing label, 403 from repo settings, ...) and
-                    # report success with a misleading message.
-                    EXISTING_PR=$(gh pr list --head update-expanded-test-artifacts --state open --json number --jq '.[0].number')
-                    if [ -n "$EXISTING_PR" ]; then
-                      echo "PR #$EXISTING_PR already open; the push above updated it."
-                    else
-                      gh pr create --fill
-                      # Assignee/label are decoration; apply after creation so
-                      # their failure cannot prevent the PR itself.
-                      gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" 2>/dev/null || true
-                      gh pr edit --add-assignee madonoharu --add-label automated-pr \
-                        || echo "::warning::PR created but assignee/label could not be applied"
-                    fi
-                  }
+                  if git diff --quiet -- tests; then
+                    echo "Expanded test artifacts are unchanged; nothing to do."
+                    exit 0
+                  fi
+
+                  echo "Creating PR with changes..."
+                  git add tests
+                  git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.deps.outputs.wasm_bindgen }}"
+                  git push --force --set-upstream origin update-expanded-test-artifacts
+
+                  # Check for an existing PR explicitly instead of catching
+                  # `gh pr create` errors: a catch-all would swallow real
+                  # failures too (missing label, 403 from repo settings, ...)
+                  # and report them as success.
+                  EXISTING_PR=$(gh pr list --head update-expanded-test-artifacts --state open --json number --jq '.[0].number')
+                  if [ -n "$EXISTING_PR" ]; then
+                    echo "PR #$EXISTING_PR already open; the push above updated it."
+                    exit 0
+                  fi
+
+                  gh pr create --fill
+                  # Assignee/label are decoration; apply after creation so
+                  # a failure there cannot block the PR itself.
+                  gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" 2>/dev/null || true
+                  gh pr edit --add-assignee madonoharu --add-label automated-pr \
+                    || echo "::warning::PR created but assignee/label could not be applied"
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            # Counterpart of "Notify on failure": once a run succeeds again,
-            # close the tracking issue so the next real breakage can notify
-            # again (an issue that stays open would mute all future alerts).
+            # Counterpart of "Notify on failure": closing the issue on success
+            # re-arms the alert — one left open would mute every later breakage.
             - name: Close failure tracking issue on success
               if: success()
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  TITLE="CI: nightly wasm-bindgen expand check is failing"
-                  EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
                   if [ -n "$EXISTING" ]; then
                     gh issue close "$EXISTING" --comment "Resolved by a successful run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   fi
@@ -139,16 +148,15 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  TITLE="CI: nightly wasm-bindgen expand check is failing"
-                  EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
                   if [ -z "$EXISTING" ]; then
                     gh label create ci-failure --color D93F0B --description "Automated CI failure report" 2>/dev/null || true
-                    gh issue create --title "$TITLE" --label ci-failure --assignee madonoharu --body "The scheduled expand check failed.
+                    gh issue create --title "$ISSUE_TITLE" --label ci-failure --assignee madonoharu --body "The scheduled expand check failed.
 
                   Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
                   Resolved wasm-bindgen: ${{ steps.deps.outputs.wasm_bindgen || 'unknown' }}
 
-                  This usually means either a new wasm-bindgen release changed the macro output in a way that broke expansion, or a toolchain change altered \`-Zunpretty=expanded\` behavior. See CONTRIBUTING.md for how to regenerate the snapshots."
+                  Likely causes: a new wasm-bindgen release whose changed macro output breaks expansion, or a toolchain change that altered \`-Zunpretty=expanded\` behavior. See CONTRIBUTING.md for how to regenerate the snapshots."
                   else
                     echo "Tracking issue #$EXISTING already open; not filing another."
                   fi

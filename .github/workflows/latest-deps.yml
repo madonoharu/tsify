@@ -9,8 +9,7 @@ name: Latest deps
 # signal here: a new wasm-bindgen release that changes its codegen makes
 # the snapshots stale by design, and the nightly check-wasmbindgen-changes
 # workflow owns that signal (it regenerates them and opens an update PR).
-# Mixing the two would make this job fail — and notify — on every routine
-# wasm-bindgen release.
+# Mixing the two would fail this job — and notify — on every routine release.
 
 on:
     schedule:
@@ -25,6 +24,12 @@ jobs:
     test-latest:
         name: Test with latest dependencies
         runs-on: ubuntu-latest
+
+        # Single source of truth for the tracking-issue title: "Notify on
+        # failure" and its "Close ... on success" counterpart must search for
+        # the exact same string, or a stale issue would mute all future alerts.
+        env:
+            ISSUE_TITLE: "CI: weekly latest-deps check is failing"
 
         steps:
             - name: Checkout sources
@@ -62,10 +67,9 @@ jobs:
                   echo "Resolved wasm-bindgen: $WB_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
                   rustc --version | tee -a "$GITHUB_STEP_SUMMARY"
 
-            # Same commands as ./test.sh, but with the expandtest snapshot
-            # comparison skipped (see the header comment). `--skip expandtest`
-            # filters the test *function* named expandtest inside each test
-            # binary.
+            # Same commands as ./test.sh, minus the expandtest snapshot
+            # comparison (see the header comment). `--skip expandtest` matches
+            # the test *function* name, inside each test binary.
             - name: Run test suite (excluding expand snapshots)
               run: |
                   cargo test --all -- --skip expandtest
@@ -86,30 +90,27 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  TITLE="CI: weekly latest-deps check is failing"
-                  EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
                   if [ -z "$EXISTING" ]; then
                     gh label create ci-failure --color D93F0B --description "Automated CI failure report" 2>/dev/null || true
-                    gh issue create --title "$TITLE" --label ci-failure --assignee madonoharu --body "The weekly latest-deps run failed.
+                    gh issue create --title "$ISSUE_TITLE" --label ci-failure --assignee madonoharu --body "The weekly latest-deps run failed.
 
                   Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
                   Resolved wasm-bindgen: ${{ steps.deps.outputs.wasm_bindgen || 'unknown' }}
 
-                  Compilation or tests are broken against the newest compatible dependency versions — the configuration downstream users actually get. Expansion-snapshot drift is excluded from this job, so it cannot be the cause; this is a real compatibility break."
+                  Compilation or tests are broken against the newest compatible dependency versions — what downstream users actually get. Expansion-snapshot drift is excluded from this job, so it cannot be the cause — this is a real compatibility break."
                   else
                     echo "Tracking issue #$EXISTING already open; not filing another."
                   fi
 
-            # Counterpart of "Notify on failure": once a run succeeds again,
-            # close the tracking issue so the next real breakage can notify
-            # again (an issue that stays open would mute all future alerts).
+            # Counterpart of "Notify on failure": closing the issue on success
+            # re-arms the alert — one left open would mute every later breakage.
             - name: Close failure tracking issue on success
               if: success()
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  TITLE="CI: weekly latest-deps check is failing"
-                  EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number')
                   if [ -n "$EXISTING" ]; then
                     gh issue close "$EXISTING" --comment "Resolved by a successful run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   fi

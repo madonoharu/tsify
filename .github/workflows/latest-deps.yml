@@ -62,7 +62,8 @@ jobs:
               id: deps
               run: |
                   cargo update
-                  WB_VERSION=$(grep -A 1 '^name = "wasm-bindgen"$' Cargo.lock | grep '^version' | head -1 | cut -d'"' -f2)
+                  WB_VERSION="$(cargo pkgid wasm-bindgen)"
+                  WB_VERSION="${WB_VERSION##*@}"
                   echo "wasm_bindgen=$WB_VERSION" >> "$GITHUB_OUTPUT"
                   echo "Resolved wasm-bindgen: $WB_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
                   rustc --version | tee -a "$GITHUB_STEP_SUMMARY"

@@ -426,4 +426,3 @@ const _: () = {
         _x
     };
 };
-// G3 proof sentinel: regeneration must remove this line.

@@ -43,3 +43,7 @@ pub fn expand(item: syn::ItemType) -> syn::Result<TokenStream> {
 
     Ok(tokens)
 }
+
+#[cfg(test)]
+#[path = "type_alias.test.rs"]
+mod test;

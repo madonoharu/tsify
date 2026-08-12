@@ -4,6 +4,9 @@ name: Check wasm-bindgen changes
 # This cron job is meant to create a PR whenever there are changes to the expanded macro output.
 # Since all PRs that affect tsify's macro output should update their own tests, this should only detect
 # changes in other rust crates.
+#
+# If this job fails (e.g. the expansion itself errors out), it opens a tracking
+# issue so the failure is not silently lost in the Actions tab.
 
 on:
     schedule:
@@ -13,37 +16,29 @@ on:
 env:
     TARGET_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}
 
+permissions:
+    contents: write
+    pull-requests: write
+    issues: write
+
 jobs:
     test:
         name: Create Test Artifacts
         runs-on: ubuntu-latest
 
+        # Single source of truth for the tracking-issue title: "Notify on
+        # failure" and its "Close ... on success" counterpart must search for
+        # the exact same string, or a stale issue would mute all future alerts.
+        env:
+            ISSUE_TITLE: "CI: nightly wasm-bindgen expand check is failing"
+
         steps:
             - name: Checkout sources
               uses: actions/checkout@v6
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "24"
-
-            - name: Install toolchain
-              uses: actions-rs/toolchain@v1
-              with:
-                  profile: minimal
-                  toolchain: stable
-                  override: true
-                  components: rustfmt
-
-            - name: Install wasm-pack
-              uses: jetli/wasm-pack-action@v0.4.0
-              with:
-                  # specify exact version to work around
-                  # https://github.com/jetli/wasm-pack-action/issues/23
-                  version: v0.14.0
-
-            - name: Add cargo-expand
-              run: cargo install cargo-expand
+            - name: Setup test environment
+              id: setup
+              uses: ./.github/actions/setup-test-env
 
             - name: Setup git config
               run: |
@@ -72,16 +67,55 @@ jobs:
 
             - name: Check for changes
               run: |
-                  git diff --quiet || {
-                    echo "Available branches:"
-                    git branch -a
-                    echo "Remote configuration:"
-                    git remote -v
-                    echo "Creating PR with changes..."
-                    git add tests
-                    git commit -m "Update expanded test artifacts"
-                    git push --force --set-upstream origin update-expanded-test-artifacts
-                    gh pr create --fill
-                  }
+                  if git diff --quiet -- tests; then
+                    echo "Expanded test artifacts are unchanged; nothing to do."
+                    exit 0
+                  fi
+
+                  echo "Creating PR with changes..."
+                  git add tests
+                  git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.setup.outputs.wasm-bindgen-version }}"
+                  git push --force --set-upstream origin update-expanded-test-artifacts
+
+                  # Check for an existing PR explicitly instead of catching
+                  # `gh pr create` errors: a catch-all would swallow real
+                  # failures too (missing label, 403 from repo settings, ...)
+                  # and report them as success.
+                  EXISTING_PR=$(gh pr list --head update-expanded-test-artifacts --state open --json number --jq '.[0].number')
+                  if [ -n "$EXISTING_PR" ]; then
+                    echo "PR #$EXISTING_PR already open; the push above updated it."
+                    exit 0
+                  fi
+
+                  gh pr create --fill
+                  # Assignee/label are decoration; apply after creation so
+                  # a failure there cannot block the PR itself.
+                  gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" --force \
+                    || echo "::warning::automated-pr label could not be created or updated"
+                  gh pr edit --add-assignee madonoharu --add-label automated-pr \
+                    || echo "::warning::PR created but assignee/label could not be applied"
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Close failure tracking issue on success
+              if: success()
+              uses: ./.github/actions/track-failure-issue
+              with:
+                  mode: close
+                  title: ${{ env.ISSUE_TITLE }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Notify on failure
+              if: failure()
+              uses: ./.github/actions/track-failure-issue
+              with:
+                  mode: notify
+                  title: ${{ env.ISSUE_TITLE }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  body: |
+                      The scheduled expand check failed.
+
+                      Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+                      Resolved wasm-bindgen: ${{ steps.setup.outputs.wasm-bindgen-version || 'unknown' }}
+
+                      Likely causes: a new wasm-bindgen release whose changed macro output breaks expansion, or a toolchain change that altered `-Zunpretty=expanded` behavior. See CONTRIBUTING.md for how to regenerate the snapshots.

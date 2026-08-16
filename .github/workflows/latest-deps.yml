@@ -1,0 +1,81 @@
+name: Latest deps
+
+# Compiles and tests the workspace against the newest compatible dependency
+# versions on a schedule, so a breaking dependency release is noticed even
+# when no PR is being pushed. (PR CI also resolves dependencies fresh, but
+# it only runs when someone opens a PR.)
+#
+# Expansion-snapshot drift is deliberately excluded from the pass/fail
+# signal here: a new wasm-bindgen release that changes its codegen makes
+# the snapshots stale by design, and the nightly check-wasmbindgen-changes
+# workflow owns that signal (it regenerates them and opens an update PR).
+# Mixing the two would fail this job — and notify — on every routine release.
+
+on:
+    schedule:
+        - cron: "0 2 * * 1" # every Monday 02:00 GMT
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    issues: write
+
+jobs:
+    test-latest:
+        name: Test with latest dependencies
+        runs-on: ubuntu-latest
+
+        # Single source of truth for the tracking-issue title: "Notify on
+        # failure" and its "Close ... on success" counterpart must search for
+        # the exact same string, or a stale issue would mute all future alerts.
+        env:
+            ISSUE_TITLE: "CI: weekly latest-deps check is failing"
+
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v6
+
+            - name: Setup test environment
+              id: setup
+              uses: ./.github/actions/setup-test-env
+
+            # Same commands as ./test.sh, minus the expandtest snapshot
+            # comparison (see the header comment). `--skip expandtest` matches
+            # the test *function* name, inside each test binary.
+            - name: Run test suite (excluding expand snapshots)
+              run: |
+                  cargo test --all -- --skip expandtest
+                  cargo test --all -F js -- --skip expandtest
+                  wasm-pack test --node
+                  wasm-pack test --node -F js
+                  ./tests-e2e/build_all.sh
+                  ./tests-e2e/reference_output/compare_output.sh
+
+            - name: Check expand snapshots (informational only)
+              # Failure here means routine snapshot drift that the nightly
+              # cron will pick up; it must not fail this job.
+              continue-on-error: true
+              run: cargo test -p tsify --test expandtest
+
+            - name: Close failure tracking issue on success
+              if: success()
+              uses: ./.github/actions/track-failure-issue
+              with:
+                  mode: close
+                  title: ${{ env.ISSUE_TITLE }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Notify on failure
+              if: failure()
+              uses: ./.github/actions/track-failure-issue
+              with:
+                  mode: notify
+                  title: ${{ env.ISSUE_TITLE }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  body: |
+                      The weekly latest-deps run failed.
+
+                      Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+                      Resolved wasm-bindgen: ${{ steps.setup.outputs.wasm-bindgen-version || 'unknown' }}
+
+                      Compilation or tests are broken against the newest compatible dependency versions — what downstream users actually get. Expansion-snapshot drift is excluded from this job, so it cannot be the cause — this is a real compatibility break.

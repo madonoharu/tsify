@@ -16,4 +16,10 @@ export function accept_point_vec(point: Point[]): void;
 
 export function return_point(point: Point): Point;
 
+export function return_point_async(point: Point): Promise<Point>;
+
+export function return_point_option_async(point: Point): Promise<Point | undefined>;
+
+export function return_point_result_async(point: Point): Promise<Point>;
+
 export function return_point_vec(): Point[];

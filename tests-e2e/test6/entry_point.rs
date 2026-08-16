@@ -41,6 +41,23 @@ pub fn return_point(point: &Ts<Point>) -> Ts<Point> {
 #[wasm_bindgen]
 pub async fn accept_point_ref_async(point: &Ts<Point>) {}
 
+// Async fns return through `IntoJsResult`; the bare, `Result`, and `Option`
+// shapes below each require `Ts<T>: Into<JsValue>` via a distinct impl path.
+#[wasm_bindgen]
+pub async fn return_point_async(point: &Ts<Point>) -> Ts<Point> {
+    point.clone()
+}
+
+#[wasm_bindgen]
+pub async fn return_point_result_async(point: Ts<Point>) -> Result<Ts<Point>, JsError> {
+    Ok(point)
+}
+
+#[wasm_bindgen]
+pub async fn return_point_option_async(point: &Ts<Point>) -> Option<Ts<Point>> {
+    Some(point.clone())
+}
+
 #[wasm_bindgen]
 pub fn accept_point_vec(point: Vec<Ts<Point>>) {}
 

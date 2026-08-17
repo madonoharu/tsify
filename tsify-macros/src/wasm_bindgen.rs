@@ -117,12 +117,14 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
     let ident = cont.ident();
     let serde_path = cont.serde_container.attrs.serde_path();
     let mut generics = cont.generics_without_defaults();
-    let borrowed_generics = generics.clone();
 
-    generics
-        .make_where_clause()
-        .predicates
-        .push(parse_quote!(#ident #borrowed_generics: #serde_path::Serialize));
+    // A predicate's self type is a type position, where `Generics` would render
+    // its declaration form — bounds, defaults, `const N: usize` — and hit E0229.
+    let predicate: syn::WherePredicate = {
+        let (_, ty_generics, _) = generics.split_for_impl();
+        parse_quote!(#ident #ty_generics: #serde_path::Serialize)
+    };
+    generics.make_where_clause().predicates.push(predicate);
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 

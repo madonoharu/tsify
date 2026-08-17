@@ -20,6 +20,10 @@ and Node.js (for the wasm/e2e tests).
 CI pins cargo-expand to the version in `.github/actions/setup-test-env`. Its
 output shape feeds the snapshots, so regenerate them with that version.
 
+`src/lib.rs` pulls in `README.md` with `#![doc = include_str!(...)]`, so every
+` ```rust ` block in the README is compiled as a doctest. Mark illustrative
+snippets `ignore`, or write them so they compile on their own.
+
 ## Expansion snapshots (`tests/expand/*.expanded.rs`)
 
 The snapshot files record the full macro expansion of `#[derive(Tsify)]`,

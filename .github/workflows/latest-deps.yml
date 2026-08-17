@@ -16,6 +16,12 @@ on:
         - cron: "0 2 * * 1" # every Monday 02:00 GMT
     workflow_dispatch:
 
+# Two runs racing would each decide independently whether to file or close the
+# tracking issue.
+concurrency:
+    group: latest-deps
+    cancel-in-progress: false
+
 permissions:
     contents: read
     issues: write
@@ -34,6 +40,10 @@ jobs:
         steps:
             - name: Checkout sources
               uses: actions/checkout@v6
+              with:
+                  # This job only builds and tests; it never pushes, so the
+                  # checkout token should not stay available to the build.
+                  persist-credentials: false
 
             - name: Setup test environment
               id: setup

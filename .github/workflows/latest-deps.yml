@@ -41,8 +41,7 @@ jobs:
             - name: Checkout sources
               uses: actions/checkout@v6
               with:
-                  # This job only builds and tests; it never pushes, so the
-                  # checkout token should not stay available to the build.
+                  # Nothing here pushes, so don't leave the token to the build.
                   persist-credentials: false
 
             - name: Setup test environment

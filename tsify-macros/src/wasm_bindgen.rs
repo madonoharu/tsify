@@ -118,30 +118,13 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
     let serde_path = cont.serde_container.attrs.serde_path();
     let mut generics = cont.generics_without_defaults();
 
-    // Remove all constraints from every type parameter because in the generated impls
-    let generics_without_bounds = syn::Generics {
-        params: generics
-            .params
-            .iter()
-            .cloned()
-            .map(|param| match param {
-                syn::GenericParam::Type(param) => syn::GenericParam::Type(syn::TypeParam {
-                    eq_token: None,
-                    default: None,
-                    colon_token: None,
-                    bounds: syn::punctuated::Punctuated::new(),
-                    ..param
-                }),
-                _ => param,
-            })
-            .collect(),
-        ..generics.clone()
+    // A predicate's self type is a type position, where `Generics` would render
+    // its declaration form — bounds, defaults, `const N: usize` — and hit E0229.
+    let predicate: syn::WherePredicate = {
+        let (_, ty_generics, _) = generics.split_for_impl();
+        parse_quote!(#ident #ty_generics: #serde_path::Serialize)
     };
-
-    generics
-        .make_where_clause()
-        .predicates
-        .push(parse_quote!(#ident #generics_without_bounds: #serde_path::Serialize));
+    generics.make_where_clause().predicates.push(predicate);
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 

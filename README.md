@@ -53,18 +53,14 @@ Will generate the following `.d.ts` file:
 ```ts
 /* tslint:disable */
 /* eslint-disable */
-/**
- * @returns {Point}
- */
-export function into_js(): Point;
-/**
- * @param {Point} point
- */
-export function from_js(point: Point): void;
 export interface Point {
     x: number;
     y: number;
 }
+
+export function from_js(point: Point): void;
+
+export function into_js(): Point;
 ```
 
 This is the behavior due to [`typescript_custom_section`](https://rustwasm.github.io/docs/wasm-bindgen/reference/attributes/on-rust-exports/typescript_custom_section.html) and [`Rust Type conversions`](https://rustwasm.github.io/docs/wasm-bindgen/contributing/design/rust-type-conversions.html).
@@ -233,12 +229,7 @@ declare namespace Color {
     };
 }
 
-export type Color =
-    | "Red"
-    | "Blue"
-    | "Green"
-    | { Rgb: [number, number, number] }
-    | { Hsv: { hue: number; saturation: number; value: number } };
+export type Color = Color.Red | Color.Blue | Color.Green | Color.Rgb | Color.Hsv;
 ```
 
 ## Type Aliases

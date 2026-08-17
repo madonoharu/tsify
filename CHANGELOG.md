@@ -1,5 +1,13 @@
 # tsify Changelog
 
+## v0.5.7
+
+- Added `Ts<T>`, a wrapper for `#[wasm_bindgen]` parameters and return types. `#[tsify(into_wasm_abi, from_wasm_abi)]` leak memory whenever (de)serialization fails: the conversion happens at the ABI boundary, where the only way to report failure is `wasm_bindgen::throw_str`, which does not run destructors. `Ts<T>` moves the conversion into the function body, where it is an ordinary `Result`. Resolves #65, #47 and #86. @cormacrelf contributed #71
+- Deprecated `into_wasm_abi` and `from_wasm_abi` in favour of `Ts<T>`. The README explains the mechanism; the attributes still work, and no removal is planned
+- `Ts<T>` can now be returned from `async fn`. @hgiesel contributed #84
+- `#[tsify(namespace)]` enums now emit `export type E = E.A | E.B` instead of repeating each variant's shape in the union. @hgiesel contributed #78
+- Fixed raw string artifacts in doc comments copied into the generated TypeScript. @samkearney contributed the fix
+
 ## v0.5.6
 
 - Resolve the issue with default parameters in generics

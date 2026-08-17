@@ -13,6 +13,12 @@ on:
         - cron: "0 0 * * *" # every day at midnight GMT
     workflow_dispatch:
 
+# The bot branch is force-pushed, so a manual run overlapping the nightly one
+# would have them overwrite each other's work.
+concurrency:
+    group: check-wasmbindgen-changes
+    cancel-in-progress: false
+
 env:
     TARGET_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}
 
@@ -67,13 +73,15 @@ jobs:
 
             - name: Check for changes
               run: |
-                  if git diff --quiet -- tests; then
+                  # `git diff` alone would miss a snapshot for a newly added
+                  # test, which is untracked until it is staged.
+                  git add -A tests
+                  if git diff --cached --quiet -- tests; then
                     echo "Expanded test artifacts are unchanged; nothing to do."
                     exit 0
                   fi
 
                   echo "Creating PR with changes..."
-                  git add tests
                   git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.setup.outputs.wasm-bindgen-version }}"
                   git push --force --set-upstream origin update-expanded-test-artifacts
 

@@ -17,6 +17,9 @@ Required tools: stable Rust, [wasm-pack](https://rustwasm.github.io/wasm-pack/),
 [cargo-expand](https://github.com/dtolnay/cargo-expand) (for the expand tests),
 and Node.js (for the wasm/e2e tests).
 
+CI pins cargo-expand to the version in `.github/actions/setup-test-env`. Its
+output shape feeds the snapshots, so regenerate them with that version.
+
 ## Expansion snapshots (`tests/expand/*.expanded.rs`)
 
 The snapshot files record the full macro expansion of `#[derive(Tsify)]`,

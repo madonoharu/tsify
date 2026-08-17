@@ -31,9 +31,11 @@ runs:
               # https://github.com/jetli/wasm-pack-action/issues/23
               version: v0.14.0
 
+        # cargo-expand's output shape feeds the snapshots, so an unpinned
+        # upgrade would read as codegen drift and misattribute the cause.
         - name: Add cargo-expand
           shell: bash
-          run: cargo install cargo-expand
+          run: cargo install cargo-expand --version 1.0.124 --locked
 
         # Log the resolved wasm-bindgen version so failures can be attributed
         # to a dependency release vs. a toolchain change.

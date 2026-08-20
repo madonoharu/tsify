@@ -28,6 +28,9 @@ pub struct SerializationConfig {
 /// `Tsify` is a trait that allows you to convert a type to and from JavaScript.
 /// Can be implemented manually if you need to customize the serialization or deserialization.
 pub trait Tsify {
+    /// Must be a type imported through `#[wasm_bindgen] extern "C" { .. }`.
+    /// [`Ts<T>`] is `#[repr(transparent)]` over this and passes it across the
+    /// ABI as a plain JS handle, which any other representation would break.
     #[cfg(feature = "wasm-bindgen")]
     type JsType: JsCast;
 

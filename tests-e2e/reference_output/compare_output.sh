@@ -38,6 +38,11 @@ for FOLDERNAME in $(find . -maxdepth 1 -type d); do
             else
                 echo "   Files are identical"
             fi
+        else
+            # A reference with no counterpart means the build stopped emitting
+            # it; skipping would report that regression as success.
+            echo "Missing generated file: $OTHER_FILE"
+            DIFF_FOUND=1
         fi
     done
 done

@@ -40,7 +40,6 @@ use wasm_bindgen::{JsCast, JsValue};
 ///    y: f64,
 /// }
 ///
-/// /// The panicking version
 /// #[wasm_bindgen]
 /// pub fn rotate(v: Ts<Vec2>, theta_rad: f64) -> Result<Ts<Vec2>, JsError> {
 ///     // Deserialize to rust type, throw deserialization error if fails
@@ -69,7 +68,7 @@ where
         Self(js, std::marker::PhantomData)
     }
 
-    /// Returns the inner JsValue representation. This is a zero cost operation.
+    /// Returns the inner JsValue representation, cloning the JS handle.
     pub fn js_value(&self) -> JsValue
     where
         <T as Tsify>::JsType: JsCast,
@@ -148,14 +147,16 @@ where
         self.0.into_abi()
     }
 }
-impl<T> IntoWasmAbi for &Ts<T>
+impl<'a, T> IntoWasmAbi for &'a Ts<T>
 where
     T: Tsify,
-    <T as Tsify>::JsType: IntoWasmAbi + Clone,
+    <T as Tsify>::JsType: JsCast + WasmDescribe,
 {
-    type Abi = <T::JsType as IntoWasmAbi>::Abi;
+    type Abi = <&'a JsValue as IntoWasmAbi>::Abi;
+    // Borrowed, so the handle stays owned here. Cloning it would hand JS an
+    // extra table slot that the borrowed-argument shim never releases.
     fn into_abi(self) -> Self::Abi {
-        self.0.clone().into_abi()
+        self.0.unchecked_ref::<JsValue>().into_abi()
     }
 }
 impl<T> FromWasmAbi for Ts<T>

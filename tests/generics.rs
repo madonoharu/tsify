@@ -161,10 +161,10 @@ fn test_generics_with_default_params() {
     struct DeNamedTuple<A = i32, B = String, C = ()>(A, B, C);
 
     let expected = indoc! {r#"
-        export type SerNamedTuple<A, B, C> = [A, B, C];"#
+        export type DeNamedTuple<A, B, C> = [A, B, C];"#
     };
 
-    assert_eq!(SerNamedTuple::<(), (), ()>::DECL, expected);
+    assert_eq!(DeNamedTuple::<(), (), ()>::DECL, expected);
 
     #[derive(Serialize, Tsify)]
     #[tsify(into_wasm_abi)]

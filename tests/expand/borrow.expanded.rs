@@ -426,4 +426,3 @@ const _: () = {
         _x
     };
 };
-// Proof sentinel: regeneration must remove this line.

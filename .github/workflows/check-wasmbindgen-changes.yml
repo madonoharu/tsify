@@ -7,6 +7,12 @@ name: Check wasm-bindgen changes
 #
 # If this job fails (e.g. the expansion itself errors out), it opens a tracking
 # issue so the failure is not silently lost in the Actions tab.
+#
+# Split into three jobs so the token that can write to the repository is never
+# in scope while dependencies are resolved and arbitrary build scripts run:
+# `expand` is read-only and hands its result over as an artifact, `open-pr`
+# holds the write permissions but builds nothing, and `track` only touches
+# issues.
 
 on:
     schedule:
@@ -19,51 +25,36 @@ concurrency:
     group: check-wasmbindgen-changes
     cancel-in-progress: false
 
+permissions: {}
+
 env:
     TARGET_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}
-
-permissions:
-    contents: write
-    pull-requests: write
-    issues: write
+    BOT_BRANCH: update-expanded-test-artifacts
+    # Single source of truth for the tracking-issue title: the "close" and
+    # "notify" calls must search for the exact same string, or a stale issue
+    # would mute all future alerts.
+    ISSUE_TITLE: "CI: nightly wasm-bindgen expand check is failing"
 
 jobs:
-    test:
-        name: Create Test Artifacts
+    expand:
+        name: Expand macros
         runs-on: ubuntu-latest
-
-        # Single source of truth for the tracking-issue title: "Notify on
-        # failure" and its "Close ... on success" counterpart must search for
-        # the exact same string, or a stale issue would mute all future alerts.
-        env:
-            ISSUE_TITLE: "CI: nightly wasm-bindgen expand check is failing"
+        permissions:
+            contents: read
+        outputs:
+            changed: ${{ steps.diff.outputs.changed }}
+            wasm-bindgen-version: ${{ steps.setup.outputs.wasm-bindgen-version }}
 
         steps:
             - name: Checkout sources
               uses: actions/checkout@v6
+              with:
+                  # Build scripts run in this job; leave them no token to find.
+                  persist-credentials: false
 
             - name: Setup test environment
               id: setup
               uses: ./.github/actions/setup-test-env
-
-            - name: Setup git config
-              run: |
-                  git config user.name "${{ github.actor }} via GitHub Actions"
-                  git config user.email "${{ github.actor }}@github_actions.no_reply"
-                  git checkout -b update-expanded-test-artifacts
-                  # Ensure the branch exists on the remote
-                  git ls-remote --exit-code origin update-expanded-test-artifacts || {
-                    git push -u origin update-expanded-test-artifacts
-                  }
-                  # Fetch the branch from the remote
-                  git fetch origin update-expanded-test-artifacts
-                  git fetch origin ${{ env.TARGET_BRANCH }}
-                  git fetch origin main
-                  # Reset to the target branch to avoid conflicts with the existing branch
-                  git reset --hard origin/${{ env.TARGET_BRANCH }}
-                  git branch --set-upstream-to=origin/${{ env.TARGET_BRANCH }} update-expanded-test-artifacts
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             # Run `MACROTEST=overwrite cargo test -p tsify --test expandtest` to rebuild the test artifacts with expanded macros.
             - name: Expand Macros
@@ -71,42 +62,105 @@ jobs:
               env:
                   MACROTEST: overwrite
 
-            - name: Check for changes
+            - name: Diff against the committed snapshots
+              id: diff
               run: |
-                  # `git diff` alone would miss a snapshot for a newly added
-                  # test, which is untracked until it is staged.
+                  # Staging first so a snapshot for a newly added test, which is
+                  # untracked until then, is part of the patch.
                   git add -A tests
                   if git diff --cached --quiet -- tests; then
                     echo "Expanded test artifacts are unchanged; nothing to do."
+                    echo "changed=false" >> "$GITHUB_OUTPUT"
                     exit 0
                   fi
+                  git diff --cached --binary -- tests > snapshots.patch
+                  echo "changed=true" >> "$GITHUB_OUTPUT"
+                  git diff --cached --stat -- tests | tee -a "$GITHUB_STEP_SUMMARY"
 
-                  echo "Creating PR with changes..."
-                  git commit -m "Update expanded test artifacts for wasm-bindgen ${{ steps.setup.outputs.wasm-bindgen-version }}"
-                  git push --force --set-upstream origin update-expanded-test-artifacts
+            - name: Upload the patch
+              if: steps.diff.outputs.changed == 'true'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: snapshots-patch
+                  path: snapshots.patch
+                  retention-days: 7
 
+    open-pr:
+        name: Open update PR
+        needs: expand
+        if: needs.expand.outputs.changed == 'true'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+
+        steps:
+            - name: Checkout target branch
+              uses: actions/checkout@v6
+              with:
+                  ref: ${{ env.TARGET_BRANCH }}
+
+            - name: Download the patch
+              uses: actions/download-artifact@v4
+              with:
+                  name: snapshots-patch
+
+            - name: Commit and push
+              run: |
+                  git config user.name "${{ github.actor }} via GitHub Actions"
+                  git config user.email "${{ github.actor }}@github_actions.no_reply"
+                  # Branch from the target rather than reusing whatever the bot
+                  # branch currently holds, so a stale run cannot resurrect an
+                  # old snapshot.
+                  git switch -c "$BOT_BRANCH"
+                  git apply snapshots.patch
+                  rm snapshots.patch
+                  git add -A tests
+                  git commit -m "Update expanded test artifacts for wasm-bindgen ${{ needs.expand.outputs.wasm-bindgen-version }}"
+                  git push --force --set-upstream origin "$BOT_BRANCH"
+
+            - name: Create the PR
+              run: |
                   # Check for an existing PR explicitly instead of catching
                   # `gh pr create` errors: a catch-all would swallow real
                   # failures too (missing label, 403 from repo settings, ...)
                   # and report them as success.
-                  EXISTING_PR=$(gh pr list --head update-expanded-test-artifacts --state open --json number --jq '.[0].number')
+                  EXISTING_PR=$(gh pr list --head "$BOT_BRANCH" --state open --json number --jq '.[0].number')
                   if [ -n "$EXISTING_PR" ]; then
                     echo "PR #$EXISTING_PR already open; the push above updated it."
                     exit 0
                   fi
 
-                  gh pr create --fill
+                  gh pr create --fill --base "$TARGET_BRANCH" --head "$BOT_BRANCH"
                   # Assignee/label are decoration; apply after creation so
                   # a failure there cannot block the PR itself.
                   gh label create automated-pr --color EDEDED --description "Created by a scheduled workflow" --force \
                     || echo "::warning::automated-pr label could not be created or updated"
+                  # No branch selector: `gh pr edit <branch>` can resolve to a
+                  # closed PR on the same branch. We are on it, so let gh infer.
                   gh pr edit --add-assignee madonoharu --add-label automated-pr \
                     || echo "::warning::PR created but assignee/label could not be applied"
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    track:
+        name: Track failures
+        needs: [expand, open-pr]
+        # `always()` so this still runs when `open-pr` was skipped for having
+        # nothing to do, which is the ordinary outcome.
+        if: always()
+        runs-on: ubuntu-latest
+        permissions:
+            issues: write
+
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v6
+              with:
+                  persist-credentials: false
+
             - name: Close failure tracking issue on success
-              if: success()
+              if: needs.expand.result == 'success' && needs.open-pr.result != 'failure'
               uses: ./.github/actions/track-failure-issue
               with:
                   mode: close
@@ -114,7 +168,7 @@ jobs:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Notify on failure
-              if: failure()
+              if: needs.expand.result == 'failure' || needs.open-pr.result == 'failure'
               uses: ./.github/actions/track-failure-issue
               with:
                   mode: notify
@@ -124,6 +178,6 @@ jobs:
                       The scheduled expand check failed.
 
                       Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-                      Resolved wasm-bindgen: ${{ steps.setup.outputs.wasm-bindgen-version || 'unknown' }}
+                      Resolved wasm-bindgen: ${{ needs.expand.outputs.wasm-bindgen-version || 'unknown' }}
 
                       Likely causes: a new wasm-bindgen release whose changed macro output breaks expansion, or a toolchain change that altered `-Zunpretty=expanded` behavior. See CONTRIBUTING.md for how to regenerate the snapshots.

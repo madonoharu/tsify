@@ -8,6 +8,8 @@ use syn::spanned::Spanned;
 pub struct TsifyContainerAttrs {
     pub type_override: Option<String>,
     pub type_params: Option<Vec<String>>,
+    /// Override the name of the generated Typescript declaration.
+    pub declaration_name: Option<String>,
     /// Implement `IntoWasmAbi` for the type.
     pub into_wasm_abi: bool,
     /// Implement `FromWasmAbi` for the type.
@@ -50,9 +52,11 @@ impl TypeGenerationConfig {
 
 impl TsifyContainerAttrs {
     pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
+        let mut declaration_name_span = None;
         let mut attrs = Self {
             type_override: None,
             type_params: None,
+            declaration_name: None,
             into_wasm_abi: false,
             from_wasm_abi: false,
             from_wasm_abi_span: None,
@@ -82,6 +86,23 @@ impl TsifyContainerAttrs {
                     }
                     let lit = meta.value()?.parse::<syn::LitStr>()?;
                     attrs.type_params = Some(lit.value().split(',').map(|s| s.trim().to_string()).collect());
+                    return Ok(());
+                }
+
+                if meta.path.is_ident("declaration_name") {
+                    if attrs.declaration_name.is_some() {
+                        return Err(meta.error("duplicate attribute"));
+                    }
+                    let lit = meta.value()?.parse::<syn::LitStr>()?;
+                    let declaration_name = lit.value();
+                    if !is_ts_identifier(&declaration_name) {
+                        return Err(syn::Error::new(
+                            lit.span(),
+                            "`declaration_name` must be a valid TypeScript identifier",
+                        ));
+                    }
+                    attrs.declaration_name = Some(declaration_name);
+                    declaration_name_span = Some(meta.path.span());
                     return Ok(());
                 }
 
@@ -171,12 +192,29 @@ impl TsifyContainerAttrs {
                     return Ok(());
                 }
 
-                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
+                Err(meta.error("unsupported tsify attribute, expected one of `type`, `type_params`, `declaration_name`, `into_wasm_abi`, `from_wasm_abi`, `namespace`, `type_prefix`, `type_suffix`, `missing_as_null`, `hashmap_as_object`, `large_number_types_as_bigints`"))
             })?;
+        }
+
+        if attrs.declaration_name.is_some()
+            && (attrs.ty_config.type_prefix.is_some() || attrs.ty_config.type_suffix.is_some())
+        {
+            return Err(syn::Error::new(
+                declaration_name_span.unwrap_or_else(Span::call_site),
+                "`declaration_name` cannot be combined with `type_prefix` or `type_suffix`",
+            ));
         }
 
         Ok(attrs)
     }
+}
+
+fn is_ts_identifier(name: &str) -> bool {
+    let mut chars = name.chars();
+    chars
+        .next()
+        .is_some_and(|c| c.is_ascii_alphabetic() || c == '_' || c == '$')
+        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$')
 }
 
 #[derive(Debug, Default)]

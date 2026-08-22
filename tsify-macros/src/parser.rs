@@ -82,7 +82,7 @@ impl<'a> Parser<'a> {
 
     fn create_type_alias_decl(&self, type_ann: TsType) -> Decl {
         Decl::TsTypeAlias(TsTypeAliasDecl {
-            id: self.container.ident_str(),
+            id: self.container.declaration_name(),
             export: true,
             type_params: self
                 .container
@@ -116,7 +116,7 @@ impl<'a> Parser<'a> {
                 .unwrap_or_else(|| self.create_relevant_type_params(type_ref_names));
 
             Decl::TsInterface(TsInterfaceDecl {
-                id: self.container.ident_str(),
+                id: self.container.declaration_name(),
                 type_params,
                 extends,
                 body: members,
@@ -305,7 +305,7 @@ impl<'a> Parser<'a> {
         let relevant_type_params = self.create_relevant_type_params(type_ref_names);
 
         Decl::TsEnum(TsEnumDecl {
-            id: self.container.ident_str(),
+            id: self.container.declaration_name(),
             type_params: relevant_type_params,
             members,
             namespace: self.container.attrs.namespace,

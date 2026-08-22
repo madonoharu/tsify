@@ -80,6 +80,7 @@ Tsify container attributes
 -   `namespace` generates a namespace for the enum variants.
 -   `type` overrides at the container level.
 -   `type_params` overrides params at the container level.
+-   `declaration_name = "NewName"` sets the name of the generated TypeScript declaration. Only the declaration: references to the type keep using the Rust identifier, so point them at the new name with `#[tsify(type = "NewName")]` where needed. Cannot be combined with `type_prefix` or `type_suffix`.
 
 [Serializer configuration options](https://github.com/RReverser/serde-wasm-bindgen?tab=readme-ov-file#serializer-configuration-options)
 -   `missing_as_null` 

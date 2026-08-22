@@ -426,4 +426,3 @@ const _: () = {
         _x
     };
 };
-// Branch-protection proof sentinel: regeneration must remove this line.

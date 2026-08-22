@@ -159,8 +159,10 @@ jobs:
               with:
                   persist-credentials: false
 
+            # Listing the two good outcomes rather than excluding failure:
+            # `result` is also `cancelled`, which is not a success.
             - name: Close failure tracking issue on success
-              if: needs.expand.result == 'success' && needs.open-pr.result != 'failure'
+              if: needs.expand.result == 'success' && (needs.open-pr.result == 'success' || needs.open-pr.result == 'skipped')
               uses: ./.github/actions/track-failure-issue
               with:
                   mode: close

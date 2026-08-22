@@ -75,7 +75,7 @@ impl<'a> Container<'a> {
     /// The name of the generated Typescript declaration.
     pub fn declaration_name(&self) -> String {
         self.attrs
-            .rename
+            .declaration_name
             .clone()
             .unwrap_or_else(|| self.ident_str())
     }

@@ -14,7 +14,7 @@ impl TempCrate {
             .expect("system time should be after the Unix epoch")
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "tsify-rename-compile-fail-{}-{nonce}",
+            "tsify-declaration-name-compile-fail-{}-{nonce}",
             std::process::id()
         ));
         fs::create_dir_all(path.join("src")).expect("failed to create temporary test crate");
@@ -33,13 +33,13 @@ impl Drop for TempCrate {
 }
 
 #[test]
-fn invalid_container_rename_attributes_fail_to_compile() {
+fn invalid_declaration_name_attributes_fail_to_compile() {
     let temp_crate = TempCrate::new();
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let dependency_path = manifest_dir.to_string_lossy().replace('\\', "\\\\");
     let manifest = format!(
         r#"[package]
-name = "tsify-rename-compile-fail"
+name = "tsify-declaration-name-compile-fail"
 version = "0.0.0"
 edition = "2021"
 
@@ -56,19 +56,19 @@ tsify = {{ path = "{dependency_path}" }}
         r#"use tsify::Tsify;
 
 #[derive(Tsify)]
-#[tsify(rename = "First", rename = "Second")]
+#[tsify(declaration_name = "First", declaration_name = "Second")]
 struct DuplicateRename;
 
 #[derive(Tsify)]
-#[tsify(type_prefix = "Prefix", rename = "Renamed")]
+#[tsify(type_prefix = "Prefix", declaration_name = "Renamed")]
 struct RenameAfterPrefix;
 
 #[derive(Tsify)]
-#[tsify(rename = "Renamed", type_suffix = "Suffix")]
+#[tsify(declaration_name = "Renamed", type_suffix = "Suffix")]
 struct RenameBeforeSuffix;
 
 #[derive(Tsify)]
-#[tsify(rename = "not-valid")]
+#[tsify(declaration_name = "not-valid")]
 struct InvalidRename;
 "#,
     )
@@ -89,17 +89,17 @@ struct InvalidRename;
     assert!(!output.status.success(), "fixture unexpectedly compiled");
     assert!(
         stderr.contains("duplicate attribute"),
-        "missing duplicate rename diagnostic:\n{stderr}"
+        "missing duplicate declaration_name diagnostic:\n{stderr}"
     );
     assert_eq!(
         stderr
-            .matches("`rename` cannot be combined with `type_prefix` or `type_suffix`")
+            .matches("`declaration_name` cannot be combined with `type_prefix` or `type_suffix`")
             .count(),
         2,
         "prefix/suffix conflicts should fail in either parse order:\n{stderr}"
     );
     assert!(
-        stderr.contains("`rename` must be a valid TypeScript identifier"),
+        stderr.contains("`declaration_name` must be a valid TypeScript identifier"),
         "missing invalid identifier diagnostic:\n{stderr}"
     );
 }

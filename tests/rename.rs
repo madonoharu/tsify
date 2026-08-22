@@ -65,15 +65,15 @@ fn test_rename() {
 }
 
 #[test]
-fn test_tsify_container_rename() {
+fn test_tsify_declaration_name() {
     #[derive(Tsify)]
-    #[tsify(rename = "StructDeclaration")]
+    #[tsify(declaration_name = "StructDeclaration")]
     struct RustStruct {
         value: String,
     }
 
     #[derive(Tsify)]
-    #[tsify(rename = "EnumDeclaration")]
+    #[tsify(declaration_name = "EnumDeclaration")]
     enum RustEnum {
         Variant(bool),
     }
@@ -93,10 +93,10 @@ fn test_tsify_container_rename() {
 }
 
 #[test]
-fn test_tsify_container_rename_overrides_serde_rename() {
+fn test_tsify_declaration_name_overrides_serde_rename() {
     #[derive(Tsify)]
     #[serde(rename = "SerdeDeclaration")]
-    #[tsify(rename = "TsifyDeclaration")]
+    #[tsify(declaration_name = "TsifyDeclaration")]
     struct RustDeclaration {
         value: String,
     }
@@ -112,10 +112,10 @@ fn test_tsify_container_rename_overrides_serde_rename() {
 }
 
 #[test]
-fn test_tsify_container_rename_does_not_change_internal_tag_value() {
+fn test_tsify_declaration_name_does_not_change_internal_tag_value() {
     #[derive(Tsify)]
     #[serde(rename = "WireName", tag = "kind")]
-    #[tsify(rename = "DeclarationName")]
+    #[tsify(declaration_name = "DeclarationName")]
     struct RustName {
         value: String,
     }
@@ -132,9 +132,9 @@ fn test_tsify_container_rename_does_not_change_internal_tag_value() {
 }
 
 #[test]
-fn test_tsify_container_rename_does_not_change_references() {
+fn test_tsify_declaration_name_does_not_change_references() {
     #[derive(Tsify)]
-    #[tsify(rename = "PublicConfig")]
+    #[tsify(declaration_name = "PublicConfig")]
     struct Config {
         value: String,
     }

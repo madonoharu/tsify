@@ -65,6 +65,107 @@ fn test_rename() {
 }
 
 #[test]
+fn test_tsify_container_rename() {
+    #[derive(Tsify)]
+    #[tsify(rename = "StructDeclaration")]
+    struct RustStruct {
+        value: String,
+    }
+
+    #[derive(Tsify)]
+    #[tsify(rename = "EnumDeclaration")]
+    enum RustEnum {
+        Variant(bool),
+    }
+
+    assert_eq!(
+        RustStruct::DECL,
+        indoc! {"
+            export interface StructDeclaration {
+                value: string;
+            }"
+        }
+    );
+    assert_eq!(
+        RustEnum::DECL,
+        "export type EnumDeclaration = { Variant: boolean };"
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_overrides_serde_rename() {
+    #[derive(Tsify)]
+    #[serde(rename = "SerdeDeclaration")]
+    #[tsify(rename = "TsifyDeclaration")]
+    struct RustDeclaration {
+        value: String,
+    }
+
+    assert_eq!(
+        RustDeclaration::DECL,
+        indoc! {"
+            export interface TsifyDeclaration {
+                value: string;
+            }"
+        }
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_does_not_change_internal_tag_value() {
+    #[derive(Tsify)]
+    #[serde(rename = "WireName", tag = "kind")]
+    #[tsify(rename = "DeclarationName")]
+    struct RustName {
+        value: String,
+    }
+
+    assert_eq!(
+        RustName::DECL,
+        indoc! {r#"
+            export interface DeclarationName {
+                kind: "WireName";
+                value: string;
+            }"#
+        }
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_does_not_change_references() {
+    #[derive(Tsify)]
+    #[tsify(rename = "PublicConfig")]
+    struct Config {
+        value: String,
+    }
+
+    #[derive(Tsify)]
+    struct Holder {
+        config: Config,
+        #[tsify(type = "PublicConfig")]
+        fixed_config: Config,
+    }
+
+    assert_eq!(
+        Config::DECL,
+        indoc! {"
+            export interface PublicConfig {
+                value: string;
+            }"
+        }
+    );
+    assert_eq!(
+        Holder::DECL,
+        indoc! {"
+            export interface Holder {
+                config: Config;
+                fixed_config: PublicConfig;
+            }"
+        }
+    );
+}
+
+#[test]
 fn test_rename_all() {
     /// Comment for Enum
     #[allow(clippy::enum_variant_names)]

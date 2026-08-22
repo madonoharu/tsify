@@ -72,6 +72,14 @@ impl<'a> Container<'a> {
         self.ident_str.clone()
     }
 
+    /// The name of the generated Typescript declaration.
+    pub fn declaration_name(&self) -> String {
+        self.attrs
+            .rename
+            .clone()
+            .unwrap_or_else(|| self.ident_str())
+    }
+
     #[inline]
     pub fn serde_attrs(&self) -> &attr::Container {
         &self.serde_container.attrs

@@ -2,15 +2,24 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use crate::{
-    attrs::TypeGenerationConfig, comments::extract_doc_comments, decl::TsTypeAliasDecl,
-    error_tracker::ErrorTracker, typescript::TsType,
+    attrs::TypeGenerationConfig,
+    comments::extract_doc_comments,
+    decl::TsTypeAliasDecl,
+    error_tracker::ErrorTracker,
+    typescript::{TsType, TypeContext},
 };
 
 /// Expand a `#[declare]` macro on a Rust `type = ...` expression.
 pub fn expand(item: syn::ItemType) -> syn::Result<TokenStream> {
     let errors = ErrorTracker::new();
 
-    let type_ann = TsType::from_syn_type(&TypeGenerationConfig::default(), item.ty.as_ref());
+    let type_ann = TsType::from_syn_type(
+        TypeContext {
+            config: &TypeGenerationConfig::default(),
+            generics: &item.generics,
+        },
+        item.ty.as_ref(),
+    );
 
     let decl = TsTypeAliasDecl {
         id: item.ident.to_string(),

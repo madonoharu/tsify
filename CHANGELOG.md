@@ -1,5 +1,11 @@
 # tsify Changelog
 
+## v0.5.8
+
+- Added `#[tsify(rename = "...")]`, which renames the generated TypeScript declaration and nothing else — references from other types still emit the Rust ident, so point them at the new name with `#[tsify(type = "...")]` at each reference site. Cannot be combined with `type_prefix` or `type_suffix`. Resolves #70, which had been blocking the 0.4 → 0.5 upgrade for anyone with two same-named types in different modules
+- **`type_prefix` and `type_suffix` no longer rename type parameters.** A type parameter has no declaration for the affix to rename, so `#[tsify(type_prefix = "Ts")] struct Wrapper<T> { x: T }` declared `export interface TsWrapper { x: TsT; }` — the parameter dropped, and `TsT` never declared anywhere. It now declares `export interface TsWrapper<T> { x: T; }`. **If you use either attribute on a generic type, its `.d.ts` changes.** There was no correct way to use the affix on a generic type before this, so nothing that type-checked without `skipLibCheck` is affected
+- **`type_prefix` and `type_suffix` no longer reach the tag literal of an internally-tagged type.** That value comes from serde, which was never told about the affix, so `#[serde(tag = "kind")] #[tsify(type_prefix = "A")] struct Config` declared `kind: "AConfig"` where serde has always serialized `"Config"`. It now declares `kind: "Config"`. **If you narrowed on the old literal, that code compiled and never matched at runtime; it is now a compile error.** Applying either attribute to only some of your types still emits references to names that were never declared — that half of #94 is still open
+
 ## v0.5.7
 
 - Added `Ts<T>`, a wrapper for `#[wasm_bindgen]` parameters and return types. `#[tsify(from_wasm_abi)]` deserializes at the ABI boundary, which cannot report failure, so bad input from JavaScript ends in `wasm_bindgen::throw_str` — a catchable JS exception that skips destructors, leaking a little on every failure until the instance dies. `Ts<T>` keeps the boundary infallible and moves the conversion into the function body, where it is an ordinary `Result`. Addresses #65, #47 and #86. @cormacrelf contributed #71

@@ -160,7 +160,7 @@ impl Serialize for CantBeSerialized {
 fn test_data_that_cant_be_serialized_throws_an_appropriate_error() {
     let val = CantBeSerialized { value: 42 }.into_ts().unwrap();
 
-    let _ = do_not_serialize(val).unwrap();
+    do_not_serialize(val).unwrap();
 }
 
 // No point testing Vec<Ts<CantBeSerialized>> here, since you call the same

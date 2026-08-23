@@ -4,7 +4,7 @@ use std::{fmt::Display, vec};
 use crate::comments::clean_comments;
 use crate::{
     comments::write_doc_comments,
-    typescript::{TsType, TsTypeElement, TsTypeLit},
+    typescript::{TsType, TsTypeElement, TsTypeLit, TsTypeRef, TsTypeRefSource},
 };
 
 #[derive(Debug, Clone)]
@@ -121,20 +121,22 @@ fn tparam(i: usize) -> String {
 impl TsEnumDecl {
     fn replace_type_params(ts_type: TsType, type_args: &mut Vec<String>) -> TsType {
         match ts_type {
-            TsType::Ref { name, type_params } => TsType::Ref {
-                name,
-                type_params: type_params
+            TsType::Ref(type_ref) => TsType::Ref(TsTypeRef {
+                type_params: type_ref
+                    .type_params
                     .iter()
                     .map(|_| {
                         let name = tparam(type_args.len());
                         type_args.push(name.clone());
-                        TsType::Ref {
+                        TsType::Ref(TsTypeRef {
                             name,
+                            source: TsTypeRefSource::TypeParam,
                             type_params: Vec::new(),
-                        }
+                        })
                     })
                     .collect(),
-            },
+                ..type_ref
+            }),
             TsType::Array(t) => TsType::Array(Box::new(TsEnumDecl::replace_type_params(
                 t.deref().clone(),
                 type_args,
@@ -200,19 +202,16 @@ impl Display for TsEnumDecl {
 
                     type_refs
                         .iter()
-                        .filter(|(name, _)| !self.type_params.contains(name))
-                        .map(|(name, type_args)| {
+                        .filter(|type_ref| !self.type_params.contains(&type_ref.name))
+                        .map(|type_ref| {
                             let mut type_refs = Vec::new();
                             let ts_type = TsEnumDecl::replace_type_params(
-                                TsType::Ref {
-                                    name: name.clone(),
-                                    type_params: type_args.clone(),
-                                },
+                                TsType::Ref(type_ref.clone()),
                                 &mut type_refs,
                             );
 
                             TsTypeAliasDecl {
-                                id: format!("__{}{}", self.id, name),
+                                id: format!("__{}{}", self.id, type_ref.name),
                                 export: false,
                                 type_params: type_refs,
                                 type_ann: ts_type,
@@ -279,10 +278,11 @@ impl Display for TsEnumDecl {
                                 format!("{}.{}<{}>", self.id, clone.id, type_params)
                             };
 
-                            TsType::Ref {
+                            TsType::Ref(TsTypeRef {
                                 name,
+                                source: TsTypeRefSource::Synthetic,
                                 type_params: vec![],
-                            }
+                            })
                         } else {
                             clone.type_ann.clone()
                         }

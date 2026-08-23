@@ -65,6 +65,239 @@ fn test_rename() {
 }
 
 #[test]
+fn test_tsify_container_rename() {
+    #[derive(Tsify)]
+    #[tsify(rename = "StructDeclaration")]
+    struct RustStruct {
+        value: String,
+    }
+
+    #[derive(Tsify)]
+    #[tsify(rename = "EnumDeclaration")]
+    enum RustEnum {
+        Variant(bool),
+    }
+
+    assert_eq!(
+        RustStruct::DECL,
+        indoc! {"
+            export interface StructDeclaration {
+                value: string;
+            }"
+        }
+    );
+    assert_eq!(
+        RustEnum::DECL,
+        "export type EnumDeclaration = { Variant: boolean };"
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_overrides_serde_rename() {
+    #[derive(Tsify)]
+    #[serde(rename = "SerdeDeclaration")]
+    #[tsify(rename = "TsifyDeclaration")]
+    struct RustDeclaration {
+        value: String,
+    }
+
+    assert_eq!(
+        RustDeclaration::DECL,
+        indoc! {"
+            export interface TsifyDeclaration {
+                value: string;
+            }"
+        }
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_does_not_change_internal_tag_value() {
+    #[derive(Tsify)]
+    #[serde(rename = "WireName", tag = "kind")]
+    #[tsify(rename = "DeclarationName")]
+    struct RustName {
+        value: String,
+    }
+
+    assert_eq!(
+        RustName::DECL,
+        indoc! {r#"
+            export interface DeclarationName {
+                kind: "WireName";
+                value: string;
+            }"#
+        }
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_currently_requires_reference_override() {
+    // `rename` names declarations and nothing else. Both references sit side by side
+    // so that #103, if it lands, has to change this expectation deliberately.
+    #[derive(Tsify)]
+    #[tsify(rename = "PublicConfig")]
+    struct Config {
+        value: String,
+    }
+
+    #[derive(Tsify)]
+    struct Holder {
+        config: Config,
+        #[tsify(type = "PublicConfig")]
+        fixed_config: Config,
+    }
+
+    assert_eq!(
+        Config::DECL,
+        indoc! {"
+            export interface PublicConfig {
+                value: string;
+            }"
+        }
+    );
+    assert_eq!(
+        Holder::DECL,
+        indoc! {"
+            export interface Holder {
+                config: Config;
+                fixed_config: PublicConfig;
+            }"
+        }
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_namespace_with_generics() {
+    struct Wrapper<T>(T);
+
+    #[derive(Tsify)]
+    #[tsify(namespace, rename = "PublicResult")]
+    enum RustResult<T> {
+        Value(Wrapper<Vec<T>>),
+        Empty,
+    }
+
+    assert_eq!(
+        RustResult::<u32>::DECL,
+        indoc! {r#"
+            type __PublicResultWrapper<A> = Wrapper<A>;
+            declare namespace PublicResult {
+                export type Value<T> = { Value: __PublicResultWrapper<T[]> };
+                export type Empty = "Empty";
+            }
+
+            export type PublicResult<T> = PublicResult.Value<T> | PublicResult.Empty;"#
+        }
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_declaration_forms() {
+    struct Unsupported;
+
+    #[derive(Tsify)]
+    #[tsify(rename = "RenamedNewtype")]
+    struct RustNewtype(u32);
+
+    #[derive(Tsify)]
+    #[tsify(rename = "RenamedUnit")]
+    struct RustUnit;
+
+    #[derive(Tsify)]
+    #[serde(transparent)]
+    #[tsify(rename = "RenamedTransparent")]
+    struct RustTransparent(String);
+
+    #[derive(Tsify)]
+    #[tsify(rename = "RenamedOverride", type = "{ value: string }")]
+    struct RustOverride(Unsupported);
+
+    assert_eq!(
+        RustNewtype::DECL,
+        indoc! {"
+            export type RenamedNewtype = number;"
+        }
+    );
+    assert_eq!(
+        RustUnit::DECL,
+        if cfg!(feature = "js") {
+            indoc! {"
+                export type RenamedUnit = undefined;"
+            }
+        } else {
+            indoc! {"
+                export type RenamedUnit = null;"
+            }
+        }
+    );
+    assert_eq!(
+        RustTransparent::DECL,
+        indoc! {"
+            export type RenamedTransparent = string;"
+        }
+    );
+    assert_eq!(
+        RustOverride::DECL,
+        indoc! {"
+            export type RenamedOverride = { value: string };"
+        }
+    );
+}
+
+#[test]
+fn test_tsify_container_rename_serde_tag_strategies() {
+    #[derive(Tsify)]
+    #[serde(tag = "kind")]
+    #[tsify(rename = "RenamedInternal")]
+    enum RustInternal<T> {
+        Value { value: T },
+        Empty,
+    }
+
+    #[derive(Tsify)]
+    #[serde(tag = "kind", content = "content")]
+    #[tsify(rename = "RenamedAdjacent")]
+    enum RustAdjacent<T> {
+        Value(T),
+        Empty,
+    }
+
+    #[derive(Tsify)]
+    #[serde(untagged)]
+    #[tsify(rename = "RenamedUntagged")]
+    enum RustUntagged<T> {
+        Value(T),
+        Empty,
+    }
+
+    assert_eq!(
+        RustInternal::<String>::DECL,
+        indoc! {r#"
+            export type RenamedInternal<T> = { kind: "Value"; value: T } | { kind: "Empty" };"#
+        }
+    );
+    assert_eq!(
+        RustAdjacent::<String>::DECL,
+        indoc! {r#"
+            export type RenamedAdjacent<T> = { kind: "Value"; content: T } | { kind: "Empty" };"#
+        }
+    );
+    assert_eq!(
+        RustUntagged::<String>::DECL,
+        if cfg!(feature = "js") {
+            indoc! {"
+                export type RenamedUntagged<T> = T | undefined;"
+            }
+        } else {
+            indoc! {"
+                export type RenamedUntagged<T> = T | null;"
+            }
+        }
+    );
+}
+
+#[test]
 fn test_rename_all() {
     /// Comment for Enum
     #[allow(clippy::enum_variant_names)]

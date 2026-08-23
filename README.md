@@ -26,13 +26,17 @@ wasm-bindgen = { version = "0.2" }
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use tsify::Ts;
+use tsify::declare;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsError;
 
+#[declare]
+pub type Coordinate = i32;
+
 #[derive(Tsify, Serialize, Deserialize)]
 pub struct Point {
-    x: i32,
-    y: i32,
+    x: Coordinate,
+    y: Coordinate,
 }
 
 #[wasm_bindgen]

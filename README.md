@@ -58,10 +58,11 @@ Will generate the following `.d.ts` file:
 /* tslint:disable */
 /* eslint-disable */
 export interface Point {
-    x: number;
-    y: number;
+    x: Coordinate;
+    y: Coordinate;
 }
 
+export type Coordinate = number;
 
 export function from_js(point: Point): void;
 

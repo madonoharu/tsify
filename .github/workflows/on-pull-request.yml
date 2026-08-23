@@ -6,8 +6,7 @@ on:
     pull_request:
         branches: ["*"]
 
-# Every job here builds and runs tests, which executes dependency build
-# scripts. None of them write to the repository.
+# Build and test only — and dependency build scripts run arbitrary code here.
 permissions:
     contents: read
 

@@ -5,8 +5,8 @@ name: Check wasm-bindgen changes
 # Since all PRs that affect tsify's macro output should update their own tests, this should only detect
 # changes in other rust crates.
 #
-# If this job fails (e.g. the expansion itself errors out), it opens a tracking
-# issue so the failure is not silently lost in the Actions tab.
+# If a run does not reach a recognized healthy state, it opens a tracking issue
+# so the breakage is not silently lost in the Actions tab.
 #
 # Split into three jobs so the token that can write to the repository is never
 # in scope while dependencies are resolved and arbitrary build scripts run:
@@ -146,9 +146,9 @@ jobs:
     track:
         name: Track failures
         needs: [expand, open-pr]
-        # `always()` so this still runs when `open-pr` was skipped for having
-        # nothing to do, which is the ordinary outcome.
-        if: always()
+        # Not `always()`: a cancelled run says nothing about the snapshots, and
+        # under the condition below it would file a report anyway.
+        if: ${{ !cancelled() }}
         runs-on: ubuntu-latest
         permissions:
             issues: write
@@ -159,27 +159,25 @@ jobs:
               with:
                   persist-credentials: false
 
-            # Listing the two good outcomes rather than excluding failure:
-            # `result` is also `cancelled`, which is not a success.
-            - name: Close failure tracking issue on success
-              if: needs.expand.result == 'success' && (needs.open-pr.result == 'success' || needs.open-pr.result == 'skipped')
+            # `open-pr` being skipped is not by itself evidence of health — a
+            # job output the runner drops produces it too. Only the two pairs
+            # below are healthy; every other state files the issue, so an
+            # unrecognized one cannot pass as success.
+            - name: Reconcile the tracking issue
               uses: ./.github/actions/track-failure-issue
               with:
-                  mode: close
-                  title: ${{ env.ISSUE_TITLE }}
-                  github-token: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Notify on failure
-              if: needs.expand.result == 'failure' || needs.open-pr.result == 'failure'
-              uses: ./.github/actions/track-failure-issue
-              with:
-                  mode: notify
+                  mode: >-
+                      ${{ needs.expand.result == 'success' &&
+                      ((needs.expand.outputs.changed == 'false' && needs.open-pr.result == 'skipped') ||
+                      (needs.expand.outputs.changed == 'true' && needs.open-pr.result == 'success'))
+                      && 'close' || 'notify' }}
                   title: ${{ env.ISSUE_TITLE }}
                   github-token: ${{ secrets.GITHUB_TOKEN }}
                   body: |
-                      The scheduled expand check failed.
+                      The scheduled expand check did not reach a healthy state.
 
                       Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
                       Resolved wasm-bindgen: ${{ needs.expand.outputs.wasm-bindgen-version || 'unknown' }}
+                      State: expand=${{ needs.expand.result }} changed=${{ needs.expand.outputs.changed || 'unset' }} open-pr=${{ needs.open-pr.result }}
 
                       Likely causes: a new wasm-bindgen release whose changed macro output breaks expansion, or a toolchain change that altered `-Zunpretty=expanded` behavior. See CONTRIBUTING.md for how to regenerate the snapshots.

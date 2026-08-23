@@ -6,6 +6,10 @@ on:
     pull_request:
         branches: ["*"]
 
+# Build and test only — and dependency build scripts run arbitrary code here.
+permissions:
+    contents: read
+
 jobs:
     build:
         name: Build
@@ -14,6 +18,8 @@ jobs:
         steps:
             - name: Checkout sources
               uses: actions/checkout@v6
+              with:
+                  persist-credentials: false
 
             - name: Install toolchain
               run: rustup toolchain install stable --profile minimal --override
@@ -30,6 +36,8 @@ jobs:
         steps:
             - name: Checkout sources
               uses: actions/checkout@v6
+              with:
+                  persist-credentials: false
 
             # This job compares the expansion snapshots that the nightly
             # workflow regenerates, so both must use the same cargo-expand.
@@ -45,6 +53,8 @@ jobs:
         steps:
             - name: Checkout sources
               uses: actions/checkout@v6
+              with:
+                  persist-credentials: false
 
             - name: Install toolchain
               run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy --override

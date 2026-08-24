@@ -78,10 +78,10 @@ This is the behavior due to [`typescript_custom_section`](https://rustwasm.githu
 
 ## Attributes
 
+These are the options to modify a `#[derive(Tsify)]` 
+
 Tsify container attributes
 
--   `into_wasm_abi` (deprecated) implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`. Deprecated in favour of using `Ts<T>` as on function parameters and return type ([why](#why-are-the-wasm_abi-attributes-deprecated)).
--   `from_wasm_abi` (deprecated) implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above. Deprecated in favour of using `Ts<T>` as on function parameters and return type ([why](#why-are-the-wasm_abi-attributes-deprecated)).
 -   `namespace` generates a namespace for the enum variants.
 -   `type` overrides at the container level.
 -   `type_params` overrides params at the container level.
@@ -112,19 +112,10 @@ Serde attributes
 -   `default`
 -   `transparent`
 
-### Why are the `wasm_abi` attributes deprecated?
+Deprecated attributes
 
-`#[tsify(into_wasm_abi, from_wasm_abi)]` moves (de)serialization *into the wasm-bindgen ABI boundary*, and that boundary cannot report failure.
-
-`wasm_bindgen::convert::FromWasmAbi::from_abi` returns `Self`, not `Result<Self, _>`, and there is no fallible variant of it or of `RefFromWasmAbi` / `LongRefFromWasmAbi` / `VectorFromWasmAbi`. So when serde fails to deserialize what JavaScript passed in, the generated impl has only one way out: `wasm_bindgen::throw_str`, which raises a JavaScript exception that unwinds straight past the wasm frames. As wasm-bindgen's own documentation warns:
-
-> Note that it is very easy to leak memory with this function because this function, unlike `panic!` on other platforms, **will not run destructors**.
-
-Everything alive at that moment leaks: the serde error, the partially deserialized value, and — because arguments are converted one after another — every argument already converted before the failing one. From JavaScript this looks like an ordinary, catchable exception, so an application can appear to handle bad input correctly while its wasm heap grows on every failure, until the instance dies with `RuntimeError: memory access out of bounds` (see [#65](https://github.com/madonoharu/tsify/issues/65) and [#86](https://github.com/madonoharu/tsify/issues/86)).
-
-`Ts<T>` keeps the boundary infallible: it is a `#[repr(transparent)]` wrapper whose `FromWasmAbi` impl only forwards the underlying `JsValue`. Deserialization then happens inside your function, where it is an ordinary `Result` — the `from_js` example at the top of this page shows the shape. Because the function returns normally, destructors run and nothing leaks. The generated TypeScript is unchanged, so `.d.ts` consumers are unaffected.
-
-`Ts<T>` needs only `#[derive(Tsify)]` — do not add `#[tsify(from_wasm_abi)]` alongside it. Note also that `Ts<Vec<T>>` is not supported, only `Vec<Ts<T>>`; to convert a whole vector, use `items.into_iter().map(|x| x.to_rust()).collect::<Result<Vec<_>, _>>()?`.
+-   `into_wasm_abi` (deprecated) implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`. Deprecated in favour of using `Ts<T>` as on function parameters and return type ([why](#why-are-the-wasm_abi-attributes-deprecated)).
+-   `from_wasm_abi` (deprecated) implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above. Deprecated in favour of using `Ts<T>` as on function parameters and return type ([why](#why-are-the-wasm_abi-attributes-deprecated)).
 
 ## Type Override
 
@@ -256,3 +247,17 @@ Generated type:
 export type Foo<T> = T;
 export type Bar = Foo<number>;
 ```
+
+### Why are the `wasm_abi` attributes deprecated?
+
+`#[tsify(into_wasm_abi, from_wasm_abi)]` moves (de)serialization *into the wasm-bindgen ABI boundary*, and that boundary cannot report failure.
+
+`wasm_bindgen::convert::FromWasmAbi::from_abi` returns `Self`, not `Result<Self, _>`, and there is no fallible variant of it or of `RefFromWasmAbi` / `LongRefFromWasmAbi` / `VectorFromWasmAbi`. So when serde fails to deserialize what JavaScript passed in, the generated impl has only one way out: `wasm_bindgen::throw_str`, which raises a JavaScript exception that unwinds straight past the wasm frames. As wasm-bindgen's own documentation warns:
+
+> Note that it is very easy to leak memory with this function because this function, unlike `panic!` on other platforms, **will not run destructors**.
+
+Everything alive at that moment leaks: the serde error, the partially deserialized value, and — because arguments are converted one after another — every argument already converted before the failing one. From JavaScript this looks like an ordinary, catchable exception, so an application can appear to handle bad input correctly while its wasm heap grows on every failure, until the instance dies with `RuntimeError: memory access out of bounds` (see [#65](https://github.com/madonoharu/tsify/issues/65) and [#86](https://github.com/madonoharu/tsify/issues/86)).
+
+`Ts<T>` keeps the boundary infallible: it is a `#[repr(transparent)]` wrapper whose `FromWasmAbi` impl only forwards the underlying `JsValue`. Deserialization then happens inside your function, where it is an ordinary `Result` — the `from_js` example at the top of this page shows the shape. Because the function returns normally, destructors run and nothing leaks. The generated TypeScript is unchanged, so `.d.ts` consumers are unaffected.
+
+`Ts<T>` needs only `#[derive(Tsify)]` — do not add `#[tsify(from_wasm_abi)]` alongside it. Note also that `Ts<Vec<T>>` is not supported, only `Vec<Ts<T>>`; to convert a whole vector, use `items.into_iter().map(|x| x.to_rust()).collect::<Result<Vec<_>, _>>()?`.

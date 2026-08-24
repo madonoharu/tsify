@@ -27,6 +27,30 @@ fn declare_impl(
 }
 
 /// The `declare` macro, used in `#[declare]` annotations.
+///
+/// ```compile_fail
+/// #[wasm_bindgen]
+/// fn returns_complex_type() -> Ts<Vec<(i32, usize)>> {
+///     vec![(-13,42)]
+/// }
+/// ```
+///
+/// In stead, create a type alias and a wrapper
+///
+/// ```
+/// use tsify::{declare, Tsify};
+///
+/// #[derive(Tsify)]
+/// struct Foo<T>(T);
+///
+/// #[declare]
+/// type Bar = Foo<Vec<(i32, usize)>>;
+///
+/// #[wasm_bindgen]
+/// pub fn returns_bar() -> Ts<Bar> {
+///     vec![(-13,42)]
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn declare(
     args: proc_macro::TokenStream,

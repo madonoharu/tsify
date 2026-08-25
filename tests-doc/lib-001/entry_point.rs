@@ -1,4 +1,4 @@
-//! doctest at src/lib.rs:31
+//! doctest at src/lib.rs:33
 //! This file is auto-generated, please don't edit this file
 
             #![allow(unused)]
@@ -23,4 +23,3 @@ pub fn returns_bar() -> Result<Ts<Bar>, JsError> {
 }
             
 }
-            

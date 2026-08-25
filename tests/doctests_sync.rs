@@ -108,7 +108,7 @@ fn doctests_are_synced() {
         "Template Cargo.toml exists at {:?}",
         root.join(TOML)
     ));
-    // This is what template.toml has as a placeholder
+    // number tests within a file
     for ftests in doctests.chunk_by(|a, b| a.file == b.file) {
         for (i, doctest) in ftests
             .iter()
@@ -149,8 +149,10 @@ fn doctests_are_synced() {
             // check the actual code
             let entry_point = test_dir.join(ENTRY);
             let code = format!(
-                "//! doctest at {}:{}{}",
-                doctest.file, doctest.line, doctest.doctest_code
+                "//! doctest at {}:{}{}\n",
+                doctest.file,
+                doctest.line,
+                doctest.doctest_code.to_string().trim_end()
             );
             if !entry_point.is_file() {
                 println!("creating new {entry_point:?}");

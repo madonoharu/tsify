@@ -36,4 +36,3 @@ pub fn from_js(point: Ts<Point>) -> Result<(), JsError> {
 }
             
 }
-            

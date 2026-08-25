@@ -25,4 +25,3 @@ some_api(|js_value: JsValue| {
 });
             
 }
-            

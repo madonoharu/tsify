@@ -16,4 +16,3 @@ pub struct Foo {
 }
             
 }
-            

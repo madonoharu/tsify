@@ -16,4 +16,3 @@ struct Foo<T>(T);
 type Bar = Foo<i32>;
             
 }
-            

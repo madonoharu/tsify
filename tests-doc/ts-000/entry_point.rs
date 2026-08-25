@@ -34,4 +34,3 @@ pub fn rotate(v: Ts<Vec2>, theta_rad: f64) -> Result<Ts<Vec2>, JsError> {
 }
             
 }
-            

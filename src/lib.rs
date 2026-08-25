@@ -16,6 +16,55 @@ pub use gloo_utils::format::JsValueSerdeExt;
 #[cfg(feature = "js")]
 pub use serde_wasm_bindgen;
 pub use tsify_macros::*;
+
+/// The `declare` macro, used in `#[declare]` annotations.
+///
+/// ## Example: Declaring a bare type so it can be serialized
+///
+/// ```compile_fail
+/// #[wasm_bindgen]
+/// fn returns_complex_type() -> Ts<Vec<(i32, usize)>> {
+///     vec![(-13,42)]
+/// }
+/// ```
+///
+/// In stead, create a type alias and a wrapper
+///
+/// ```
+/// use wasm_bindgen::prelude::*;
+/// use tsify::{declare, Tsify, Ts};
+/// use serde::{Deserialize, Serialize};
+///
+/// #[derive(Tsify, Serialize, Deserialize)]
+/// struct Foo<T>(T);
+///
+/// #[declare]
+/// type Bar = Foo<Vec<(i32, usize)>>;
+///
+/// #[wasm_bindgen]
+/// pub fn returns_bar() -> Result<Ts<Bar>, JsError> {
+///     Ok(Foo(vec![(-13,42)]).into_ts()?)
+/// }
+/// ```
+///
+/// which generates the following ts:
+/// ```ts
+/// /* tslint:disable */
+/// /* eslint-disable */
+/// export interface Point {
+///     x: Coordinate;
+///     y: Coordinate;
+/// }
+///
+/// export type Coordinate = number;
+///
+///
+/// export function from_js(point: Point): void;
+///
+/// export function into_js(): Point;
+/// ```
+pub use tsify_macros::declare;
+
 #[cfg(feature = "wasm-bindgen")]
 use wasm_bindgen::{JsCast, JsValue};
 

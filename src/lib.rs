@@ -51,17 +51,13 @@ pub use tsify_macros::*;
 /// ```ts
 /// /* tslint:disable */
 /// /* eslint-disable */
-/// export interface Point {
-///     x: Coordinate;
-///     y: Coordinate;
-/// }
+/// export type Bar = Foo<[number, number][]>;
 ///
-/// export type Coordinate = number;
+/// export type Foo<T> = T;
 ///
 ///
-/// export function from_js(point: Point): void;
+/// export function returns_bar(): Foo;
 ///
-/// export function into_js(): Point;
 /// ```
 pub use tsify_macros::declare;
 

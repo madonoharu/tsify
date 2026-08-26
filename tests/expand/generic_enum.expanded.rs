@@ -237,22 +237,61 @@ const _: () = {
         };
     }
     #[automatically_derived]
-    impl<T, U> WasmDescribe for GenericEnum<T, U> {
+    impl<T, U> tsify::TsName for GenericEnum<T, U>
+    where
+        T: tsify::TsName,
+        U: tsify::TsName,
+    {
+        const NAME_LEN: u32 = 15u32 + <T as tsify::TsName>::NAME_LEN
+            + <U as tsify::TsName>::NAME_LEN;
         #[inline]
-        fn describe() {
-            <Self as Tsify>::JsType::describe()
+        fn describe_name() {
+            tsify::inform_char('G');
+            tsify::inform_char('e');
+            tsify::inform_char('n');
+            tsify::inform_char('e');
+            tsify::inform_char('r');
+            tsify::inform_char('i');
+            tsify::inform_char('c');
+            tsify::inform_char('E');
+            tsify::inform_char('n');
+            tsify::inform_char('u');
+            tsify::inform_char('m');
+            tsify::inform_char('<');
+            <T as tsify::TsName>::describe_name();
+            tsify::inform_char(',');
+            tsify::inform_char(' ');
+            <U as tsify::TsName>::describe_name();
+            tsify::inform_char('>');
         }
     }
     #[automatically_derived]
-    impl<T, U> WasmDescribeVector for GenericEnum<T, U> {
+    impl<T, U> WasmDescribe for GenericEnum<T, U>
+    where
+        T: tsify::TsName,
+        U: tsify::TsName,
+    {
+        #[inline]
+        fn describe() {
+            <Self as tsify::TsName>::describe_named_externref()
+        }
+    }
+    #[automatically_derived]
+    impl<T, U> WasmDescribeVector for GenericEnum<T, U>
+    where
+        T: tsify::TsName,
+        U: tsify::TsName,
+    {
         #[inline]
         fn describe_vector() {
-            <Self as Tsify>::JsType::describe_vector()
+            <Self as tsify::TsName>::describe_named_externref_vector()
         }
     }
     #[automatically_derived]
     impl<T, U> IntoWasmAbi for &GenericEnum<T, U>
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         GenericEnum<T, U>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -280,6 +319,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> IntoWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         GenericEnum<T, U>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -291,6 +332,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> OptionIntoWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         GenericEnum<T, U>: _serde::Serialize,
     {
         #[inline]
@@ -301,6 +344,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> From<GenericEnum<T, U>> for JsValue
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         GenericEnum<T, U>: _serde::Serialize,
     {
         #[inline]
@@ -327,6 +372,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> VectorIntoWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         GenericEnum<T, U>: _serde::Serialize,
     {
         type Abi = <JsType as VectorIntoWasmAbi>::Abi;
@@ -358,6 +405,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> FromWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as FromWasmAbi>::Abi;
@@ -373,6 +422,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> OptionFromWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         #[inline]
@@ -391,6 +442,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> RefFromWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as RefFromWasmAbi>::Abi;
@@ -406,6 +459,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> VectorFromWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::TsName,
+        U: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as VectorFromWasmAbi>::Abi;

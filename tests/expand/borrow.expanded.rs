@@ -231,17 +231,30 @@ const _: () = {
         };
     }
     #[automatically_derived]
+    impl<'a> tsify::TsName for Borrow<'a> {
+        const NAME_LEN: u32 = 6u32;
+        #[inline]
+        fn describe_name() {
+            tsify::inform_char('B');
+            tsify::inform_char('o');
+            tsify::inform_char('r');
+            tsify::inform_char('r');
+            tsify::inform_char('o');
+            tsify::inform_char('w');
+        }
+    }
+    #[automatically_derived]
     impl<'a> WasmDescribe for Borrow<'a> {
         #[inline]
         fn describe() {
-            <Self as Tsify>::JsType::describe()
+            <Self as tsify::TsName>::describe_named_externref()
         }
     }
     #[automatically_derived]
     impl<'a> WasmDescribeVector for Borrow<'a> {
         #[inline]
         fn describe_vector() {
-            <Self as Tsify>::JsType::describe_vector()
+            <Self as tsify::TsName>::describe_named_externref_vector()
         }
     }
     #[automatically_derived]

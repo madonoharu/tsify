@@ -1,5 +1,10 @@
 # tsify Changelog
 
+## Unreleased
+
+- **Generic types keep their type arguments in the signatures wasm-bindgen functions.** Resolves #76
+- **A type argument now needs a TypeScript name of its own**, the new `tsify::TsName` trait. `#[derive(Tsify)]` writes the impl, and tsify provides one for each built-in the derive already declares. **Instantiating a generic tsify type with a type that has neither is now a compile error** where it crosses the ABI, fixed by one `tsify::ts_name!` line. `DECL` is unaffected
+
 ## v0.5.8
 
 - Added `#[tsify(rename = "...")]`, which renames the generated TypeScript declaration and nothing else — references from other types still emit the Rust ident, so point them at the new name with `#[tsify(type = "...")]` at each reference site. Cannot be combined with `type_prefix` or `type_suffix`. Resolves #70, which had been blocking the 0.4 → 0.5 upgrade for anyone with two same-named types in different modules

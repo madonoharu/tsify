@@ -25,6 +25,13 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let generics = cont.generics_without_defaults();
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
+    // The name the type describes itself by is composed from its arguments, so
+    // everything that goes through `WasmDescribe` needs them to have names too.
+    let name_params = name_type_params(cont, &decl).unwrap_or_default();
+    let name_generics = generics_with_ts_name(cont, &name_params);
+    let ts_name = expand_ts_name(cont, &decl, &name_params, &name_generics);
+    let (name_impl_generics, name_ty_generics, name_where_clause) = name_generics.split_for_impl();
+
     let typescript_custom_section = quote! {
         #[wasm_bindgen(typescript_custom_section)]
         const TS_APPEND_CONTENT: &'static str = #decl_str;
@@ -35,18 +42,21 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let wasm_describe = wasm_abi.then(|| {
         quote! {
             #[automatically_derived]
-            impl #impl_generics WasmDescribe for #ident #ty_generics #where_clause {
+            impl #name_impl_generics WasmDescribe for #ident #name_ty_generics #name_where_clause {
+                // Not `JsType::describe()`: the extern type below carries one
+                // fixed name, which for a generic type would drop its
+                // arguments. See `tsify::TsName`.
                 #[inline]
                 fn describe() {
-                    <Self as Tsify>::JsType::describe()
+                    <Self as tsify::TsName>::describe_named_externref()
                 }
             }
 
             #[automatically_derived]
-            impl #impl_generics WasmDescribeVector for #ident #ty_generics #where_clause {
+            impl #name_impl_generics WasmDescribeVector for #ident #name_ty_generics #name_where_clause {
                 #[inline]
                 fn describe_vector() {
-                    <Self as Tsify>::JsType::describe_vector()
+                    <Self as tsify::TsName>::describe_named_externref_vector()
                 }
             }
         }
@@ -61,8 +71,12 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
         },
     });
 
-    let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
-    let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
+    let into_wasm_abi = attrs
+        .into_wasm_abi
+        .then(|| expand_into_wasm_abi(cont, &name_generics));
+    let from_wasm_abi = attrs
+        .from_wasm_abi
+        .then(|| expand_from_wasm_abi(cont, &name_generics));
     let maybe_deprecated = attrs.into_wasm_abi_span
         .or(attrs.from_wasm_abi_span)
         .map(|span| {
@@ -104,6 +118,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
                 };
             }
 
+            #ts_name
             #typescript_custom_section
             #wasm_describe
             #into_wasm_abi
@@ -113,10 +128,109 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     }
 }
 
-fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
+/// The declaration's parameters, resolved back to the Rust type parameters they
+/// name.
+///
+/// `None` when one of them names no Rust parameter — `#[tsify(type_params)]`
+/// can say anything — which leaves nothing to compose that argument's name
+/// from, so the type keeps describing itself by its bare id as it did before.
+fn name_type_params(cont: &Container, decl: &Decl) -> Option<Vec<syn::Ident>> {
+    decl.type_params()
+        .iter()
+        .map(|declared| {
+            cont.generics()
+                .type_params()
+                .find(|param| param.ident == *declared)
+                .map(|param| param.ident.clone())
+        })
+        .collect()
+}
+
+/// The type's generics, plus the `TsName` bound every parameter that appears in
+/// its name needs. A parameter no field mentions is left alone: it is not part
+/// of the name, so it has no name to contribute.
+fn generics_with_ts_name(cont: &Container, name_params: &[syn::Ident]) -> syn::Generics {
+    let mut generics = cont.generics_without_defaults();
+
+    if !name_params.is_empty() {
+        let where_clause = generics.make_where_clause();
+        for param in name_params {
+            where_clause
+                .predicates
+                .push(parse_quote!(#param: tsify::TsName));
+        }
+    }
+
+    generics
+}
+
+/// Spells out the type's TypeScript name for `tsify::TsName`, one `char` at a
+/// time, deferring to each argument's own impl for the arguments.
+///
+/// Unrolled rather than informed from `DECL`'s id because wasm-bindgen reads the
+/// descriptor without the module's data segments loaded, so a character that
+/// comes from memory reaches it as `\0`.
+fn expand_ts_name(
+    cont: &Container,
+    decl: &Decl,
+    name_params: &[syn::Ident],
+    generics: &syn::Generics,
+) -> TokenStream {
+    let ident = cont.ident();
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+
+    let id_chars = decl.id().chars().collect::<Vec<_>>();
+    let id_len = id_chars.len() as u32;
+    let id = quote!(#(tsify::inform_char(#id_chars);)*);
+
+    let (name_len, describe_name) = if name_params.is_empty() {
+        (quote!(#id_len), id)
+    } else {
+        // The id, `<`, `>`, and `, ` between each pair of arguments.
+        let punctuation = id_len + 2 + 2 * (name_params.len() as u32 - 1);
+
+        let args = name_params.iter().enumerate().map(|(i, param)| {
+            let separator = (i > 0).then(|| {
+                quote! {
+                    tsify::inform_char(',');
+                    tsify::inform_char(' ');
+                }
+            });
+
+            quote! {
+                #separator
+                <#param as tsify::TsName>::describe_name();
+            }
+        });
+
+        (
+            quote!(#punctuation #(+ <#name_params as tsify::TsName>::NAME_LEN)*),
+            quote! {
+                #id
+                tsify::inform_char('<');
+                #(#args)*
+                tsify::inform_char('>');
+            },
+        )
+    };
+
+    quote! {
+        #[automatically_derived]
+        impl #impl_generics tsify::TsName for #ident #ty_generics #where_clause {
+            const NAME_LEN: u32 = #name_len;
+
+            #[inline]
+            fn describe_name() {
+                #describe_name
+            }
+        }
+    }
+}
+
+fn expand_into_wasm_abi(cont: &Container, name_generics: &syn::Generics) -> TokenStream {
     let ident = cont.ident();
     let serde_path = cont.serde_container.attrs.serde_path();
-    let mut generics = cont.generics_without_defaults();
+    let mut generics = name_generics.clone();
 
     // A predicate's self type is a type position, where `Generics` would render
     // its declaration form — bounds, defaults, `const N: usize` — and hit E0229.
@@ -221,11 +335,11 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
     }
 }
 
-fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
+fn expand_from_wasm_abi(cont: &Container, name_generics: &syn::Generics) -> TokenStream {
     let ident = cont.ident();
     let serde_path = cont.serde_container.attrs.serde_path();
 
-    let mut generics = cont.generics_without_defaults();
+    let mut generics = name_generics.clone();
 
     generics
         .make_where_clause()

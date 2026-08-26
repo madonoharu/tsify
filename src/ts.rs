@@ -2,6 +2,7 @@ use std::fmt;
 use std::mem::ManuallyDrop;
 
 use crate::Error;
+use crate::TsName;
 use crate::Tsify;
 use wasm_bindgen::convert::{
     FromWasmAbi, IntoWasmAbi, LongRefFromWasmAbi, OptionFromWasmAbi, OptionIntoWasmAbi,
@@ -129,17 +130,19 @@ where
 
 impl<T> WasmDescribe for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: WasmDescribe,
 {
+    // Not `JsType::describe()`: the extern type carries one fixed name, which
+    // for a generic `T` would drop its arguments. See `TsName`.
     fn describe() {
-        <T as Tsify>::JsType::describe()
+        <T as TsName>::describe_named_externref()
     }
 }
 
 impl<T> IntoWasmAbi for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: IntoWasmAbi,
 {
     type Abi = <T::JsType as IntoWasmAbi>::Abi;
@@ -149,7 +152,7 @@ where
 }
 impl<'a, T> IntoWasmAbi for &'a Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: JsCast + WasmDescribe,
 {
     type Abi = <&'a JsValue as IntoWasmAbi>::Abi;
@@ -161,7 +164,7 @@ where
 }
 impl<T> FromWasmAbi for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: FromWasmAbi,
 {
     type Abi = <T::JsType as FromWasmAbi>::Abi;
@@ -172,7 +175,7 @@ where
 
 impl<T> OptionIntoWasmAbi for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: OptionIntoWasmAbi,
 {
     fn none() -> Self::Abi {
@@ -182,7 +185,7 @@ where
 
 impl<T> OptionFromWasmAbi for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: OptionFromWasmAbi,
 {
     fn is_none(abi: &Self::Abi) -> bool {
@@ -192,7 +195,7 @@ where
 
 impl<T> RefFromWasmAbi for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: RefFromWasmAbi,
 {
     // JsValue uses ManuallyDrop.
@@ -208,7 +211,7 @@ where
 
 impl<T> LongRefFromWasmAbi for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: LongRefFromWasmAbi,
 {
     type Abi = <JsValue as LongRefFromWasmAbi>::Abi;
@@ -222,17 +225,17 @@ where
 
 impl<T> WasmDescribeVector for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: WasmDescribeVector,
 {
     fn describe_vector() {
-        <T as Tsify>::JsType::describe_vector()
+        <T as TsName>::describe_named_externref_vector()
     }
 }
 
 impl<T> VectorFromWasmAbi for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: VectorFromWasmAbi,
 {
     type Abi = <<T as Tsify>::JsType as VectorFromWasmAbi>::Abi;
@@ -249,7 +252,7 @@ where
 
 impl<T> VectorIntoWasmAbi for Ts<T>
 where
-    T: Tsify,
+    T: Tsify + TsName,
     <T as Tsify>::JsType: VectorIntoWasmAbi,
 {
     type Abi = <<T as Tsify>::JsType as VectorIntoWasmAbi>::Abi;

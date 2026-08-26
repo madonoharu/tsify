@@ -10,6 +10,10 @@ mod ts;
 pub use ts::Ts;
 mod error;
 pub use error::Error;
+#[cfg(feature = "wasm-bindgen")]
+mod name;
+#[cfg(feature = "wasm-bindgen")]
+pub use name::{inform_char, TsName};
 
 #[cfg(all(feature = "json", not(feature = "js")))]
 pub use gloo_utils::format::JsValueSerdeExt;

@@ -236,4 +236,26 @@ const _: () = {
             large_number_types_as_bigints: false,
         };
     }
+    #[automatically_derived]
+    impl tsify::TsName for RustType {
+        const NAME_LEN: u32 = 15u32;
+        #[inline]
+        fn describe_name() {
+            tsify::inform_char('R');
+            tsify::inform_char('e');
+            tsify::inform_char('n');
+            tsify::inform_char('a');
+            tsify::inform_char('m');
+            tsify::inform_char('e');
+            tsify::inform_char('d');
+            tsify::inform_char('W');
+            tsify::inform_char('a');
+            tsify::inform_char('s');
+            tsify::inform_char('m');
+            tsify::inform_char('T');
+            tsify::inform_char('y');
+            tsify::inform_char('p');
+            tsify::inform_char('e');
+        }
+    }
 };

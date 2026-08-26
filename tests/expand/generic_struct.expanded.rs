@@ -236,22 +236,55 @@ const _: () = {
         };
     }
     #[automatically_derived]
-    impl<T> WasmDescribe for GenericStruct<T> {
+    impl<T> tsify::TsName for GenericStruct<T>
+    where
+        T: tsify::TsName,
+    {
+        const NAME_LEN: u32 = 15u32 + <T as tsify::TsName>::NAME_LEN;
         #[inline]
-        fn describe() {
-            <Self as Tsify>::JsType::describe()
+        fn describe_name() {
+            tsify::inform_char('G');
+            tsify::inform_char('e');
+            tsify::inform_char('n');
+            tsify::inform_char('e');
+            tsify::inform_char('r');
+            tsify::inform_char('i');
+            tsify::inform_char('c');
+            tsify::inform_char('S');
+            tsify::inform_char('t');
+            tsify::inform_char('r');
+            tsify::inform_char('u');
+            tsify::inform_char('c');
+            tsify::inform_char('t');
+            tsify::inform_char('<');
+            <T as tsify::TsName>::describe_name();
+            tsify::inform_char('>');
         }
     }
     #[automatically_derived]
-    impl<T> WasmDescribeVector for GenericStruct<T> {
+    impl<T> WasmDescribe for GenericStruct<T>
+    where
+        T: tsify::TsName,
+    {
+        #[inline]
+        fn describe() {
+            <Self as tsify::TsName>::describe_named_externref()
+        }
+    }
+    #[automatically_derived]
+    impl<T> WasmDescribeVector for GenericStruct<T>
+    where
+        T: tsify::TsName,
+    {
         #[inline]
         fn describe_vector() {
-            <Self as Tsify>::JsType::describe_vector()
+            <Self as tsify::TsName>::describe_named_externref_vector()
         }
     }
     #[automatically_derived]
     impl<T> IntoWasmAbi for &GenericStruct<T>
     where
+        T: tsify::TsName,
         GenericStruct<T>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -279,6 +312,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> IntoWasmAbi for GenericStruct<T>
     where
+        T: tsify::TsName,
         GenericStruct<T>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -290,6 +324,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> OptionIntoWasmAbi for GenericStruct<T>
     where
+        T: tsify::TsName,
         GenericStruct<T>: _serde::Serialize,
     {
         #[inline]
@@ -300,6 +335,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> From<GenericStruct<T>> for JsValue
     where
+        T: tsify::TsName,
         GenericStruct<T>: _serde::Serialize,
     {
         #[inline]
@@ -326,6 +362,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> VectorIntoWasmAbi for GenericStruct<T>
     where
+        T: tsify::TsName,
         GenericStruct<T>: _serde::Serialize,
     {
         type Abi = <JsType as VectorIntoWasmAbi>::Abi;
@@ -357,6 +394,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> FromWasmAbi for GenericStruct<T>
     where
+        T: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as FromWasmAbi>::Abi;
@@ -372,6 +410,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> OptionFromWasmAbi for GenericStruct<T>
     where
+        T: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         #[inline]
@@ -390,6 +429,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> RefFromWasmAbi for GenericStruct<T>
     where
+        T: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as RefFromWasmAbi>::Abi;
@@ -405,6 +445,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> VectorFromWasmAbi for GenericStruct<T>
     where
+        T: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as VectorFromWasmAbi>::Abi;
@@ -667,22 +708,56 @@ const _: () = {
         };
     }
     #[automatically_derived]
-    impl<T> WasmDescribe for GenericNewtype<T> {
+    impl<T> tsify::TsName for GenericNewtype<T>
+    where
+        T: tsify::TsName,
+    {
+        const NAME_LEN: u32 = 16u32 + <T as tsify::TsName>::NAME_LEN;
         #[inline]
-        fn describe() {
-            <Self as Tsify>::JsType::describe()
+        fn describe_name() {
+            tsify::inform_char('G');
+            tsify::inform_char('e');
+            tsify::inform_char('n');
+            tsify::inform_char('e');
+            tsify::inform_char('r');
+            tsify::inform_char('i');
+            tsify::inform_char('c');
+            tsify::inform_char('N');
+            tsify::inform_char('e');
+            tsify::inform_char('w');
+            tsify::inform_char('t');
+            tsify::inform_char('y');
+            tsify::inform_char('p');
+            tsify::inform_char('e');
+            tsify::inform_char('<');
+            <T as tsify::TsName>::describe_name();
+            tsify::inform_char('>');
         }
     }
     #[automatically_derived]
-    impl<T> WasmDescribeVector for GenericNewtype<T> {
+    impl<T> WasmDescribe for GenericNewtype<T>
+    where
+        T: tsify::TsName,
+    {
+        #[inline]
+        fn describe() {
+            <Self as tsify::TsName>::describe_named_externref()
+        }
+    }
+    #[automatically_derived]
+    impl<T> WasmDescribeVector for GenericNewtype<T>
+    where
+        T: tsify::TsName,
+    {
         #[inline]
         fn describe_vector() {
-            <Self as Tsify>::JsType::describe_vector()
+            <Self as tsify::TsName>::describe_named_externref_vector()
         }
     }
     #[automatically_derived]
     impl<T> IntoWasmAbi for &GenericNewtype<T>
     where
+        T: tsify::TsName,
         GenericNewtype<T>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -710,6 +785,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> IntoWasmAbi for GenericNewtype<T>
     where
+        T: tsify::TsName,
         GenericNewtype<T>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -721,6 +797,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> OptionIntoWasmAbi for GenericNewtype<T>
     where
+        T: tsify::TsName,
         GenericNewtype<T>: _serde::Serialize,
     {
         #[inline]
@@ -731,6 +808,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> From<GenericNewtype<T>> for JsValue
     where
+        T: tsify::TsName,
         GenericNewtype<T>: _serde::Serialize,
     {
         #[inline]
@@ -757,6 +835,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> VectorIntoWasmAbi for GenericNewtype<T>
     where
+        T: tsify::TsName,
         GenericNewtype<T>: _serde::Serialize,
     {
         type Abi = <JsType as VectorIntoWasmAbi>::Abi;
@@ -788,6 +867,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> FromWasmAbi for GenericNewtype<T>
     where
+        T: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as FromWasmAbi>::Abi;
@@ -803,6 +883,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> OptionFromWasmAbi for GenericNewtype<T>
     where
+        T: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         #[inline]
@@ -821,6 +902,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> RefFromWasmAbi for GenericNewtype<T>
     where
+        T: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as RefFromWasmAbi>::Abi;
@@ -836,6 +918,7 @@ const _: () = {
     #[automatically_derived]
     impl<T> VectorFromWasmAbi for GenericNewtype<T>
     where
+        T: tsify::TsName,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as VectorFromWasmAbi>::Abi;

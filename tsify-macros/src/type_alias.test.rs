@@ -49,3 +49,14 @@ fn test_declare_keeps_doc_comments() {
     });
     assert_contains!(tokens, "Alias docs", "export type Documented = number;");
 }
+
+#[test]
+fn test_declare_keeps_default_type_params() {
+    let tokens = expand_to_string(syn::parse_quote! {
+        type Defaulted<T = bool, U = Vec<i32>> = Foo<T, U>;
+    });
+    assert_contains!(
+        tokens,
+        "export type Defaulted<T = boolean, U = number[]> = Foo<T, U>;",
+    );
+}

@@ -4,7 +4,7 @@ use quote::quote;
 use crate::{
     attrs::TypeGenerationConfig,
     comments::extract_doc_comments,
-    decl::TsTypeAliasDecl,
+    decl::{TsTypeAliasDecl, TsTypeParam},
     error_tracker::ErrorTracker,
     typescript::{TsType, TypeContext},
 };
@@ -13,13 +13,12 @@ use crate::{
 pub fn expand(item: syn::ItemType) -> syn::Result<TokenStream> {
     let errors = ErrorTracker::new();
 
-    let type_ann = TsType::from_syn_type(
-        TypeContext {
-            config: &TypeGenerationConfig::default(),
-            generics: &item.generics,
-        },
-        item.ty.as_ref(),
-    );
+    let ctx = TypeContext {
+        config: &TypeGenerationConfig::default(),
+        generics: &item.generics,
+    };
+
+    let type_ann = TsType::from_syn_type(ctx, item.ty.as_ref());
 
     let decl = TsTypeAliasDecl {
         id: item.ident.to_string(),
@@ -27,7 +26,13 @@ pub fn expand(item: syn::ItemType) -> syn::Result<TokenStream> {
         type_params: item
             .generics
             .type_params()
-            .map(|ty| ty.ident.to_string())
+            .map(|ty| TsTypeParam {
+                name: ty.ident.to_string(),
+                default: ty
+                    .default
+                    .as_ref()
+                    .map(|default| TsType::from_syn_type(ctx, default)),
+            })
             .collect(),
         type_ann,
         comments: extract_doc_comments(&item.attrs),

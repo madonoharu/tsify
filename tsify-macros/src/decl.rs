@@ -7,11 +7,67 @@ use crate::{
     typescript::{TsType, TsTypeElement, TsTypeLit, TsTypeRef, TsTypeRefSource},
 };
 
+/// A parameter of a generated declaration: the name it is declared under, and
+/// the type TypeScript falls back to where a reference leaves it out.
+///
+/// The two are kept apart because a parameter is written differently depending
+/// on where it appears. `<T = boolean>` declares one; naming the default again
+/// where the type is *used* is a syntax error, and matching a parameter by name
+/// -- which is how a reference is told apart from a type it could be confused
+/// with -- has to see `T` either way.
+#[derive(Debug, Clone)]
+pub struct TsTypeParam {
+    pub name: String,
+    pub default: Option<TsType>,
+}
+
+impl TsTypeParam {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            default: None,
+        }
+    }
+
+    /// From a parameter written as TypeScript, which is how
+    /// `#[tsify(type_params = "...")]` supplies them. The name is whatever
+    /// precedes a default; the default is carried through as written.
+    pub fn parse(source: &str) -> Self {
+        match source.split_once('=') {
+            Some((name, default)) => Self {
+                name: name.trim().to_string(),
+                default: Some(TsType::Override {
+                    type_override: default.trim().to_string(),
+                    type_params: Vec::new(),
+                }),
+            },
+            None => Self::new(source.trim().to_string()),
+        }
+    }
+}
+
+/// The declaration form, `A, B = number`.
+fn declared_params(params: &[TsTypeParam]) -> String {
+    params
+        .iter()
+        .map(|param| match &param.default {
+            Some(default) => format!("{} = {}", param.name, default),
+            None => param.name.clone(),
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// The names alone, in order, for a reference or for matching by name.
+fn param_names(params: &[TsTypeParam]) -> Vec<String> {
+    params.iter().map(|param| param.name.clone()).collect()
+}
+
 #[derive(Debug, Clone)]
 pub struct TsTypeAliasDecl {
     pub id: String,
     pub export: bool,
-    pub type_params: Vec<String>,
+    pub type_params: Vec<TsTypeParam>,
     pub type_ann: TsType,
     pub comments: Vec<String>,
 }
@@ -32,7 +88,7 @@ impl Display for TsTypeAliasDecl {
         let right = if self.type_params.is_empty() {
             self.id.clone()
         } else {
-            let type_params = self.type_params.join(", ");
+            let type_params = declared_params(&self.type_params);
             format!("{}<{}>", self.id, type_params)
         };
 
@@ -48,7 +104,7 @@ impl Display for TsTypeAliasDecl {
 #[derive(Debug)]
 pub struct TsInterfaceDecl {
     pub id: String,
-    pub type_params: Vec<String>,
+    pub type_params: Vec<TsTypeParam>,
     pub extends: Vec<TsType>,
     pub body: Vec<TsTypeElement>,
     pub comments: Vec<String>,
@@ -61,7 +117,7 @@ impl Display for TsInterfaceDecl {
         write!(f, "export interface {}", self.id)?;
 
         if !self.type_params.is_empty() {
-            let type_params = self.type_params.join(", ");
+            let type_params = declared_params(&self.type_params);
             write!(f, "<{type_params}>")?;
         }
 
@@ -95,7 +151,7 @@ impl Display for TsInterfaceDecl {
 #[derive(Debug)]
 pub struct TsEnumDecl {
     pub id: String,
-    pub type_params: Vec<String>,
+    pub type_params: Vec<TsTypeParam>,
     pub members: Vec<TsTypeAliasDecl>,
     pub namespace: bool,
     pub comments: Vec<String>,
@@ -202,7 +258,12 @@ impl Display for TsEnumDecl {
 
                     type_refs
                         .iter()
-                        .filter(|type_ref| !self.type_params.contains(&type_ref.name))
+                        .filter(|type_ref| {
+                            !self
+                                .type_params
+                                .iter()
+                                .any(|param| param.name == type_ref.name)
+                        })
                         .map(|type_ref| {
                             let mut type_refs = Vec::new();
                             let ts_type = TsEnumDecl::replace_type_params(
@@ -213,7 +274,7 @@ impl Display for TsEnumDecl {
                             TsTypeAliasDecl {
                                 id: format!("__{}{}", self.id, type_ref.name),
                                 export: false,
-                                type_params: type_refs,
+                                type_params: type_refs.into_iter().map(TsTypeParam::new).collect(),
                                 type_ann: ts_type,
                                 comments: vec![],
                             }
@@ -245,7 +306,7 @@ impl Display for TsEnumDecl {
                         type_ann: elem
                             .type_ann
                             .clone()
-                            .prefix_type_refs(&prefix, &self.type_params),
+                            .prefix_type_refs(&prefix, &param_names(&self.type_params)),
                         comments: elem.comments.clone(),
                     })
                     .map(|elem| format!("\n{}", elem.to_string_with_indent(4)))
@@ -274,7 +335,7 @@ impl Display for TsEnumDecl {
                             let name = if clone.type_params.is_empty() {
                                 format!("{}.{}", self.id, clone.id)
                             } else {
-                                let type_params = clone.type_params.join(", ");
+                                let type_params = param_names(&clone.type_params).join(", ");
                                 format!("{}.{}<{}>", self.id, clone.id, type_params)
                             };
 

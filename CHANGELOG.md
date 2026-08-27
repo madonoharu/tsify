@@ -1,5 +1,10 @@
 # tsify Changelog
 
+## Unreleased
+
+- **A default type parameter is now declared with its default.** `struct Foo<T = bool>(T)` declared `export type Foo<T> = T;` and now declares `export type Foo<T = boolean> = T;`, the same for interfaces, enums and `#[declare]` aliases. **Your `.d.ts` changes if you use one.** A default that cannot be honoured is dropped: one naming a parameter no field mentions, and then every default before it, since TypeScript only allows them on a trailing run
+- While [#76](https://github.com/madonoharu/tsify/issues/76) is open this makes it quieter — `fn bar(foo: Ts<Foo<i64>>)` still writes `bar(foo: Foo)`, which the default now resolves to `Foo<boolean>` rather than raising `TS2314`
+
 ## v0.5.8
 
 - Added `#[tsify(rename = "...")]`, which renames the generated TypeScript declaration and nothing else — references from other types still emit the Rust ident, so point them at the new name with `#[tsify(type = "...")]` at each reference site. Cannot be combined with `type_prefix` or `type_suffix`. Resolves #70, which had been blocking the 0.4 → 0.5 upgrade for anyone with two same-named types in different modules

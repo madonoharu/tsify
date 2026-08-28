@@ -19,31 +19,24 @@ pub use tsify_macros::*;
 
 /// The `declare` macro, used in `#[declare]` annotations.
 ///
-/// ## Example: Declaring a bare type so it can be serialized
 ///
-/// ```compile_fail
-/// #[wasm_bindgen]
-/// fn returns_complex_type() -> Ts<Vec<(i32, usize)>> {
-///     vec![(-13,42)]
-/// }
-/// ```
 ///
-/// In stead, create a type alias and a wrapper
+/// ## Examples
 ///
 /// ```
-/// use wasm_bindgen::prelude::*;
+/// # use wasm_bindgen::prelude::*;
 /// use tsify::{declare, Tsify, Ts};
 /// use serde::{Deserialize, Serialize};
 ///
-/// #[derive(Tsify, Serialize, Deserialize)]
-/// struct Foo<T>(T);
-///
 /// #[declare]
-/// type Bar = Foo<Vec<(i32, usize)>>;
+/// pub type Foo = (i32, String);
+///
+/// #[derive(Tsify, Serialize)]
+/// pub struct Bar(pub Vec<Foo>);
 ///
 /// #[wasm_bindgen]
 /// pub fn returns_bar() -> Result<Ts<Bar>, JsError> {
-///     Ok(Foo(vec![(-13,42)]).into_ts()?)
+///     Ok(Bar(vec![(42, "forty two".to_string())]).into_ts()?)
 /// }
 /// ```
 ///
@@ -51,14 +44,28 @@ pub use tsify_macros::*;
 /// ```ts
 /// /* tslint:disable */
 /// /* eslint-disable */
-/// export type Bar = Foo<[number, number][]>;
+/// export type Bar = Foo[];
 ///
-/// export type Foo<T> = T;
+/// export type Foo = [number, string];
 ///
 ///
-/// export function returns_bar(): Foo;
+/// export function returns_bar(): Bar;
 ///
 /// ```
+///
+/// The following is currently not possible:
+///
+/// ```compile_fail
+/// #[declare]
+/// pub type Foo = (i32, String)
+///
+/// #[wasm_bindgen]
+/// pub fn returns_foo() -> Ts<Vec<Foo>>
+/// ```
+///
+/// In stead, create a wrapper struct for every distinct return type as shown
+/// above.
+///
 pub use tsify_macros::declare;
 
 #[cfg(feature = "wasm-bindgen")]

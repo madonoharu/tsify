@@ -1,12 +1,15 @@
 //! Sync the crate's doctest with a folder, so their output can also be verified
 //!
 //!
+#[ignore = "long test that builds wasm modules for all doctests"]
 use std::fmt::Debug;
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 use serde::Deserialize;
 
+const DOC_JSON: &str = "doctests.json";
 const DOCTESTS_DIR: &str = "tests-doc";
 const TOML: &str = "Cargo.toml";
 const TOML_TEMPLATE: &str = "template.toml";
@@ -81,10 +84,34 @@ impl Attributes {
 }
 
 #[test]
+#[ignore = "Test that builds all doctests as wasm modules"]
 fn doctests_are_synced() {
+    // run rustdoc so we're testing against an up-to-date json
+    let json_raw = Command::new("cargo")
+        .args([
+            "+nightly",
+            "rustdoc",
+            "-p",
+            "tsify",
+            "--lib",
+            "--",
+            "-Zunstable-options",
+            "--output-format",
+            "doctest",
+        ])
+        .output()
+        .unwrap()
+        .stdout;
+    let json = &str::from_utf8(&json_raw).unwrap();
+
     let root = Path::new(DOCTESTS_DIR);
-    let json = std::fs::read_to_string("target/doctests.json")
-        .expect("run the doctest extraction step first");
+
+    assert!(Command::new(root.join("build_all.sh"))
+        .status()
+        .unwrap()
+        .success());
+
+    // let json = std::fs::read_to_string(DOC_JSON).expect("run the doctest extraction step first");
 
     // if the test is passing
     let mut passing = true;
@@ -93,7 +120,7 @@ fn doctests_are_synced() {
     let Doctests {
         format_version,
         mut doctests,
-    } = serde_json::from_str(&json).unwrap();
+    } = serde_json::from_str(json).unwrap();
     if format_version != 2 {
         eprintln!("format version is not 2");
         passing = false;
@@ -102,7 +129,7 @@ fn doctests_are_synced() {
     // assert_eq!(format_version, 2);
 
     // so the naming scheme is file-001 with the number increasing
-    // so this will "fail" on like a reordering
+    // so this will "fail" on a reordering within the file
     doctests.sort_by(|a, b| a.file.cmp(&b.file).then(a.line.cmp(&b.line)));
     let toml_template = fs::read_to_string(root.join(TOML_TEMPLATE)).expect(&format!(
         "Template Cargo.toml exists at {:?}",
@@ -115,7 +142,7 @@ fn doctests_are_synced() {
             .filter(|d| d.doctest_attributes.should_build())
             .enumerate()
         {
-            // create a ??file??/??folder??
+            // create a folder
             // convert src/module/submodule.rs -> module-submodule-001
             let name = format!(
                 "{}-{i:03}",
@@ -177,6 +204,7 @@ fn doctests_are_synced() {
             match (ref_file.is_file(), out_file.is_file()) {
                 (false, false) => {
                     eprintln!("reference {ref_file:?} does not exist and there is no output, please build all doctests");
+                    println!("tests-doc/generate_doctest_json.sh");
                     passing = false;
                     fixed = false;
                 }
@@ -189,7 +217,10 @@ fn doctests_are_synced() {
                     if fs::read_to_string(&ref_file).unwrap()
                         != fs::read_to_string(&out_file).unwrap()
                     {
-                        eprintln!("{ref_file:?} does not match");
+                        eprintln!(
+                            "{ref_file:?} does not match for {}:{}. Correct output is at {out_file:?}",
+                            doctest.file, doctest.line
+                        );
                         passing = false;
                         fixed = false;
                     }

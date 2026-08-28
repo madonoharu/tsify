@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Without this a failed `wasm-pack build` is followed by a successful `popd`,
 # so the script reports success and compare_output.sh then compares stale
 # artifacts.

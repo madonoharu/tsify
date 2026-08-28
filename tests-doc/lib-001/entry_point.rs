@@ -1,4 +1,4 @@
-//! doctest at src/lib.rs:33
+//! doctest at src/lib.rs:26
 //! This file is auto-generated, please don't edit this file
 
             #![allow(unused)]
@@ -11,15 +11,15 @@ extern crate r#tsify;
 use tsify::{declare, Tsify, Ts};
 use serde::{Deserialize, Serialize};
 
-#[derive(Tsify, Serialize, Deserialize)]
-struct Foo<T>(T);
-
 #[declare]
-type Bar = Foo<Vec<(i32, usize)>>;
+pub type Foo = (i32, String);
+
+#[derive(Tsify, Serialize)]
+pub struct Bar(pub Vec<Foo>);
 
 #[wasm_bindgen]
 pub fn returns_bar() -> Result<Ts<Bar>, JsError> {
-    Ok(Foo(vec![(-13,42)]).into_ts()?)
+    Ok(Bar(vec![(42, "forty two".to_string())]).into_ts()?)
 }
             
 }

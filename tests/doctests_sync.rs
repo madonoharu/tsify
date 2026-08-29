@@ -35,6 +35,21 @@ struct Doctest {
     doctest_code: Code,
 }
 
+impl std::fmt::Display for Doctest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:?}",
+            self.file
+                .strip_prefix("src/")
+                .unwrap()
+                .strip_suffix(".rs")
+                .unwrap()
+                .replace("\\/", &"-")
+        )
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct Code {
     crate_level: String,
@@ -140,16 +155,7 @@ fn doctests_are_synced() {
         {
             // create a folder
             // convert src/module/submodule.rs -> module-submodule-001
-            let name = format!(
-                "{}-{i:03}",
-                doctest
-                    .file
-                    .strip_prefix("src/")
-                    .unwrap()
-                    .strip_suffix(".rs")
-                    .unwrap()
-                    .replace("\\/", &"-")
-            );
+            let name = format!("{doctest}-{i:03}");
             let test_dir = root.join(&name);
             fs::create_dir_all(test_dir.clone()).expect(&format!("{DOCTESTS_DIR:?} exists"));
 
@@ -183,28 +189,12 @@ fn doctests_are_synced() {
             .filter(|d| d.doctest_attributes.should_build())
             .enumerate()
         {
-            let name = format!(
-                "{}-{i:03}",
-                doctest
-                    .file
-                    .strip_prefix("src/")
-                    .unwrap()
-                    .strip_suffix(".rs")
-                    .unwrap()
-                    .replace("\\/", &"-")
-            );
-            let test_dir = root.join(&name);
-            // finally, I think we may check the reference output and for now also update it
-            // That's because I'm lazy and just want to put all generated outputs in their directories
-            // maybe this should really stop being a test now, but rather some executable that you can invoke with options
-            // because we're really not using the testing harness much
-            // not sure how to do it though
-            let ref_dir = root.join(REFERENCE);
-            // I think I'd rather just like the files to be in reference_output
-            // not sure why it's such a nested structure in tests-e2e
+            let name = format!("{doctest}-{i:03}");
+
+            //
             let out_name = name.replace("-", "_") + ".d.ts";
-            let ref_file = ref_dir.join(&out_name);
-            let out_file = test_dir.join("pkg").join(&out_name);
+            let ref_file = root.join(&name).join(&out_name);
+            let out_file = root.join(REFERENCE).join("pkg").join(&out_name);
             if ref_file.is_file() {
                 if fs::read_to_string(&ref_file).unwrap() != fs::read_to_string(&out_file).unwrap()
                 {

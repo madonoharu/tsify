@@ -13,7 +13,8 @@
 # It stops for exactly one thing it cannot do: `main` requires a pull request
 # and enforces that on administrators, so the version bump has to be merged by a
 # person. Give it `--wait` and it will sit there until the merge happens and
-# then carry on.
+# then carry on. It gives up only if `gh` itself stops answering for half an
+# hour, which is a broken login rather than a slow reviewer.
 #
 # `tsify` and `tsify-macros` go up as a pair, macro first, and the root has to
 # be published against a floor that already requires the new macro. Getting that
@@ -36,6 +37,8 @@ cd "$(dirname "$0")/.."
 
 api="https://crates.io/api/v1/crates"
 index_timeout_seconds=600
+# How long `gh` may go on saying nothing before --wait stops believing in it.
+gh_silence_seconds=1800
 user_agent="tsify-release-script (+https://github.com/madonoharu/tsify)"
 
 # Set by `-y`. It does not reach the question before publishing.
@@ -372,13 +375,15 @@ Once this is merged, \`./scripts/release.sh $version\` on main uploads both crat
         echo "  merge it and this carries on by itself; Ctrl-C is safe"
         # Waiting for a person has no useful ceiling, but waiting for `gh` does:
         # an expired login answers nothing, and nothing is neither MERGED nor
-        # CLOSED, so the loop would run until someone noticed.
-        local waited=0 state unreadable=0
+        # CLOSED, so the loop would run until someone noticed. Counted in
+        # seconds rather than tries, so the message says something a reader can
+        # check, and long enough that a network blip is not mistaken for it.
+        local waited=0 state silent=0
         while :; do
             if state=$(gh pr view "release/$version" --json state --jq .state 2>/dev/null); then
-                unreadable=0
-            elif [ $((unreadable += 1)) -ge 20 ]; then
-                echo "error: gh could not read the pull request in twenty tries" >&2
+                silent=0
+            elif [ "$silent" -ge "$gh_silence_seconds" ]; then
+                echo "error: gh has not answered for ${silent}s" >&2
                 echo "       the branch is pushed; merge it and run this again" >&2
                 return 1
             else
@@ -390,6 +395,7 @@ Once this is merged, \`./scripts/release.sh $version\` on main uploads both crat
             esac
             sleep 15
             waited=$((waited + 15))
+            [ "$state" = UNKNOWN ] && silent=$((silent + 15))
             [ $((waited % 60)) -eq 0 ] && echo "  ... ${waited}s"
         done
         pass "merged"

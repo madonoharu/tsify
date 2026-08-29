@@ -52,6 +52,29 @@ Two consequences:
    snapshots that pass locally but fail in CI. `cargo metadata --locked`
    will *not* warn — the stale version still satisfies the manifest ranges.
 
+## End-to-end references (`tests-e2e/reference_output/`)
+
+Each crate under `tests-e2e/` is built with `wasm-pack` and the `.d.ts` it emits
+is compared against a committed reference. When your change alters that output
+on purpose, build and then bless it:
+
+```sh
+./tests-e2e/build_all.sh
+./tests-e2e/reference_output/update_output.sh
+git diff
+```
+
+The script writes whatever is in `pkg/` over the references, so build first — it
+cannot tell a stale artifact from a current one. Read the diff before committing
+it; that diff is the review of your change to the generated TypeScript.
+
+One of those references is in the README. `tests-e2e/test_readme_quickstart1`
+builds the README's quickstart itself — its `build.rs` extracts the Rust block
+the README prints — and its reference is the `.d.ts` printed beneath that block,
+which `update_output.sh` rewrites along with the rest. So an intended change to
+the generated TypeScript updates the documentation in the same commit, and an
+unintended one fails the Test job.
+
 ## Why `Cargo.lock` is not committed
 
 Keeping the lockfile out of version control means CI always resolves

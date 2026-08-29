@@ -15,7 +15,7 @@ Click to show Cargo.toml.
 
 ```toml
 [dependencies]
-tsify = "0.5.7"
+tsify = "0.5.8"
 serde = { version = "1.0", features = ["derive"] }
 wasm-bindgen = { version = "0.2" }
 ```
@@ -85,6 +85,8 @@ Tsify container attributes
 -   `namespace` generates a namespace for the enum variants.
 -   `type` overrides at the container level.
 -   `type_params` overrides params at the container level.
+-   `type_prefix = "Pre"` and `type_suffix = "Suf"` add a universal affix to the names of generated types. Apply them crate-wide: a reference takes the affix of the type doing the referencing, so applying either to only some of your types emits references to names that were never declared ([#94](https://github.com/madonoharu/tsify/issues/94)).
+-   `rename = "NewName"` changes the name of the generated TypeScript declaration. References are unaffected — point them at the new name with `#[tsify(type = "NewName")]` where another type refers to this one ([#103](https://github.com/madonoharu/tsify/issues/103) covers what it would take for references to follow). Cannot be combined with `type_prefix` or `type_suffix`.
 
 [Serializer configuration options](https://github.com/RReverser/serde-wasm-bindgen?tab=readme-ov-file#serializer-configuration-options)
 -   `missing_as_null` 

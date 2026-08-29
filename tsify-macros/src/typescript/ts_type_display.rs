@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::TsType;
+use super::{TsType, TsTypeRef};
 
 impl Display for TsType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -31,7 +31,9 @@ impl Display for TsType {
                 write!(f, "[{elems}]")
             }
 
-            TsType::Ref { name, type_params } => {
+            TsType::Ref(TsTypeRef {
+                name, type_params, ..
+            }) => {
                 let params = type_params
                     .iter()
                     .map(|param| param.to_string())

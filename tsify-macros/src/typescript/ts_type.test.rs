@@ -1,12 +1,13 @@
 use crate::attrs::TypeGenerationConfig;
 
-use super::TsType;
+use super::{TsType, TsTypeRef, TsTypeRefSource, TypeContext};
 
 macro_rules! assert_ts {
         ($config:expr, $( $t:ty )|* , $expected:expr) => {
           $({
             let ty: syn::Type = syn::parse_quote!($t);
-            let ts_type = TsType::from_syn_type(&$config, &ty);
+            let ctx = TypeContext { config: &$config, generics: &syn::Generics::default() };
+            let ts_type = TsType::from_syn_type(ctx, &ty);
             assert_eq!(ts_type.to_string(), $expected);
           })*
         };
@@ -75,4 +76,47 @@ fn test_basic_types() {
         RangeInclusive<usize>,
         "{ start: number; end: number }"
     );
+}
+
+#[test]
+fn test_rust_type_ref_keeps_path() {
+    let config = TypeGenerationConfig::default();
+    let ty: syn::Type = syn::parse_quote!(a::Config<String>);
+    let expected_path: syn::Path = syn::parse_quote!(a::Config<String>);
+
+    let ts_type = TsType::from_syn_type(
+        TypeContext {
+            config: &config,
+            generics: &syn::Generics::default(),
+        },
+        &ty,
+    );
+
+    assert!(matches!(
+        ts_type,
+        TsType::Ref(TsTypeRef {
+            name,
+            source: TsTypeRefSource::Rust(path),
+            ..
+        }) if name == "Config" && path == expected_path
+    ));
+
+    let ty: syn::Type = syn::parse_quote!(T);
+    let generics: syn::Generics = syn::parse_quote!(<T>);
+    let ts_type = TsType::from_syn_type(
+        TypeContext {
+            config: &config,
+            generics: &generics,
+        },
+        &ty,
+    );
+
+    assert!(matches!(
+        ts_type,
+        TsType::Ref(TsTypeRef {
+            name,
+            source: TsTypeRefSource::TypeParam,
+            ..
+        }) if name == "T"
+    ));
 }

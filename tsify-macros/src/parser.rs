@@ -10,7 +10,7 @@ use crate::{
     comments::extract_doc_comments,
     container::Container,
     decl::{Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl},
-    typescript::{TsType, TsTypeElement, TsTypeLit},
+    typescript::{TsType, TsTypeElement, TsTypeLit, TypeContext},
 };
 
 enum ParsedFields {
@@ -82,7 +82,7 @@ impl<'a> Parser<'a> {
 
     fn create_type_alias_decl(&self, type_ann: TsType) -> Decl {
         Decl::TsTypeAlias(TsTypeAliasDecl {
-            id: self.container.ident_str(),
+            id: self.container.declaration_name(),
             export: true,
             type_params: self
                 .container
@@ -116,7 +116,7 @@ impl<'a> Parser<'a> {
                 .unwrap_or_else(|| self.create_relevant_type_params(type_ref_names));
 
             Decl::TsInterface(TsInterfaceDecl {
-                id: self.container.ident_str(),
+                id: self.container.declaration_name(),
                 type_params,
                 extends,
                 body: members,
@@ -213,7 +213,13 @@ impl<'a> Parser<'a> {
             }
         };
 
-        let type_ann = TsType::from_syn_type(&self.container.attrs.ty_config, field.ty);
+        let type_ann = TsType::from_syn_type(
+            TypeContext {
+                config: &self.container.attrs.ty_config,
+                generics: self.container.generics(),
+            },
+            field.ty,
+        );
 
         if let Some(t) = &ts_attrs.type_override {
             let type_params = if let Some(params) = &ts_attrs.type_params {
@@ -305,7 +311,7 @@ impl<'a> Parser<'a> {
         let relevant_type_params = self.create_relevant_type_params(type_ref_names);
 
         Decl::TsEnum(TsEnumDecl {
-            id: self.container.ident_str(),
+            id: self.container.declaration_name(),
             type_params: relevant_type_params,
             members,
             namespace: self.container.attrs.namespace,

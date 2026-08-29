@@ -1,6 +1,6 @@
 [package]
 name = "tsify-macros"
-version = "0.5.7"
+version = "0.5.8"
 edition = "2021"
 authors = [
     "Madono Haru <madonoharu@gmail.com>",
@@ -20,6 +20,7 @@ proc-macro = true
 proc-macro2 = "1.0"
 quote = "1.0"
 syn = { version = "2.0", default-features = false, features = [
+    "extra-traits",
     "full",
     "parsing",
     "printing",

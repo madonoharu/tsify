@@ -6,6 +6,27 @@ use crate::attrs::TypeGenerationConfig;
 
 use super::{NullType, TsKeywordTypeKind, TsTypeElement, TsTypeLit};
 
+/// What stays fixed for the whole of one conversion from a `syn` type.
+#[derive(Clone, Copy)]
+pub struct TypeContext<'a> {
+    pub config: &'a TypeGenerationConfig,
+    pub generics: &'a syn::Generics,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TsTypeRefSource {
+    Rust(syn::Path),
+    Synthetic,
+    TypeParam,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TsTypeRef {
+    pub name: String,
+    pub source: TsTypeRefSource,
+    pub type_params: Vec<TsType>,
+}
+
 /// A Typescript type
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TsType {
@@ -20,10 +41,7 @@ pub enum TsType {
     /// An optional type along with how a missing value is represented (i.e., as `undefined` or `null`).
     Option(Box<Self>, NullType),
     /// A reference to a type like `Foo`, `Bar<T>`, etc.
-    Ref {
-        name: String,
-        type_params: Vec<Self>,
-    },
+    Ref(TsTypeRef),
     /// A function type like `(arg0: string, arg1: number) => void`
     Fn {
         params: Vec<Self>,
@@ -96,7 +114,7 @@ impl TsType {
     }
 
     /// Convert a `syn::Type` to a `TsType`
-    pub fn from_syn_type(config: &TypeGenerationConfig, ty: &syn::Type) -> Self {
+    pub fn from_syn_type(ctx: TypeContext, ty: &syn::Type) -> Self {
         use syn::Type::*;
         use syn::{
             TypeArray, TypeBareFn, TypeGroup, TypeImplTrait, TypeParamBound, TypeParen, TypePath,
@@ -105,7 +123,7 @@ impl TsType {
 
         match ty {
             Array(TypeArray { elem, len, .. }) => {
-                let elem = Self::from_syn_type(config, elem);
+                let elem = Self::from_syn_type(ctx, elem);
                 let len = parse_len(len);
 
                 match len {
@@ -114,22 +132,20 @@ impl TsType {
                 }
             }
 
-            Slice(TypeSlice { elem, .. }) => {
-                Self::Array(Box::new(Self::from_syn_type(config, elem)))
-            }
+            Slice(TypeSlice { elem, .. }) => Self::Array(Box::new(Self::from_syn_type(ctx, elem))),
 
             Reference(TypeReference { elem, .. })
             | Paren(TypeParen { elem, .. })
-            | Group(TypeGroup { elem, .. }) => Self::from_syn_type(config, elem),
+            | Group(TypeGroup { elem, .. }) => Self::from_syn_type(ctx, elem),
 
             BareFn(TypeBareFn { inputs, output, .. }) => {
                 let params = inputs
                     .iter()
-                    .map(|arg| Self::from_syn_type(config, &arg.ty))
+                    .map(|arg| Self::from_syn_type(ctx, &arg.ty))
                     .collect();
 
                 let type_ann = if let syn::ReturnType::Type(_, ty) = output {
-                    Self::from_syn_type(config, ty)
+                    Self::from_syn_type(ctx, ty)
                 } else {
                     TsType::VOID
                 };
@@ -142,24 +158,24 @@ impl TsType {
 
             Tuple(TypeTuple { elems, .. }) => {
                 if elems.is_empty() {
-                    TsType::nullish(config)
+                    TsType::nullish(ctx.config)
                 } else {
                     let elems = elems
                         .iter()
-                        .map(|ty| Self::from_syn_type(config, ty))
+                        .map(|ty| Self::from_syn_type(ctx, ty))
                         .collect();
                     Self::Tuple(elems)
                 }
             }
 
-            Path(TypePath { path, .. }) => Self::from_path(config, path).unwrap_or(TsType::NEVER),
+            Path(TypePath { path, .. }) => Self::from_path(ctx, path).unwrap_or(TsType::NEVER),
 
             TraitObject(TypeTraitObject { bounds, .. })
             | ImplTrait(TypeImplTrait { bounds, .. }) => {
                 let elems = bounds
                     .iter()
                     .filter_map(|t| match t {
-                        TypeParamBound::Trait(t) => Self::from_path(config, &t.path),
+                        TypeParamBound::Trait(t) => Self::from_path(ctx, &t.path),
                         _ => None, // skip lifetime etc.
                     })
                     .collect();
@@ -175,16 +191,17 @@ impl TsType {
 
     /// Convert a `syn::Path` to a `TsType`. For example `core::option::Option<i32>` would be
     /// converted to `Self::Option(number)`.
-    fn from_path(config: &TypeGenerationConfig, path: &syn::Path) -> Option<Self> {
+    fn from_path(ctx: TypeContext, path: &syn::Path) -> Option<Self> {
         path.segments
             .last()
-            .map(|segment| Self::from_terminal_path_segment(config, segment))
+            .map(|segment| Self::from_terminal_path_segment(ctx, path, segment))
     }
 
     /// Convert a `syn::PathSegment` to a `TsType`. For example `Option<i32>` would be converted to
     /// `Self::Option(number)`.
     fn from_terminal_path_segment(
-        config: &TypeGenerationConfig,
+        ctx: TypeContext,
+        path: &syn::Path,
         segment: &syn::PathSegment,
     ) -> Self {
         let name = segment.ident.to_string();
@@ -218,7 +235,7 @@ impl TsType {
             syn::PathArguments::None => (vec![], None),
         };
 
-        Self::from_name(config, &name, args, output)
+        Self::from_name(ctx, path, &name, args, output)
     }
 
     pub fn with_tag_type(
@@ -299,7 +316,7 @@ impl TsType {
         f(self);
 
         match self {
-            TsType::Ref { type_params, .. } => {
+            TsType::Ref(TsTypeRef { type_params, .. }) => {
                 type_params.iter().for_each(|t| t.visit(f));
             }
             TsType::Array(elem) => elem.visit(f),
@@ -327,7 +344,7 @@ impl TsType {
         let mut set: HashSet<&String> = HashSet::new();
 
         self.visit(&mut |ty: &TsType| match ty {
-            TsType::Ref { name, .. } => {
+            TsType::Ref(TsTypeRef { name, .. }) => {
                 set.insert(name);
             }
             TsType::Override { type_params, .. } => set.extend(type_params),
@@ -348,24 +365,27 @@ impl TsType {
             TsType::Option(t, null) => {
                 TsType::Option(Box::new(t.prefix_type_refs(prefix, exceptions)), null)
             }
-            TsType::Ref { name, type_params } => {
-                if exceptions.contains(&name) {
-                    TsType::Ref {
-                        name,
-                        type_params: type_params
-                            .iter()
-                            .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
-                            .collect(),
-                    }
+            TsType::Ref(TsTypeRef {
+                name,
+                source,
+                type_params,
+            }) => {
+                // The prefix changes how the reference renders, not what it refers to,
+                // so the origin is kept: a name disagreeing with its origin is #94.
+                let name = if exceptions.contains(&name) {
+                    name
                 } else {
-                    TsType::Ref {
-                        name: format!("{}{}", prefix, name),
-                        type_params: type_params
-                            .iter()
-                            .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
-                            .collect(),
-                    }
-                }
+                    format!("{}{}", prefix, name)
+                };
+
+                TsType::Ref(TsTypeRef {
+                    name,
+                    source,
+                    type_params: type_params
+                        .iter()
+                        .map(|t| t.clone().prefix_type_refs(prefix, exceptions))
+                        .collect(),
+                })
             }
             TsType::Fn { params, type_ann } => TsType::Fn {
                 params: params
@@ -400,15 +420,16 @@ impl TsType {
         }
     }
 
-    pub fn type_refs(&self, type_refs: &mut Vec<(String, Vec<TsType>)>) {
+    pub fn type_refs(&self, type_refs: &mut Vec<TsTypeRef>) {
         match self {
             TsType::Array(t) | TsType::Option(t, _) => t.type_refs(type_refs),
             TsType::Tuple(tv) | TsType::Union(tv) | TsType::Intersection(tv) => {
                 tv.iter().for_each(|t| t.type_refs(type_refs))
             }
-            TsType::Ref { name, type_params } => {
-                type_refs.push((name.clone(), type_params.clone()));
-                type_params
+            TsType::Ref(type_ref) => {
+                type_refs.push(type_ref.clone());
+                type_ref
+                    .type_params
                     .iter()
                     .for_each(|t| t.clone().type_refs(type_refs));
             }

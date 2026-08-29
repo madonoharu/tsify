@@ -11,9 +11,9 @@ pub struct Container<'a> {
     pub attrs: TsifyContainerAttrs,
     /// Information about the type as parsed by Serde.
     pub serde_container: SerdeContainer<'a>,
-    /// The `ident` of the type as written in the Rust code.
+    /// The `ident` of the type, with `type_prefix` and `type_suffix` applied.
     pub ident_str: String,
-    /// The name type that will be serialized to Typescript.
+    /// The name serde serializes the type under.
     pub name: String,
 }
 
@@ -31,9 +31,10 @@ impl<'a> Container<'a> {
             }
         };
 
-        let name = attrs
-            .ty_config
-            .format_name(serde_container.attrs.name().serialize_name().to_string());
+        // No affix: this is the value serde writes, and serde knows nothing about
+        // `type_prefix` or `type_suffix`. Every other wire-facing name -- variant tags,
+        // field keys -- already comes straight from serde.
+        let name = serde_container.attrs.name().serialize_name().to_string();
 
         let ident_str = attrs
             .ty_config
@@ -67,9 +68,17 @@ impl<'a> Container<'a> {
         &self.serde_container.ident
     }
 
-    /// The `ident` of the type as written in the Rust code as a string.
+    /// The `ident` of the type as a string, with `type_prefix` and `type_suffix` applied.
     pub fn ident_str(&self) -> String {
         self.ident_str.clone()
+    }
+
+    /// The name of the generated declaration -- not `name()`, which reaches the wire.
+    pub fn declaration_name(&self) -> String {
+        self.attrs
+            .rename
+            .clone()
+            .unwrap_or_else(|| self.ident_str())
     }
 
     #[inline]
@@ -82,7 +91,8 @@ impl<'a> Container<'a> {
         self.serde_attrs().transparent()
     }
 
-    /// The name of the type that will be serialized to Typescript.
+    /// The name serde serializes the type under. This is wire data rather than a type
+    /// name, so no affix is applied.
     pub fn name(&self) -> String {
         self.name.clone()
     }

@@ -268,7 +268,7 @@ cmd_check() {
 
 rewrite() {
     # Every pattern is checked before anything is written. `perl -pi` replaces
-    # first and counts afterwards, so a pattern that stopped matching would
+    # first and counts afterward, so a pattern that stopped matching would
     # otherwise leave the earlier files rewritten and the release half-prepared.
     grep -q '^version = "' Cargo.toml || { echo "error: Cargo.toml has no version line" >&2; exit 1; }
     grep -q '^version = "' tsify-macros/Cargo.toml || { echo "error: tsify-macros/Cargo.toml has no version line" >&2; exit 1; }
@@ -361,7 +361,7 @@ prepare_release() {
             --title "Release $version" \
             --body "Moves both crates to $version, along with the floor \`tsify\` puts on \`tsify-macros\`, the version the README tells people to depend on, and a CHANGELOG heading.
 
-Once this is merged, \`./scripts/release.sh publish $version\` on main uploads both crates." \
+Once this is merged, \`./scripts/release.sh $version\` on main uploads both crates." \
             || note "the pull request could not be opened — open it by hand; the branch is pushed"
     else
         note "gh is not installed — open the pull request by hand"
@@ -370,9 +370,20 @@ Once this is merged, \`./scripts/release.sh publish $version\` on main uploads b
     if [ "$wait_for_merge" = true ] && command -v gh >/dev/null 2>&1; then
         step "Waiting for the pull request to be merged"
         echo "  merge it and this carries on by itself; Ctrl-C is safe"
-        local waited=0 state
+        # Waiting for a person has no useful ceiling, but waiting for `gh` does:
+        # an expired login answers nothing, and nothing is neither MERGED nor
+        # CLOSED, so the loop would run until someone noticed.
+        local waited=0 state unreadable=0
         while :; do
-            state=$(gh pr view "release/$version" --json state --jq .state 2>/dev/null || echo UNKNOWN)
+            if state=$(gh pr view "release/$version" --json state --jq .state 2>/dev/null); then
+                unreadable=0
+            elif [ $((unreadable += 1)) -ge 20 ]; then
+                echo "error: gh could not read the pull request in twenty tries" >&2
+                echo "       the branch is pushed; merge it and run this again" >&2
+                return 1
+            else
+                state=UNKNOWN
+            fi
             case "$state" in
                 MERGED) break ;;
                 CLOSED) echo "error: the pull request was closed without merging" >&2; return 1 ;;
@@ -667,7 +678,17 @@ for arg in "$@"; do
         -w | --wait) wait_for_merge=true ;;
         --allow-dirty) allow_dirty="--allow-dirty" ;;
         -*) echo "error: unknown option $arg" >&2; exit 2 ;;
-        *) version="$arg" ;;
+        # A word that is not a subcommand is the version. Taking a second one
+        # would mean a mistyped `status` silently ran the release instead —
+        # measured: `statsu 0.6.0` used to reach the release path.
+        *)
+            if [ -n "$version" ]; then
+                echo "error: don't know what to do with '$arg'" >&2
+                echo "       the only subcommands are 'status' and 'check'" >&2
+                exit 2
+            fi
+            version="$arg"
+            ;;
     esac
 done
 

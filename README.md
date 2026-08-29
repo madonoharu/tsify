@@ -64,7 +64,7 @@ export function from_js(point: Point): void;
 export function into_js(): Point;
 ```
 
-This is the behavior due to [`typescript_custom_section`](https://rustwasm.github.io/docs/wasm-bindgen/reference/attributes/on-rust-exports/typescript_custom_section.html) and [`Rust Type conversions`](https://rustwasm.github.io/docs/wasm-bindgen/contributing/design/rust-type-conversions.html).
+This is the behavior due to [`typescript_custom_section`](https://wasm-bindgen.github.io/wasm-bindgen/reference/attributes/on-rust-exports/typescript_custom_section.html?highlight=typescript_custom_section#typescript_custom_section) and [`Rust Type conversions`](https://wasm-bindgen.github.io/wasm-bindgen/contributing/design/rust-type-conversions.html?highlight=Rust%20Type%20conversions#rust-type-conversions).
 
 ## Crate Features
 

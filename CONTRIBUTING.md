@@ -13,7 +13,7 @@ wasm-pack test --node -F js
 ./tests-e2e/reference_output/compare_output.sh
 ```
 
-Required tools: stable Rust, [wasm-pack](https://rustwasm.github.io/wasm-pack/),
+Required tools: stable Rust, [wasm-pack](https://wasm-bindgen.github.io/wasm-pack/),
 [cargo-expand](https://github.com/dtolnay/cargo-expand) (for the expand tests),
 and Node.js (for the wasm/e2e tests).
 

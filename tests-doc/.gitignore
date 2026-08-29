@@ -1,0 +1,6 @@
+*
+
+!reference_output/*
+!build_all.sh
+!template.toml
+!.gitignore

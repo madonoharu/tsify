@@ -19,7 +19,9 @@ pub use tsify_macros::*;
 
 /// The `declare` macro, used in `#[declare]` annotations.
 ///
-///
+/// It gives a type alias a name in TypeScript. The alias stays transparent to
+/// Rust, so a type that has to cross the wasm ABI still needs a container of
+/// its own.
 ///
 /// ## Examples
 ///
@@ -41,6 +43,7 @@ pub use tsify_macros::*;
 /// ```
 ///
 /// which generates the following ts:
+///
 /// ```ts
 /// /* tslint:disable */
 /// /* eslint-disable */
@@ -50,22 +53,29 @@ pub use tsify_macros::*;
 ///
 ///
 /// export function returns_bar(): Bar;
-///
 /// ```
 ///
-/// The following is currently not possible:
+/// Naming the alias is not enough to carry it across on its own. This does not
+/// compile — `Vec<Foo>` is not a `Tsify` container, and `Ts<T>` needs one:
 ///
 /// ```compile_fail
+/// use tsify::{declare, Ts};
+/// use wasm_bindgen::prelude::*;
+///
 /// #[declare]
-/// pub type Foo = (i32, String)
+/// pub type Foo = (i32, String);
 ///
 /// #[wasm_bindgen]
-/// pub fn returns_foo() -> Ts<Vec<Foo>>
+/// pub fn returns_foo() -> Ts<Vec<Foo>> {
+///     unimplemented!()
+/// }
 /// ```
 ///
-/// In stead, create a wrapper struct for every distinct return type as shown
-/// above.
-///
+/// Instead, create a wrapper struct for every distinct return type, as shown
+/// above. It has to be a distinct type rather than another alias, and it
+/// cannot be generic: a generic type reaches the boundary without its
+/// arguments ([#76](https://github.com/madonoharu/tsify/issues/76)). That
+/// means one wrapper per instantiation.
 pub use tsify_macros::declare;
 
 #[cfg(feature = "wasm-bindgen")]

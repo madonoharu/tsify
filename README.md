@@ -26,17 +26,13 @@ wasm-bindgen = { version = "0.2" }
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use tsify::Ts;
-use tsify::declare;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsError;
 
-#[declare]
-pub type Coordinate = i32;
-
 #[derive(Tsify, Serialize, Deserialize)]
 pub struct Point {
-    x: Coordinate,
-    y: Coordinate,
+    x: i32,
+    y: i32,
 }
 
 #[wasm_bindgen]
@@ -58,11 +54,9 @@ Will generate the following `.d.ts` file:
 /* tslint:disable */
 /* eslint-disable */
 export interface Point {
-    x: Coordinate;
-    y: Coordinate;
+    x: number;
+    y: number;
 }
-
-export type Coordinate = number;
 
 export function from_js(point: Point): void;
 
@@ -78,7 +72,7 @@ This is the behavior due to [`typescript_custom_section`](https://rustwasm.githu
 
 ## Attributes
 
-These are the options to modify a `#[derive(Tsify)]` 
+These are the options that modify a `#[derive(Tsify)]` container. A type alias is not a container and takes none of them — it needs [`#[declare]`](#type-aliases) instead, or its name is emitted without ever being declared.
 
 Tsify container attributes
 
@@ -116,8 +110,8 @@ Serde attributes
 
 Deprecated attributes
 
--   `into_wasm_abi` (deprecated) implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`. Deprecated in favour of using `Ts<T>` as on function parameters and return type ([why](#why-are-the-wasm_abi-attributes-deprecated)).
--   `from_wasm_abi` (deprecated) implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above. Deprecated in favour of using `Ts<T>` as on function parameters and return type ([why](#why-are-the-wasm_abi-attributes-deprecated)).
+-   `into_wasm_abi` (deprecated) implements `IntoWasmAbi` and `OptionIntoWasmAbi`. This can be converted directly from Rust to JS via `serde_json` or `serde-wasm-bindgen`. Deprecated in favor of using `Ts<T>` as on function parameters and return type ([why](#why-are-the-wasm_abi-attributes-deprecated)).
+-   `from_wasm_abi` (deprecated) implements `FromWasmAbi` and `OptionFromWasmAbi`. This is the opposite operation of the above. Deprecated in favor of using `Ts<T>` as on function parameters and return type ([why](#why-are-the-wasm_abi-attributes-deprecated)).
 
 ## Type Override
 
@@ -250,7 +244,7 @@ export type Foo<T> = T;
 export type Bar = Foo<number>;
 ```
 
-### Why are the `wasm_abi` attributes deprecated?
+## Why are the `wasm_abi` attributes deprecated?
 
 `#[tsify(into_wasm_abi, from_wasm_abi)]` moves (de)serialization *into the wasm-bindgen ABI boundary*, and that boundary cannot report failure.
 
@@ -258,7 +252,7 @@ export type Bar = Foo<number>;
 
 > Note that it is very easy to leak memory with this function because this function, unlike `panic!` on other platforms, **will not run destructors**.
 
-Everything alive at that moment leaks: the serde error, the partially deserialized value, and — because arguments are converted one after another — every argument already converted before the failing one. From JavaScript this looks like an ordinary, catchable exception, so an application can appear to handle bad input correctly while its wasm heap grows on every failure, until the instance dies with `RuntimeError: memory access out of bounds` (see [#65](https://github.com/madonoharu/tsify/issues/65) and [#86](https://github.com/madonoharu/tsify/issues/86)).
+Everything alive at that moment leaks: the serde error, and — because arguments are converted one after another — every argument already converted before the failing one. From JavaScript this looks like an ordinary, catchable exception, so an application can appear to handle bad input correctly while its wasm heap grows on every failure, until the instance dies with `RuntimeError: memory access out of bounds` (see [#65](https://github.com/madonoharu/tsify/issues/65) and [#86](https://github.com/madonoharu/tsify/issues/86)).
 
 `Ts<T>` keeps the boundary infallible: it is a `#[repr(transparent)]` wrapper whose `FromWasmAbi` impl only forwards the underlying `JsValue`. Deserialization then happens inside your function, where it is an ordinary `Result` — the `from_js` example at the top of this page shows the shape. Because the function returns normally, destructors run and nothing leaks. The generated TypeScript is unchanged, so `.d.ts` consumers are unaffected.
 

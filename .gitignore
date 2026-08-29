@@ -6,4 +6,3 @@
 Cargo.lock
 .vscode
 tests-e2e/*/pkg
-tests-doc/*/pkg

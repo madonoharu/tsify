@@ -58,6 +58,7 @@ export interface Point {
     y: number;
 }
 
+
 export function from_js(point: Point): void;
 
 export function into_js(): Point;

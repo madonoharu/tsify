@@ -83,6 +83,10 @@ impl Attributes {
     }
 }
 
+/// 1. Build json doctest output
+/// 2. generate modules for every test
+/// 3. build all tests
+/// 4. compare outputs
 #[test]
 #[ignore = "Test that builds all doctests as wasm modules"]
 fn doctests_are_synced() {
@@ -106,16 +110,8 @@ fn doctests_are_synced() {
 
     let root = Path::new(DOCTESTS_DIR);
 
-    assert!(Command::new(root.join("build_all.sh"))
-        .status()
-        .unwrap()
-        .success());
-
-    // let json = std::fs::read_to_string(DOC_JSON).expect("run the doctest extraction step first");
-
     // if the test is passing
     let mut passing = true;
-    let mut fixed = true;
 
     let Doctests {
         format_version,
@@ -155,24 +151,13 @@ fn doctests_are_synced() {
                     .replace("\\/", &"-")
             );
             let test_dir = root.join(&name);
-            // create directory if not exists
-            if !test_dir.is_dir() {
-                println!("creating directory {test_dir:?}");
-                fs::create_dir(test_dir.clone()).expect(&format!("{DOCTESTS_DIR:?} exists"));
-                passing = false;
-            }
+            fs::create_dir_all(test_dir.clone()).expect(&format!("{DOCTESTS_DIR:?} exists"));
+
             // check all Cargo.toml
             let toml = test_dir.join(TOML);
             let toml_contents = toml_template.replace("{name}", &name);
-            if !toml.is_file() {
-                println!("writing new {toml:?}");
-                fs::write(toml, &toml_contents).expect("can write toml");
-                passing = false;
-            } else if fs::read_to_string(&toml).unwrap() != toml_contents {
-                println!("updating {toml:?}");
-                fs::write(toml, &toml_contents).expect("can write toml");
-                passing = false;
-            }
+            fs::write(toml, &toml_contents).expect("can write toml");
+
             // check the actual code
             let entry_point = test_dir.join(ENTRY);
             let code = format!(
@@ -181,15 +166,34 @@ fn doctests_are_synced() {
                 doctest.line,
                 doctest.doctest_code.to_string().trim_end()
             );
-            if !entry_point.is_file() {
-                println!("creating new {entry_point:?}");
-                fs::write(entry_point, code.as_bytes()).expect("can write doctest");
-                passing = false;
-            } else if fs::read(&entry_point).unwrap() != code.as_bytes() {
-                println!("updating {entry_point:?}");
-                fs::write(entry_point, code.as_bytes()).expect("can write doctest");
-                passing = false;
-            }
+            fs::write(entry_point, code.as_bytes()).expect("can write doctest");
+        }
+    }
+
+    // Build all wasm modules
+    assert!(Command::new(root.join("build_all.sh"))
+        .status()
+        .unwrap()
+        .success());
+
+    // verify output equality
+    for ftests in doctests.chunk_by(|a, b| a.file == b.file) {
+        for (i, doctest) in ftests
+            .iter()
+            .filter(|d| d.doctest_attributes.should_build())
+            .enumerate()
+        {
+            let name = format!(
+                "{}-{i:03}",
+                doctest
+                    .file
+                    .strip_prefix("src/")
+                    .unwrap()
+                    .strip_suffix(".rs")
+                    .unwrap()
+                    .replace("\\/", &"-")
+            );
+            let test_dir = root.join(&name);
             // finally, I think we may check the reference output and for now also update it
             // That's because I'm lazy and just want to put all generated outputs in their directories
             // maybe this should really stop being a test now, but rather some executable that you can invoke with options
@@ -201,34 +205,14 @@ fn doctests_are_synced() {
             let out_name = name.replace("-", "_") + ".d.ts";
             let ref_file = ref_dir.join(&out_name);
             let out_file = test_dir.join("pkg").join(&out_name);
-            match (ref_file.is_file(), out_file.is_file()) {
-                (false, false) => {
-                    eprintln!("reference {ref_file:?} does not exist and there is no output, please build all doctests");
-                    println!("tests-doc/generate_doctest_json.sh");
+            if ref_file.is_file() {
+                if fs::read_to_string(&ref_file).unwrap() != fs::read_to_string(&out_file).unwrap()
+                {
+                    eprintln!(
+                        "{ref_file:?} does not match for {}:{}. Correct output is at {out_file:?}",
+                        doctest.file, doctest.line
+                    );
                     passing = false;
-                    fixed = false;
-                }
-                (false, true) => {
-                    eprintln!("reference {ref_file:?} does not exist, copying from output");
-                    fs::copy(out_file, ref_file).expect("can copy file");
-                    passing = false;
-                }
-                (true, true) => {
-                    if fs::read_to_string(&ref_file).unwrap()
-                        != fs::read_to_string(&out_file).unwrap()
-                    {
-                        eprintln!(
-                            "{ref_file:?} does not match for {}:{}. Correct output is at {out_file:?}",
-                            doctest.file, doctest.line
-                        );
-                        passing = false;
-                        fixed = false;
-                    }
-                }
-                (true, false) => {
-                    eprintln!("no generated output for {ref_file:?}, please build all doctests");
-                    passing = false;
-                    fixed = false;
                 }
             }
         }
@@ -239,9 +223,5 @@ fn doctests_are_synced() {
     // compare with existing files
     // write differences
     // panic if anything changed
-    match (passing, fixed) {
-        (false, true) => panic!("Doctests were not synced to output - they should be now"),
-        (false, false) => panic!("tests-doc/build_all.sh"),
-        _ => {}
-    };
+    assert!(passing)
 }

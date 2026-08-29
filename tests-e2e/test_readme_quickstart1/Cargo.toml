@@ -1,0 +1,20 @@
+[package]
+name = "test_readme_quickstart1"
+publish = false
+version = "0.1.0"
+edition = "2021"
+
+# The dependencies the README's own Cargo.toml block lists, with `tsify`
+# pointed at this checkout instead of a released version.
+[dependencies]
+wasm-bindgen = "0.2"
+tsify = { path = "../..", version = "*" }
+serde = { version = "1.0", features = ["derive"] }
+
+[lib]
+path = "entry_point.rs"
+crate-type = ["cdylib"]
+
+# No `[build-dependencies]`. The other crates here declare `wasm-bindgen-cli`
+# and have no build script, so nothing compiles it; this one has a build script,
+# which would drag the whole CLI in to read one Markdown block.

@@ -3,7 +3,7 @@
 /**
  * A default is rendered like any other type, so the feature moves it.
  */
-export interface Rendered<T = number | null, U = Record<string, number>> {
+export interface Rendered<T = number | undefined, U = Map<string, number>> {
     t: T;
     u: U;
 }

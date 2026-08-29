@@ -60,3 +60,13 @@ fn test_declare_keeps_default_type_params() {
         "export type Defaulted<T = boolean, U = number[]> = Foo<T, U>;",
     );
 }
+
+#[test]
+fn test_declare_drops_a_default_a_parameter_would_shadow() {
+    // `crate::T` is the type, but in the parameter list `T` reads as the
+    // parameter declared after it.
+    let tokens = expand_to_string(syn::parse_quote! {
+        type Later<U = crate::T, T = String> = Foo<U, T>;
+    });
+    assert_contains!(tokens, "export type Later<U, T = string> = Foo<U, T>;");
+}

@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- **A default type parameter is now declared with its default.** `struct Foo<T = bool>(T)` declared `export type Foo<T> = T;` and now declares `export type Foo<T = boolean> = T;`, the same for interfaces, enums and `#[declare]` aliases. **Your `.d.ts` changes if you use one.** A default that cannot be honoured is dropped: one naming a parameter no field mentions, and then every default before it, since TypeScript only allows them on a trailing run
+- **A default type parameter is now declared with its default.** `struct Foo<T = bool>(T)` declared `export type Foo<T> = T;` and now declares `export type Foo<T = boolean> = T;`, the same for interfaces, enums and `#[declare]` aliases. **Your `.d.ts` changes if you use one.**
+- A default is read where the parameters are, so a name in it resolves against the parameter list before the declarations around it. One that would land somewhere other than the Rust says is dropped — naming a parameter that is declared nowhere or declared after it, or a type whose name a parameter has taken — and so is every default before it, since TypeScript only allows them on a trailing run. Inside `#[tsify(namespace)]`, a default is rewritten to the hoisted alias like any other reference, so a sibling variant cannot capture it
 - While [#76](https://github.com/madonoharu/tsify/issues/76) is open this makes it quieter — `fn bar(foo: Ts<Foo<i64>>)` still writes `bar(foo: Foo)`, which the default now resolves to `Foo<boolean>` rather than raising `TS2314`
 
 ## v0.5.8

@@ -9,38 +9,9 @@ use crate::{
     attrs::TsifyFieldAttrs,
     comments::extract_doc_comments,
     container::Container,
-    decl::{Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl, TsTypeParam},
-    typescript::{TsType, TsTypeElement, TsTypeLit, TsTypeRefSource, TypeContext},
+    decl::{resolve_defaults, Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl, TsTypeParam},
+    typescript::{TsType, TsTypeElement, TsTypeLit, TypeContext},
 };
-
-/// Whether every parameter a default names is one this declaration declares.
-///
-/// A default may name another parameter -- `struct Foo<A, B = A>` -- and a
-/// parameter no field mentions is not declared at all. Keeping such a default
-/// would point `B` at an `A` that appears nowhere, so the default goes instead
-/// and `B` is declared without one.
-fn declares_every_parameter_it_names(default: &TsType, declared: &HashSet<String>) -> bool {
-    let mut type_refs = Vec::new();
-    default.type_refs(&mut type_refs);
-
-    type_refs.iter().all(|type_ref| {
-        !matches!(type_ref.source, TsTypeRefSource::TypeParam) || declared.contains(&type_ref.name)
-    })
-}
-
-/// Strips defaults up to the last parameter that has none.
-///
-/// TypeScript, like Rust, only accepts defaults on a trailing run of
-/// parameters. Rust guarantees that of what it accepts, but dropping one of
-/// them -- because the parameter it named was left undeclared -- can open a gap
-/// in the middle, and `<A = number, B>` does not parse.
-fn trim_defaults_to_trailing_run(params: &mut [TsTypeParam]) {
-    if let Some(last_without) = params.iter().rposition(|param| param.default.is_none()) {
-        for param in &mut params[..last_without] {
-            param.default = None;
-        }
-    }
-}
 
 enum ParsedFields {
     Named(Vec<TsTypeElement>, Vec<TsType>),
@@ -101,39 +72,26 @@ impl<'a> Parser<'a> {
     }
 
     fn create_relevant_type_params(&self, type_ref_names: HashSet<&String>) -> Vec<TsTypeParam> {
-        let declared = self
+        let mut params = self
             .container
             .generics()
             .type_params()
             .filter(|param| type_ref_names.contains(&param.ident.to_string()))
-            .collect::<Vec<_>>();
-
-        let declared_names = declared
-            .iter()
-            .map(|param| param.ident.to_string())
-            .collect::<HashSet<_>>();
-
-        let mut params = declared
-            .iter()
             .map(|param| TsTypeParam {
                 name: param.ident.to_string(),
-                default: param
-                    .default
-                    .as_ref()
-                    .map(|default| {
-                        TsType::from_syn_type(
-                            TypeContext {
-                                config: &self.container.attrs.ty_config,
-                                generics: self.container.generics(),
-                            },
-                            default,
-                        )
-                    })
-                    .filter(|default| declares_every_parameter_it_names(default, &declared_names)),
+                default: param.default.as_ref().map(|default| {
+                    TsType::from_syn_type(
+                        TypeContext {
+                            config: &self.container.attrs.ty_config,
+                            generics: self.container.generics(),
+                        },
+                        default,
+                    )
+                }),
             })
             .collect::<Vec<_>>();
 
-        trim_defaults_to_trailing_run(&mut params);
+        resolve_defaults(&mut params);
 
         params
     }

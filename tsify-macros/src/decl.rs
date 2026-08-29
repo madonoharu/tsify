@@ -46,6 +46,55 @@ impl TsTypeParam {
     }
 }
 
+/// Settles which defaults survive, and drops the rest.
+///
+/// A default is written inside the parameter list, so that is where its names
+/// resolve: against the parameters first, and the declarations around them only
+/// after. That gives three ways for a default to mean something other than the
+/// Rust it came from, none of which can be spelled around, because a parameter
+/// shadows within its own list:
+///
+/// * it names a parameter this declaration does not declare — one that no field
+///   mentions is declared nowhere — so the name reaches nothing;
+/// * it names a parameter declared after it, which TypeScript rejects outright
+///   as `TS2744`;
+/// * it names a type of its own whose name a parameter has taken, and the
+///   parameter wins.
+///
+/// The default goes in each case. TypeScript then accepts defaults only on a
+/// trailing run of parameters, so opening a gap takes the defaults before it as
+/// well.
+pub fn resolve_defaults(params: &mut [TsTypeParam]) {
+    let names = param_names(params);
+
+    for index in 0..params.len() {
+        let resolves = match &params[index].default {
+            Some(default) => {
+                let mut type_refs = Vec::new();
+                default.type_refs(&mut type_refs);
+
+                type_refs.iter().all(|type_ref| match type_ref.source {
+                    TsTypeRefSource::TypeParam => names[..index].contains(&type_ref.name),
+                    TsTypeRefSource::Rust(_) | TsTypeRefSource::Synthetic => {
+                        !names.contains(&type_ref.name)
+                    }
+                })
+            }
+            None => continue,
+        };
+
+        if !resolves {
+            params[index].default = None;
+        }
+    }
+
+    if let Some(last_without) = params.iter().rposition(|param| param.default.is_none()) {
+        for param in &mut params[..last_without] {
+            param.default = None;
+        }
+    }
+}
+
 /// The declaration form, `A, B = number`.
 fn declared_params(params: &[TsTypeParam]) -> String {
     params
@@ -256,6 +305,15 @@ impl Display for TsEnumDecl {
                     let mut type_refs = Vec::new();
                     type_alias.type_ann.type_refs(&mut type_refs);
 
+                    // A default is a type like any other, and is read from
+                    // inside the namespace, where a sibling variant can have
+                    // taken the name it meant.
+                    for param in &type_alias.type_params {
+                        if let Some(default) = &param.default {
+                            default.type_refs(&mut type_refs);
+                        }
+                    }
+
                     type_refs
                         .iter()
                         .filter(|type_ref| {
@@ -296,22 +354,29 @@ impl Display for TsEnumDecl {
                 write!(f, " {{}}")?;
             } else {
                 let prefix = format!("__{}", self.id);
-                let members = self
-                    .members
-                    .iter()
-                    .map(|elem| TsTypeAliasDecl {
-                        id: elem.id.clone(),
-                        export: true,
-                        type_params: elem.type_params.clone(),
-                        type_ann: elem
-                            .type_ann
-                            .clone()
-                            .prefix_type_refs(&prefix, &param_names(&self.type_params)),
-                        comments: elem.comments.clone(),
-                    })
-                    .map(|elem| format!("\n{}", elem.to_string_with_indent(4)))
-                    .collect::<Vec<_>>()
-                    .join("");
+                let exceptions = param_names(&self.type_params);
+                let members =
+                    self.members
+                        .iter()
+                        .map(|elem| TsTypeAliasDecl {
+                            id: elem.id.clone(),
+                            export: true,
+                            type_params: elem
+                                .type_params
+                                .iter()
+                                .map(|param| TsTypeParam {
+                                    name: param.name.clone(),
+                                    default: param.default.clone().map(|default| {
+                                        default.prefix_type_refs(&prefix, &exceptions)
+                                    }),
+                                })
+                                .collect(),
+                            type_ann: elem.type_ann.clone().prefix_type_refs(&prefix, &exceptions),
+                            comments: elem.comments.clone(),
+                        })
+                        .map(|elem| format!("\n{}", elem.to_string_with_indent(4)))
+                        .collect::<Vec<_>>()
+                        .join("");
 
                 write!(f, " {{{members}\n}}")?;
             }

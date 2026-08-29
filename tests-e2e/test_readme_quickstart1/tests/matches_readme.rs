@@ -30,6 +30,18 @@ fn a_block_in_a_later_section_is_not_the_block() {
 }
 
 #[test]
+fn a_crlf_checkout_finds_the_same_block() {
+    // What Windows gets by default. Before #121 the anchor search looked for
+    // "\n## Example\n", which a CRLF file never contains, so the build script
+    // panicked saying the README had lost the heading.
+    let lf_text = "\n## Example\n\n```rust\nright\n```\n";
+    assert_eq!(
+        fenced_block_after(&lf_text.replace('\n', "\r\n"), "## Example", "rust"),
+        fenced_block_after(lf_text, "## Example", "rust"),
+    );
+}
+
+#[test]
 #[should_panic(expected = "is empty")]
 fn an_empty_block_is_rejected() {
     let text = "\n## Example\n\n```ts\n```\n";
@@ -40,7 +52,9 @@ fn an_empty_block_is_rejected() {
 fn reference_output_is_what_the_readme_prints() {
     assert_eq!(
         fenced_block_after(README, "Will generate the following `.d.ts` file:", "ts"),
-        REFERENCE,
+        // Both sides through `lf`: on a CRLF checkout these two files differ by
+        // their line endings alone, which is not a divergence worth failing on.
+        lf(REFERENCE),
         "the `.d.ts` the README prints and the reference this crate is compared \
          against have diverged; `./tests-e2e/reference_output/update_output.sh` \
          writes the emitted output over both"

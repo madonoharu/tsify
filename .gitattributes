@@ -1,0 +1,9 @@
+# The e2e harness reads these as text and compares them byte for byte, and it
+# looks for `\n`. Git checks files out with CRLF wherever `core.autocrlf` is on,
+# which is the default on Windows; without this the README extraction, the
+# reference diff and the bless script all disagree with the files on disk (#121).
+*.md    text eol=lf
+*.rs    text eol=lf
+*.ts    text eol=lf
+*.sh    text eol=lf
+*.toml  text eol=lf

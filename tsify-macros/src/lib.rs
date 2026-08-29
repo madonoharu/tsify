@@ -27,6 +27,10 @@ fn declare_impl(
 }
 
 /// The `declare` macro, used in `#[declare]` annotations.
+///
+/// The examples are on the re-export in `tsify`, where the crates they need
+/// are available to a doctest. That documentation is what a reader of
+/// `tsify::declare` sees.
 #[proc_macro_attribute]
 pub fn declare(
     args: proc_macro::TokenStream,

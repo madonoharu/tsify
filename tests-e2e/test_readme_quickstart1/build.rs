@@ -1,13 +1,10 @@
-//! Extracts the README's quickstart so that the crate builds the example
-//! itself rather than a copy of it.
+//! Extracts the README's quickstart, so the example has one home instead of a
+//! copy to keep honest. Do not replace this with a checked-in copy: a copy is a
+//! workspace source, so `cargo fmt --all -- --check` would reorder the imports
+//! a reader sees in the README.
 //!
-//! A copy would need something to keep it honest; the example having one home
-//! needs nothing. It also keeps the README out of reach of `cargo fmt --check`,
-//! which would otherwise decide the order of the imports a reader sees.
-//!
-//! The block is taken verbatim, so if the quickstart ever starts hiding lines
-//! from the doctest with `# `, this wants a rule for stripping them. It fails
-//! the build rather than going quiet: an anchor that moves panics here.
+//! The block is taken verbatim: if the quickstart ever hides lines from the
+//! doctest with `# `, this wants a rule for stripping them.
 
 use std::{env, fs, path::Path};
 

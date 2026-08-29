@@ -1,13 +1,8 @@
 //! Holds the reference `.d.ts` to the text the README prints.
 //!
-//! The harness compares that reference against what `wasm-pack build` emits
-//! from this crate, and the crate is the README's own Rust block by
-//! construction. This is the remaining link: that the block the README prints
-//! is the reference being compared, rather than some other text that once
-//! resembled it.
-//!
-//! The paths are `include_str!`s, so a file that moves is a build error rather
-//! than a check that quietly stops checking anything.
+//! The harness compares that reference against what `wasm-pack build` emits;
+//! this is the other link, that the reference is still the block the README
+//! prints. `include_str!`, so a file that moves is a build error.
 
 const README: &str = include_str!("../../../README.md");
 const REFERENCE: &str =
@@ -25,6 +20,20 @@ fn an_anchor_is_a_whole_line() {
 fn a_fence_of_another_language_is_not_the_block() {
     let text = "\n## Example\n\n```toml\nwrong\n```\n\n```rust\nright\n```\n";
     assert_eq!(fenced_block_after(text, "## Example", "rust"), "right\n");
+}
+
+#[test]
+#[should_panic(expected = "no `ts` block in the README section")]
+fn a_block_in_a_later_section_is_not_the_block() {
+    let text = "\n## Example\n\n```typescript\nrenamed\n```\n\n## Other\n\n```ts\nelsewhere\n```\n";
+    fenced_block_after(text, "## Example", "ts");
+}
+
+#[test]
+#[should_panic(expected = "is empty")]
+fn an_empty_block_is_rejected() {
+    let text = "\n## Example\n\n```ts\n```\n";
+    fenced_block_after(text, "## Example", "ts");
 }
 
 #[test]

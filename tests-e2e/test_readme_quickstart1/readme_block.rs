@@ -4,6 +4,18 @@
 // imported: a build script and an integration test have no crate in common,
 // and the two must agree on what "the block" means.
 
+/// The README with one kind of line ending, so that everything below can look
+/// for `\n`.
+///
+/// Git checks Markdown out with CRLF wherever `core.autocrlf` is on, which is
+/// the default on Windows, and then no search for a whole line matches and the
+/// build script panics saying the anchor is gone (#121). Normalizing here
+/// rather than at each call site is what keeps the extraction and the
+/// comparison agreeing about what the file says.
+fn lf(text: &str) -> String {
+    text.replace("\r\n", "\n")
+}
+
 /// The body of the first fenced `lang` block that follows the line `anchor` and
 /// belongs to the same section as it.
 ///
@@ -12,7 +24,8 @@
 /// fence to a language that renders the same — ```` ```ts ```` to
 /// ```` ```typescript ```` — fails here instead of quietly matching a block
 /// in some later section that everything downstream would then agree on.
-fn fenced_block_after<'a>(text: &'a str, anchor: &str, lang: &str) -> &'a str {
+fn fenced_block_after(text: &str, anchor: &str, lang: &str) -> String {
+    let text = lf(text);
     let anchor_line = format!("\n{anchor}\n");
     let after_anchor = text
         .split_once(anchor_line.as_str())
@@ -35,5 +48,5 @@ fn fenced_block_after<'a>(text: &'a str, anchor: &str, lang: &str) -> &'a str {
     let end = body
         .find("\n```")
         .unwrap_or_else(|| panic!("unterminated `{lang}` block after {anchor:?} in the README"));
-    &body[..end + 1]
+    body[..end + 1].to_string()
 }

@@ -1,24 +1,18 @@
 #!/bin/bash
 
 # The inverse of compare_output.sh: writes what `wasm-pack build` last emitted
-# over the references, and then over the one block of the README that is a
-# reference too (see ../test_readme_quickstart1).
-#
-# It blesses whatever is in `pkg/` — like `MACROTEST=overwrite` for the
-# expansion snapshots, it is for a change of output you meant to make. Build
-# first, or it blesses a stale artifact:
+# over the references, and over the one block of the README that is a reference
+# too (see ../test_readme_quickstart1). It blesses whatever is in `pkg/`, so
+# build first.
 #
 #     ./tests-e2e/build_all.sh
-#     ./tests-e2e/reference_output/update_output.sh
+#     ./tests-e2e/reference_output/update_output.sh [test_name]
 #     git diff
 #
-# It walks the references rather than `pkg/`, so it updates the files already
-# kept here and does not start tracking new ones.
-#
-# One test can be named, so that a change to a single example does not ask for
-# every crate to have been built:
-#
-#     ./tests-e2e/reference_output/update_output.sh test_readme_quickstart1
+# It walks the references rather than `pkg/`, so it updates what is already kept
+# here and does not start tracking new files. Nothing is written until
+# everything has been read, or a README it cannot parse would leave the
+# references updated and the README not.
 
 set -e
 
@@ -33,74 +27,100 @@ if [ -n "$TARGET" ] && [ ! -d "./$TARGET" ]; then
 fi
 
 README="../../README.md"
-QUICKSTART_REFERENCE="test_readme_quickstart1/test_readme_quickstart1.d.ts"
+QUICKSTART="test_readme_quickstart1"
+QUICKSTART_GENERATED="../${QUICKSTART}/pkg/${QUICKSTART}.d.ts"
 # The line the README prints the quickstart's `.d.ts` under.
 ANCHOR='Will generate the following `.d.ts` file:'
 
-for FOLDERNAME in $(find . -maxdepth 1 -type d); do
-    if [ "$FOLDERNAME" = "." ]; then
-        continue
-    fi
-
-    FOLDERNAME="${FOLDERNAME#./}"
-
-    if [ -n "$TARGET" ] && [ "$FOLDERNAME" != "$TARGET" ]; then
-        continue
-    fi
-
-    FILES=$(find "./${FOLDERNAME}/" -type f)
-    for FILE in $FILES; do
-        RELATIVE_PATH="${FILE#./${FOLDERNAME}/}"
-        GENERATED="../${FOLDERNAME}/pkg/${RELATIVE_PATH}"
-
-        # A reference with nothing to update from means the build did not run,
-        # or stopped emitting the file. Blessing the rest would hide that.
-        if [ ! -f "$GENERATED" ]; then
-            echo "Missing generated file: $GENERATED"
-            echo "   run ./tests-e2e/build_all.sh first"
-            exit 1
+# The set of reference files to update, as `<reference>\t<generated>` lines.
+# `find` is the same walk compare_output.sh makes, so the two stay in step.
+pairs() {
+    for FOLDERNAME in $(find . -maxdepth 1 -type d); do
+        if [ "$FOLDERNAME" = "." ]; then
+            continue
         fi
-
-        if cmp -s "$GENERATED" "$FILE"; then
-            echo "Unchanged $FILE"
-        else
-            cp "$GENERATED" "$FILE"
-            echo "Updated   $FILE"
+        FOLDERNAME="${FOLDERNAME#./}"
+        if [ -n "$TARGET" ] && [ "$FOLDERNAME" != "$TARGET" ]; then
+            continue
         fi
+        for FILE in $(find "./${FOLDERNAME}/" -type f); do
+            RELATIVE_PATH="${FILE#./${FOLDERNAME}/}"
+            printf '%s\t%s\n' "$FILE" "../${FOLDERNAME}/pkg/${RELATIVE_PATH}"
+        done
     done
+}
+
+# ── Phase 1: read and validate. No writes. ───────────────────────────────────
+
+PAIRS=$(pairs)
+
+echo "$PAIRS" | while IFS="$(printf '\t')" read -r FILE GENERATED; do
+    [ -n "$FILE" ] || continue
+    # A reference with nothing to update from means the build did not run, or
+    # stopped emitting the file. Blessing the rest would hide that.
+    if [ ! -f "$GENERATED" ]; then
+        echo "Missing generated file: $GENERATED" >&2
+        echo "   run ./tests-e2e/build_all.sh first" >&2
+        exit 1
+    fi
 done
 
-# The README prints the quickstart's `.d.ts` in full, so the block and the
-# reference are the same text. tests/matches_readme.rs is what fails when they
-# stop being.
-if [ -n "$TARGET" ] && [ "$TARGET" != "test_readme_quickstart1" ]; then
-    exit 0
+TMP=""
+if [ -z "$TARGET" ] || [ "$TARGET" = "$QUICKSTART" ]; then
+    # The README prints the quickstart's `.d.ts` in full, so the block and the
+    # reference are the same text, and both come from the same build.
+    # tests/matches_readme.rs is what fails when they stop being.
+    TMP=$(mktemp)
+    trap 'rm -f "$TMP"' EXIT
+
+    awk -v generated="$QUICKSTART_GENERATED" -v anchor="$ANCHOR" '
+        BEGIN {
+            while ((getline line < generated) > 0) block = block line "\n"
+            close(generated)
+            state = 0
+        }
+        state == 0 { print; if ($0 == anchor) state = 1; next }
+        # The block has to belong to the section the anchor is in. Walking past
+        # a heading would rewrite something that belongs to another example —
+        # see the note in ../test_readme_quickstart1/readme_block.rs.
+        state == 1 {
+            if ($0 ~ /^## /) {
+                print "no `ts` block in the README section that follows " anchor > "/dev/stderr"
+                bad = 1
+                exit 1
+            }
+            print
+            if ($0 == "```ts") { printf "%s", block; state = 2 }
+            next
+        }
+        state == 2 { if ($0 == "```") { print; state = 3 } next }
+        { print }
+        END {
+            if (!bad && state != 3) {
+                print "could not find the `ts` block after " anchor > "/dev/stderr"
+                exit 1
+            }
+        }
+    ' "$README" > "$TMP"
 fi
 
-TMP=$(mktemp)
-trap 'rm -f "$TMP"' EXIT
+# ── Phase 2: write. Everything above has already succeeded. ──────────────────
 
-awk -v ref="$QUICKSTART_REFERENCE" -v anchor="$ANCHOR" '
-    BEGIN {
-        while ((getline line < ref) > 0) block = block line "\n"
-        close(ref)
-        state = 0
-    }
-    state == 0 { print; if ($0 == anchor) state = 1; next }
-    state == 1 { print; if ($0 == "```ts") { printf "%s", block; state = 2 } next }
-    state == 2 { if ($0 == "```") { print; state = 3 } next }
-    { print }
-    END {
-        if (state != 3) {
-            print "could not find the `ts` block after " anchor > "/dev/stderr"
-            exit 1
-        }
-    }
-' "$README" > "$TMP"
+echo "$PAIRS" | while IFS="$(printf '\t')" read -r FILE GENERATED; do
+    [ -n "$FILE" ] || continue
+    if cmp -s "$GENERATED" "$FILE"; then
+        echo "Unchanged $FILE"
+    else
+        cp "$GENERATED" "$FILE"
+        echo "Updated   $FILE"
+    fi
+done
 
-if cmp -s "$TMP" "$README"; then
-    echo "Unchanged $README"
-else
-    cp "$TMP" "$README"
-    echo "Updated   $README"
+if [ -n "$TMP" ]; then
+    if cmp -s "$TMP" "$README"; then
+        echo "Unchanged $README"
+    else
+        cp "$TMP" "$README"
+        echo "Updated   $README"
+    fi
 fi

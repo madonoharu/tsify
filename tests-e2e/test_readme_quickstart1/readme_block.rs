@@ -4,22 +4,36 @@
 // imported: a build script and an integration test have no crate in common,
 // and the two must agree on what "the block" means.
 
-/// The body of the first fenced `lang` block that follows the line `anchor`.
+/// The body of the first fenced `lang` block that follows the line `anchor` and
+/// belongs to the same section as it.
 ///
-/// `anchor` is matched as a whole line, so a deeper heading ending in the same
-/// words is not mistaken for it, and neither is a mention of it in prose.
+/// Both bounds matter. `anchor` is a whole line, so `### Example` is not
+/// `## Example`. The search stops at the next `## ` heading, so renaming a
+/// fence to a language that renders the same — ```` ```ts ```` to
+/// ```` ```typescript ```` — fails here instead of quietly matching a block
+/// in some later section that everything downstream would then agree on.
 fn fenced_block_after<'a>(text: &'a str, anchor: &str, lang: &str) -> &'a str {
     let anchor_line = format!("\n{anchor}\n");
     let after_anchor = text
         .split_once(anchor_line.as_str())
         .unwrap_or_else(|| panic!("the README no longer has a line {anchor:?}"))
         .1;
+    let section = match after_anchor.find("\n## ") {
+        Some(next_heading) => &after_anchor[..next_heading],
+        None => after_anchor,
+    };
     let open = format!("```{lang}\n");
-    let body = after_anchor
+    let body = section
         .split_once(open.as_str())
-        .unwrap_or_else(|| panic!("no `{lang}` block after {anchor:?} in the README"))
+        .unwrap_or_else(|| {
+            panic!("no `{lang}` block in the README section that follows {anchor:?}")
+        })
         .1;
-    body.split_once("```")
-        .unwrap_or_else(|| panic!("unterminated `{lang}` block after {anchor:?} in the README"))
-        .0
+    if body.starts_with("```") {
+        panic!("the `{lang}` block after {anchor:?} in the README is empty");
+    }
+    let end = body
+        .find("\n```")
+        .unwrap_or_else(|| panic!("unterminated `{lang}` block after {anchor:?} in the README"));
+    &body[..end + 1]
 }

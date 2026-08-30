@@ -53,7 +53,10 @@ fn assert_diagnostic(stderr: &str, case: &CompileFailCase) {
             .map_or(diagnostic.len(), |index| index + 1);
         let diagnostic = &diagnostic[..diagnostic_end];
 
-        if diagnostic.contains(&location) {
+        // rustc spells the path with the platform's separator, so the same
+        // diagnostic points at `src/module.rs` on Unix and `src\module.rs` on
+        // Windows. Compare one spelling.
+        if diagnostic.replace('\\', "/").contains(&location) {
             return;
         }
         search_start = error_start + error.len();

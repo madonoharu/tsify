@@ -5,8 +5,10 @@
 # artifacts.
 set -e
 
-# Define the root directory for the search
-ROOT_DIR="tests-e2e"
+# Resolved from the script rather than the caller's directory: this is invoked
+# from `test.sh` at the repository root and, since it now calls a sibling
+# script, from wherever a person happens to be.
+ROOT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 # Find all Cargo.toml files in the root directory and its direct subdirectories
 FILES=$(find "$ROOT_DIR" -maxdepth 2 -name Cargo.toml)
@@ -26,3 +28,9 @@ for FILE in $FILES; do
     # Pop the directory from the stack and change back to the original directory
     popd > /dev/null || exit
 done
+
+# The reference-output crates above are release builds. Keep the one debug
+# descriptor check separate: running every crate again would double this suite,
+# while a release build or a current wasm-bindgen interpreter would each hide
+# the compatibility failure it is meant to catch.
+"$ROOT_DIR/build_minimum_wasm_bindgen.sh"

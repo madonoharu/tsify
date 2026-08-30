@@ -1,0 +1,19 @@
+[package]
+name = "minimum_wasm_bindgen"
+publish = false
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Replaced from the root tsify manifest by build_minimum_wasm_bindgen.sh.
+wasm-bindgen = "=@WASM_BINDGEN_MINIMUM@"
+tsify = { path = @TSIFY_PATH@, default-features = false, features = ["js"] }
+serde = { version = "1.0", features = ["derive"] }
+
+[lib]
+path = "entry_point.rs"
+crate-type = ["cdylib"]
+
+# The generated crate is deliberately isolated from tsify's workspace so its
+# exact minimum dependency does not change resolution for the normal suite.
+[workspace]

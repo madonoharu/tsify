@@ -10,10 +10,11 @@ set -e
 # script, from wherever a person happens to be.
 ROOT_DIR=$(cd "$(dirname "$0")" && pwd)
 
-# Find all Cargo.toml files in the root directory and its direct subdirectories
-FILES=$(find "$ROOT_DIR" -maxdepth 2 -name Cargo.toml)
-
-for FILE in $FILES; do
+# Find all Cargo.toml files in the root directory and its direct subdirectories.
+# Read as NUL-separated records rather than splitting one string on whitespace:
+# `ROOT_DIR` is absolute now, so a checkout under a path with a space in it
+# would otherwise arrive here as several fragments.
+while IFS= read -r -d '' FILE; do
     # Get the directory of the file
     DIR=$(dirname "$FILE")
     # Push the directory onto the stack and change to it
@@ -27,7 +28,7 @@ for FILE in $FILES; do
     wasm-pack build
     # Pop the directory from the stack and change back to the original directory
     popd > /dev/null || exit
-done
+done < <(find "$ROOT_DIR" -maxdepth 2 -name Cargo.toml -print0)
 
 # The reference-output crates above are release builds. Keep the one debug
 # descriptor check separate: running every crate again would double this suite,

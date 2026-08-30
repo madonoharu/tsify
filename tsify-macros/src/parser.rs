@@ -9,7 +9,7 @@ use crate::{
     attrs::TsifyFieldAttrs,
     comments::extract_doc_comments,
     container::Container,
-    decl::{Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl},
+    decl::{resolve_defaults, Decl, TsEnumDecl, TsInterfaceDecl, TsTypeAliasDecl, TsTypeParam},
     typescript::{TsType, TsTypeElement, TsTypeLit, TypeContext},
 };
 
@@ -71,13 +71,29 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn create_relevant_type_params(&self, type_ref_names: HashSet<&String>) -> Vec<String> {
-        self.container
+    fn create_relevant_type_params(&self, type_ref_names: HashSet<&String>) -> Vec<TsTypeParam> {
+        let mut params = self
+            .container
             .generics()
             .type_params()
-            .map(|p| p.ident.to_string())
-            .filter(|t| type_ref_names.contains(t))
-            .collect()
+            .filter(|param| type_ref_names.contains(&param.ident.to_string()))
+            .map(|param| TsTypeParam {
+                name: param.ident.to_string(),
+                default: param.default.as_ref().map(|default| {
+                    TsType::from_syn_type(
+                        TypeContext {
+                            config: &self.container.attrs.ty_config,
+                            generics: self.container.generics(),
+                        },
+                        default,
+                    )
+                }),
+            })
+            .collect::<Vec<_>>();
+
+        resolve_defaults(&mut params);
+
+        params
     }
 
     fn create_type_alias_decl(&self, type_ann: TsType) -> Decl {
@@ -89,7 +105,7 @@ impl<'a> Parser<'a> {
                 .attrs
                 .type_params
                 .as_ref()
-                .cloned()
+                .map(|params| params.iter().map(|p| TsTypeParam::parse(p)).collect())
                 .unwrap_or_else(|| self.create_relevant_type_params(type_ann.type_ref_names())),
             type_ann,
             comments: extract_doc_comments(&self.container.serde_container.original.attrs),
@@ -112,7 +128,7 @@ impl<'a> Parser<'a> {
                 .attrs
                 .type_params
                 .as_ref()
-                .cloned()
+                .map(|params| params.iter().map(|p| TsTypeParam::parse(p)).collect())
                 .unwrap_or_else(|| self.create_relevant_type_params(type_ref_names));
 
             Decl::TsInterface(TsInterfaceDecl {
@@ -222,11 +238,17 @@ impl<'a> Parser<'a> {
         );
 
         if let Some(t) = &ts_attrs.type_override {
+            // An override records which parameters it mentions, so that the
+            // container can tell they are still in use. That is a set of names;
+            // only a declaration carries defaults.
             let type_params = if let Some(params) = &ts_attrs.type_params {
                 params.clone()
             } else {
                 let type_ref_names = type_ann.type_ref_names();
                 self.create_relevant_type_params(type_ref_names)
+                    .into_iter()
+                    .map(|param| param.name)
+                    .collect()
             };
             (
                 TsType::Override {

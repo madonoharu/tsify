@@ -1,0 +1,27 @@
+[package]
+name = "test_defaults_js1"
+publish = false
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wasm-bindgen = "0.2"
+tsify = { path = "../..", version = "*" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+# The same source as `test_defaults1`, built with `js` instead. The pair of
+# reference outputs is what that feature changes.
+[features]
+default = ["js"]
+js = ["tsify/js"]
+
+[lib]
+path = "../test_defaults1/entry_point.rs"
+crate-type = ["cdylib"]
+
+[build-dependencies]
+wasm-bindgen-cli = "0.2"

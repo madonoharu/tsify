@@ -9,11 +9,12 @@
 // way `test_generic_args1` records #76.
 //
 // Measured while writing this: whether a name collides depends on the arm.
-// `Duration`, `SystemTime`, `Path`, `PathBuf`, `ByteBuf` and `String` match on
-// the identifier alone, so any type of yours by that name is replaced. The
-// rest — `Option`, `Result`, `Vec`, `HashMap`, `Range` and so on — are guarded
-// by the number of type arguments, so they collide only when yours takes the
-// same number. #115 lists them together; the reference below separates them.
+// `String`, `str`, `char`, `Path`, `PathBuf`, `bool`, `ByteBuf`, `Duration`,
+// `SystemTime` and the `Fn` family match on the identifier alone, so a type of
+// yours by one of those names is replaced whatever shape it has. The rest —
+// `Option`, `Result`, `Vec`, `HashMap`, `Range` and so on — are guarded by the
+// number of type arguments, so they collide only when yours takes the same
+// number. #115 lists them together; the reference below separates them.
 
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
@@ -39,11 +40,12 @@ pub struct HoldsStdTypes {
     pub std_range: std::ops::Range<u32>,
 }
 
-// ── Guarded by the number of type arguments ──────────────────────────────────
+// ── Names the prelude also uses ──────────────────────────────────────────────
 
-// Shadowing names the prelude uses would reach the code the derive generates,
-// so these live in a module of their own. The arm matches the terminal
-// identifier, so the path makes no difference.
+// Shadowing these at the crate root would reach the code the derive generates,
+// so they live in a module of their own. The arm matches the terminal
+// identifier, so the path makes no difference. The first three are guarded by
+// argument count; `Fn` is not.
 pub mod shadowed {
     use super::*;
 
@@ -66,6 +68,13 @@ pub mod shadowed {
         pub a: T,
         pub b: U,
     }
+
+    // `Fn` is not a Rust keyword, and its arm carries no arity guard, so a
+    // type of yours by that name is replaced however many arguments it has.
+    #[derive(Tsify, Serialize, Deserialize)]
+    pub struct Fn {
+        pub called: bool,
+    }
 }
 
 #[derive(Tsify, Serialize, Deserialize)]
@@ -73,6 +82,7 @@ pub struct HoldsGuarded {
     pub range: shadowed::Range<String>,
     pub result: shadowed::Result<u32, String>,
     pub option: shadowed::Option<u32, String>,
+    pub func: shadowed::Fn,
 }
 
 // ── Control ──────────────────────────────────────────────────────────────────

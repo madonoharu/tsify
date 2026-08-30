@@ -4,6 +4,10 @@ export interface Duration {
     secs: number;
 }
 
+export interface Fn {
+    called: boolean;
+}
+
 export interface HoldsDuration {
     d: { secs: number; nanos: number };
 }
@@ -12,6 +16,7 @@ export interface HoldsGuarded {
     range: { start: string; end: string };
     result: { Ok: number } | { Err: string };
     option: Option<number, string>;
+    func: () => void;
 }
 
 export interface HoldsInterval {

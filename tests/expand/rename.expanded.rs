@@ -259,4 +259,17 @@ const _: () = {
             tsify::__macro_support::inform_char('e');
         }
     }
+    #[automatically_derived]
+    impl tsify::__macro_support::DescribeTsName for RustType {
+        #[inline]
+        fn describe_ts_name() {
+            <Self as tsify::__macro_support::TsName<{ 0u8 }>>::describe_named_externref()
+        }
+        #[inline]
+        fn describe_ts_name_vector() {
+            <Self as tsify::__macro_support::TsName<
+                { 0u8 },
+            >>::describe_named_externref_vector()
+        }
+    }
 };

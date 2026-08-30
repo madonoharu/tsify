@@ -245,17 +245,30 @@ const _: () = {
         }
     }
     #[automatically_derived]
+    impl<'a> tsify::__macro_support::DescribeTsName for Borrow<'a> {
+        #[inline]
+        fn describe_ts_name() {
+            <Self as tsify::__macro_support::TsName<{ 0u8 }>>::describe_named_externref()
+        }
+        #[inline]
+        fn describe_ts_name_vector() {
+            <Self as tsify::__macro_support::TsName<
+                { 0u8 },
+            >>::describe_named_externref_vector()
+        }
+    }
+    #[automatically_derived]
     impl<'a> WasmDescribe for Borrow<'a> {
         #[inline]
         fn describe() {
-            <Self as Tsify>::JsType::describe()
+            <Self as tsify::__macro_support::DescribeTsName>::describe_ts_name()
         }
     }
     #[automatically_derived]
     impl<'a> WasmDescribeVector for Borrow<'a> {
         #[inline]
         fn describe_vector() {
-            <Self as Tsify>::JsType::describe_vector()
+            <Self as tsify::__macro_support::DescribeTsName>::describe_ts_name_vector()
         }
     }
     #[automatically_derived]

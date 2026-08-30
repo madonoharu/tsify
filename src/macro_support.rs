@@ -700,3 +700,20 @@ macro_rules! ts_name_range {
 }
 
 ts_name_range!(Range<T>, RangeInclusive<T>);
+
+/// Seeds [`TsName`] with the config of the type a value is serialized through.
+///
+/// The root type's attributes decide how the whole value is written, and the
+/// only place that packed value exists is the derive that read them. So the
+/// derive writes this impl with the literal in it, and everything reached from
+/// here threads that same config down unchanged.
+///
+/// It is separate from [`Tsify`](crate::Tsify) because naming a type needs its
+/// arguments to have names, and that bound has no business reaching `DECL`.
+pub trait DescribeTsName {
+    /// Informs the `NAMED_EXTERNREF` descriptor for this type.
+    fn describe_ts_name();
+
+    /// Informs the descriptor for a vector of this type.
+    fn describe_ts_name_vector();
+}

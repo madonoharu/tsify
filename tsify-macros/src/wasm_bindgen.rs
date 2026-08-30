@@ -26,6 +26,7 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     let ts_name = expand_ts_name(cont, &decl);
+    let describe_ts_name = expand_describe_ts_name(cont, &decl);
 
     let typescript_custom_section = quote! {
         #[wasm_bindgen(typescript_custom_section)]
@@ -34,21 +35,26 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
 
     let wasm_abi = attrs.into_wasm_abi || attrs.from_wasm_abi;
 
+    let name_generics = generics_with_ts_name(cont, &decl);
+    let (name_impl_generics, name_ty_generics, name_where_clause) = name_generics.split_for_impl();
+
     let wasm_describe = wasm_abi.then(|| {
         quote! {
             #[automatically_derived]
-            impl #impl_generics WasmDescribe for #ident #ty_generics #where_clause {
+            impl #name_impl_generics WasmDescribe for #ident #name_ty_generics #name_where_clause {
+                // Not `JsType::describe()`: the extern type carries one fixed
+                // name, which for a generic type drops its arguments.
                 #[inline]
                 fn describe() {
-                    <Self as Tsify>::JsType::describe()
+                    <Self as tsify::__macro_support::DescribeTsName>::describe_ts_name()
                 }
             }
 
             #[automatically_derived]
-            impl #impl_generics WasmDescribeVector for #ident #ty_generics #where_clause {
+            impl #name_impl_generics WasmDescribeVector for #ident #name_ty_generics #name_where_clause {
                 #[inline]
                 fn describe_vector() {
-                    <Self as Tsify>::JsType::describe_vector()
+                    <Self as tsify::__macro_support::DescribeTsName>::describe_ts_name_vector()
                 }
             }
         }
@@ -63,8 +69,12 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
         },
     });
 
-    let into_wasm_abi = attrs.into_wasm_abi.then(|| expand_into_wasm_abi(cont));
-    let from_wasm_abi = attrs.from_wasm_abi.then(|| expand_from_wasm_abi(cont));
+    let into_wasm_abi = attrs
+        .into_wasm_abi
+        .then(|| expand_into_wasm_abi(cont, &name_generics));
+    let from_wasm_abi = attrs
+        .from_wasm_abi
+        .then(|| expand_from_wasm_abi(cont, &name_generics));
     let maybe_deprecated = attrs.into_wasm_abi_span
         .or(attrs.from_wasm_abi_span)
         .map(|span| {
@@ -107,12 +117,83 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
             }
 
             #ts_name
+            #describe_ts_name
             #typescript_custom_section
             #wasm_describe
             #into_wasm_abi
             #from_wasm_abi
             #maybe_deprecated
         };
+    }
+}
+
+/// The config the container declares, packed the way `TsName` reads it.
+fn packed_config(cont: &Container) -> TokenStream {
+    let mut bits = Vec::new();
+    if cont.attrs.ty_config.missing_as_null {
+        bits.push(quote!(tsify::__macro_support::MISSING_AS_NULL));
+    }
+    if cont.attrs.ty_config.hashmap_as_object {
+        bits.push(quote!(tsify::__macro_support::HASHMAP_AS_OBJECT));
+    }
+    if cont.attrs.ty_config.large_number_types_as_bigints {
+        bits.push(quote!(
+            tsify::__macro_support::LARGE_NUMBER_TYPES_AS_BIGINTS
+        ));
+    }
+
+    if bits.is_empty() {
+        quote!(0u8)
+    } else {
+        quote!(#(#bits)|*)
+    }
+}
+
+/// The type's generics, plus the `TsName` bound each parameter that appears in
+/// its name needs, under this container's own config.
+///
+/// This container is the root wherever it is the type a value is serialized
+/// through, which is the only place these impls are entered.
+fn generics_with_ts_name(cont: &Container, decl: &Decl) -> syn::Generics {
+    let mut generics = cont.generics_without_defaults();
+    let name_params = name_type_params(cont, decl).unwrap_or_default();
+
+    if !name_params.is_empty() {
+        let config = packed_config(cont);
+        let where_clause = generics.make_where_clause();
+        for param in &name_params {
+            where_clause
+                .predicates
+                .push(parse_quote!(#param: tsify::__macro_support::TsName<{ #config }>));
+        }
+    }
+
+    generics
+}
+
+/// Seeds the name with this container's config, since a value serialized
+/// through it is written by the serializer its attributes built.
+fn expand_describe_ts_name(cont: &Container, decl: &Decl) -> TokenStream {
+    let ident = cont.ident();
+    let config = packed_config(cont);
+    let generics = generics_with_ts_name(cont, decl);
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+
+    quote! {
+        #[automatically_derived]
+        impl #impl_generics tsify::__macro_support::DescribeTsName
+            for #ident #ty_generics #where_clause
+        {
+            #[inline]
+            fn describe_ts_name() {
+                <Self as tsify::__macro_support::TsName<{ #config }>>::describe_named_externref()
+            }
+
+            #[inline]
+            fn describe_ts_name_vector() {
+                <Self as tsify::__macro_support::TsName<{ #config }>>::describe_named_externref_vector()
+            }
+        }
     }
 }
 
@@ -216,10 +297,10 @@ fn expand_ts_name(cont: &Container, decl: &Decl) -> TokenStream {
     }
 }
 
-fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
+fn expand_into_wasm_abi(cont: &Container, name_generics: &syn::Generics) -> TokenStream {
     let ident = cont.ident();
     let serde_path = cont.serde_container.attrs.serde_path();
-    let mut generics = cont.generics_without_defaults();
+    let mut generics = name_generics.clone();
 
     // A predicate's self type is a type position, where `Generics` would render
     // its declaration form — bounds, defaults, `const N: usize` — and hit E0229.
@@ -324,11 +405,11 @@ fn expand_into_wasm_abi(cont: &Container) -> TokenStream {
     }
 }
 
-fn expand_from_wasm_abi(cont: &Container) -> TokenStream {
+fn expand_from_wasm_abi(cont: &Container, name_generics: &syn::Generics) -> TokenStream {
     let ident = cont.ident();
     let serde_path = cont.serde_container.attrs.serde_path();
 
-    let mut generics = cont.generics_without_defaults();
+    let mut generics = name_generics.clone();
 
     generics
         .make_where_clause()

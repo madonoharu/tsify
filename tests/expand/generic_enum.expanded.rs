@@ -268,22 +268,49 @@ const _: () = {
         }
     }
     #[automatically_derived]
-    impl<T, U> WasmDescribe for GenericEnum<T, U> {
+    impl<T, U> tsify::__macro_support::DescribeTsName for GenericEnum<T, U>
+    where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
+    {
         #[inline]
-        fn describe() {
-            <Self as Tsify>::JsType::describe()
+        fn describe_ts_name() {
+            <Self as tsify::__macro_support::TsName<{ 0u8 }>>::describe_named_externref()
+        }
+        #[inline]
+        fn describe_ts_name_vector() {
+            <Self as tsify::__macro_support::TsName<
+                { 0u8 },
+            >>::describe_named_externref_vector()
         }
     }
     #[automatically_derived]
-    impl<T, U> WasmDescribeVector for GenericEnum<T, U> {
+    impl<T, U> WasmDescribe for GenericEnum<T, U>
+    where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
+    {
+        #[inline]
+        fn describe() {
+            <Self as tsify::__macro_support::DescribeTsName>::describe_ts_name()
+        }
+    }
+    #[automatically_derived]
+    impl<T, U> WasmDescribeVector for GenericEnum<T, U>
+    where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
+    {
         #[inline]
         fn describe_vector() {
-            <Self as Tsify>::JsType::describe_vector()
+            <Self as tsify::__macro_support::DescribeTsName>::describe_ts_name_vector()
         }
     }
     #[automatically_derived]
     impl<T, U> IntoWasmAbi for &GenericEnum<T, U>
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         GenericEnum<T, U>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -311,6 +338,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> IntoWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         GenericEnum<T, U>: _serde::Serialize,
     {
         type Abi = <JsType as IntoWasmAbi>::Abi;
@@ -322,6 +351,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> OptionIntoWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         GenericEnum<T, U>: _serde::Serialize,
     {
         #[inline]
@@ -332,6 +363,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> From<GenericEnum<T, U>> for JsValue
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         GenericEnum<T, U>: _serde::Serialize,
     {
         #[inline]
@@ -358,6 +391,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> VectorIntoWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         GenericEnum<T, U>: _serde::Serialize,
     {
         type Abi = <JsType as VectorIntoWasmAbi>::Abi;
@@ -389,6 +424,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> FromWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as FromWasmAbi>::Abi;
@@ -404,6 +441,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> OptionFromWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         Self: _serde::de::DeserializeOwned,
     {
         #[inline]
@@ -422,6 +461,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> RefFromWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as RefFromWasmAbi>::Abi;
@@ -437,6 +478,8 @@ const _: () = {
     #[automatically_derived]
     impl<T, U> VectorFromWasmAbi for GenericEnum<T, U>
     where
+        T: tsify::__macro_support::TsName<{ 0u8 }>,
+        U: tsify::__macro_support::TsName<{ 0u8 }>,
         Self: _serde::de::DeserializeOwned,
     {
         type Abi = <JsType as VectorFromWasmAbi>::Abi;

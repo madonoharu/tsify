@@ -1,5 +1,10 @@
 # tsify Changelog
 
+## Unreleased
+
+- **A generic type keeps its type arguments in the signatures wasm-bindgen writes.** `fn get(v: Ts<Envelope<Payload>>)` wrote `get(v: Envelope)`, a `TS2314` against the `export interface Envelope<T>` in the same file. It now writes `Envelope<Payload>`, nested and through `into_wasm_abi` alike, and the argument is named under the serialization config of the type the value is written through. Resolves #76
+- **A type used as a type argument of a generic tsify type now needs a TypeScript name.** Everything the declaration path renders has one, and `#[derive(Tsify)]` writes one for your types. **A foreign type that derives neither is a compile error** where the generic crosses the ABI; wrap it in a local newtype that derives `Tsify`
+
 ## v0.5.8
 
 - Added `#[tsify(rename = "...")]`, which renames the generated TypeScript declaration and nothing else — references from other types still emit the Rust ident, so point them at the new name with `#[tsify(type = "...")]` at each reference site. Cannot be combined with `type_prefix` or `type_suffix`. Resolves #70, which had been blocking the 0.4 → 0.5 upgrade for anyone with two same-named types in different modules

@@ -35,8 +35,7 @@ pub struct MatchingParam<T> {
 // #112 — the union a namespaced enum writes puts the whole parameter spec in a
 // type-argument position, where a default is not allowed (TS1005). Measured:
 // this happens whenever the spec carries an `=`, with or without a comma, so
-// the two below fail the same way and the one after them does not. #112 says a
-// single parameter with no comma works; that is not what the reference shows.
+// the two below fail the same way and the one after them does not.
 #[derive(Tsify, Serialize, Deserialize)]
 #[tsify(namespace, type_params = "T = Record<string, number>")]
 pub enum CompoundDefault<T> {

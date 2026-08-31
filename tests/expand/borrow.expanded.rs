@@ -231,17 +231,44 @@ const _: () = {
         };
     }
     #[automatically_derived]
+    impl<'a, const __TSIFY_CONFIG: u8> tsify::__macro_support::TsName<__TSIFY_CONFIG>
+    for Borrow<'a> {
+        const NAME_LEN: u32 = 6u32;
+        #[inline]
+        fn describe_name() {
+            tsify::__macro_support::inform_char('B');
+            tsify::__macro_support::inform_char('o');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('o');
+            tsify::__macro_support::inform_char('w');
+        }
+    }
+    #[automatically_derived]
+    impl<'a> tsify::__macro_support::DescribeTsName for Borrow<'a> {
+        #[inline]
+        fn describe_ts_name() {
+            <Self as tsify::__macro_support::TsName<{ 0u8 }>>::describe_named_externref()
+        }
+        #[inline]
+        fn describe_ts_name_vector() {
+            <Self as tsify::__macro_support::TsName<
+                { 0u8 },
+            >>::describe_named_externref_vector()
+        }
+    }
+    #[automatically_derived]
     impl<'a> WasmDescribe for Borrow<'a> {
         #[inline]
         fn describe() {
-            <Self as Tsify>::JsType::describe()
+            <Self as tsify::__macro_support::DescribeTsName>::describe_ts_name()
         }
     }
     #[automatically_derived]
     impl<'a> WasmDescribeVector for Borrow<'a> {
         #[inline]
         fn describe_vector() {
-            <Self as Tsify>::JsType::describe_vector()
+            <Self as tsify::__macro_support::DescribeTsName>::describe_ts_name_vector()
         }
     }
     #[automatically_derived]

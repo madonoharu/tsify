@@ -236,4 +236,40 @@ const _: () = {
             large_number_types_as_bigints: false,
         };
     }
+    #[automatically_derived]
+    impl<const __TSIFY_CONFIG: u8> tsify::__macro_support::TsName<__TSIFY_CONFIG>
+    for RustType {
+        const NAME_LEN: u32 = 15u32;
+        #[inline]
+        fn describe_name() {
+            tsify::__macro_support::inform_char('R');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('a');
+            tsify::__macro_support::inform_char('m');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('d');
+            tsify::__macro_support::inform_char('W');
+            tsify::__macro_support::inform_char('a');
+            tsify::__macro_support::inform_char('s');
+            tsify::__macro_support::inform_char('m');
+            tsify::__macro_support::inform_char('T');
+            tsify::__macro_support::inform_char('y');
+            tsify::__macro_support::inform_char('p');
+            tsify::__macro_support::inform_char('e');
+        }
+    }
+    #[automatically_derived]
+    impl tsify::__macro_support::DescribeTsName for RustType {
+        #[inline]
+        fn describe_ts_name() {
+            <Self as tsify::__macro_support::TsName<{ 0u8 }>>::describe_named_externref()
+        }
+        #[inline]
+        fn describe_ts_name_vector() {
+            <Self as tsify::__macro_support::TsName<
+                { 0u8 },
+            >>::describe_named_externref_vector()
+        }
+    }
 };

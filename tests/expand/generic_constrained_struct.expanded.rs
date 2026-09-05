@@ -73,7 +73,7 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> OptionIntoWasmAbi for &'a JsType {
+        impl<'__wbg_ref> OptionIntoWasmAbi for &'__wbg_ref JsType {
             #[inline]
             fn none() -> Self::Abi {
                 0
@@ -97,8 +97,8 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> IntoWasmAbi for &'a JsType {
-            type Abi = <&'a JsValue as IntoWasmAbi>::Abi;
+        impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
+            type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
             fn into_abi(self) -> Self::Abi {
                 (&self.obj).into_abi()
@@ -504,7 +504,7 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> OptionIntoWasmAbi for &'a JsType {
+        impl<'__wbg_ref> OptionIntoWasmAbi for &'__wbg_ref JsType {
             #[inline]
             fn none() -> Self::Abi {
                 0
@@ -528,8 +528,8 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> IntoWasmAbi for &'a JsType {
-            type Abi = <&'a JsValue as IntoWasmAbi>::Abi;
+        impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
+            type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
             fn into_abi(self) -> Self::Abi {
                 (&self.obj).into_abi()
@@ -935,7 +935,7 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> OptionIntoWasmAbi for &'a JsType {
+        impl<'__wbg_ref> OptionIntoWasmAbi for &'__wbg_ref JsType {
             #[inline]
             fn none() -> Self::Abi {
                 0
@@ -959,8 +959,8 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> IntoWasmAbi for &'a JsType {
-            type Abi = <&'a JsValue as IntoWasmAbi>::Abi;
+        impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
+            type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
             fn into_abi(self) -> Self::Abi {
                 (&self.obj).into_abi()
@@ -1370,7 +1370,7 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> OptionIntoWasmAbi for &'a JsType {
+        impl<'__wbg_ref> OptionIntoWasmAbi for &'__wbg_ref JsType {
             #[inline]
             fn none() -> Self::Abi {
                 0
@@ -1394,8 +1394,8 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> IntoWasmAbi for &'a JsType {
-            type Abi = <&'a JsValue as IntoWasmAbi>::Abi;
+        impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
+            type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
             fn into_abi(self) -> Self::Abi {
                 (&self.obj).into_abi()
@@ -1801,7 +1801,7 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> OptionIntoWasmAbi for &'a JsType {
+        impl<'__wbg_ref> OptionIntoWasmAbi for &'__wbg_ref JsType {
             #[inline]
             fn none() -> Self::Abi {
                 0
@@ -1825,8 +1825,8 @@ const _: () = {
             }
         }
         #[automatically_derived]
-        impl<'a> IntoWasmAbi for &'a JsType {
-            type Abi = <&'a JsValue as IntoWasmAbi>::Abi;
+        impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
+            type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
             fn into_abi(self) -> Self::Abi {
                 (&self.obj).into_abi()

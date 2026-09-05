@@ -237,6 +237,36 @@ const _: () = {
         };
     }
     #[automatically_derived]
+    impl<
+        T: Constraint,
+        const __TSIFY_CONFIG: u8,
+    > tsify::__macro_support::TsName<__TSIFY_CONFIG> for GenericStruct<T>
+    where
+        T: tsify::__macro_support::TsName<__TSIFY_CONFIG>,
+    {
+        const NAME_LEN: u32 = 15u32
+            + <T as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::NAME_LEN;
+        #[inline]
+        fn describe_name() {
+            tsify::__macro_support::inform_char('G');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('i');
+            tsify::__macro_support::inform_char('c');
+            tsify::__macro_support::inform_char('S');
+            tsify::__macro_support::inform_char('t');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('u');
+            tsify::__macro_support::inform_char('c');
+            tsify::__macro_support::inform_char('t');
+            tsify::__macro_support::inform_char('<');
+            <T as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::describe_name();
+            tsify::__macro_support::inform_char('>');
+        }
+    }
+    #[automatically_derived]
     impl<T: Constraint> WasmDescribe for GenericStruct<T> {
         #[inline]
         fn describe() {
@@ -668,6 +698,37 @@ const _: () = {
         };
     }
     #[automatically_derived]
+    impl<
+        T: Constraint,
+        const __TSIFY_CONFIG: u8,
+    > tsify::__macro_support::TsName<__TSIFY_CONFIG> for GenericNewtype<T>
+    where
+        T: tsify::__macro_support::TsName<__TSIFY_CONFIG>,
+    {
+        const NAME_LEN: u32 = 16u32
+            + <T as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::NAME_LEN;
+        #[inline]
+        fn describe_name() {
+            tsify::__macro_support::inform_char('G');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('i');
+            tsify::__macro_support::inform_char('c');
+            tsify::__macro_support::inform_char('N');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('w');
+            tsify::__macro_support::inform_char('t');
+            tsify::__macro_support::inform_char('y');
+            tsify::__macro_support::inform_char('p');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('<');
+            <T as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::describe_name();
+            tsify::__macro_support::inform_char('>');
+        }
+    }
+    #[automatically_derived]
     impl<T: Constraint> WasmDescribe for GenericNewtype<T> {
         #[inline]
         fn describe() {
@@ -1097,6 +1158,35 @@ const _: () = {
             hashmap_as_object: false,
             large_number_types_as_bigints: false,
         };
+    }
+    #[automatically_derived]
+    impl<
+        T: Iterator<Item = u32>,
+        const __TSIFY_CONFIG: u8,
+    > tsify::__macro_support::TsName<__TSIFY_CONFIG> for GenericAssoc<T>
+    where
+        T: tsify::__macro_support::TsName<__TSIFY_CONFIG>,
+    {
+        const NAME_LEN: u32 = 14u32
+            + <T as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::NAME_LEN;
+        #[inline]
+        fn describe_name() {
+            tsify::__macro_support::inform_char('G');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('i');
+            tsify::__macro_support::inform_char('c');
+            tsify::__macro_support::inform_char('A');
+            tsify::__macro_support::inform_char('s');
+            tsify::__macro_support::inform_char('s');
+            tsify::__macro_support::inform_char('o');
+            tsify::__macro_support::inform_char('c');
+            tsify::__macro_support::inform_char('<');
+            <T as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::describe_name();
+            tsify::__macro_support::inform_char('>');
+        }
     }
     #[automatically_derived]
     impl<T: Iterator<Item = u32>> WasmDescribe for GenericAssoc<T> {
@@ -1534,6 +1624,32 @@ const _: () = {
         };
     }
     #[automatically_derived]
+    impl<
+        'a: 'b,
+        'b,
+        const __TSIFY_CONFIG: u8,
+    > tsify::__macro_support::TsName<__TSIFY_CONFIG> for GenericLifetime<'a, 'b> {
+        const NAME_LEN: u32 = 15u32;
+        #[inline]
+        fn describe_name() {
+            tsify::__macro_support::inform_char('G');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('i');
+            tsify::__macro_support::inform_char('c');
+            tsify::__macro_support::inform_char('L');
+            tsify::__macro_support::inform_char('i');
+            tsify::__macro_support::inform_char('f');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('t');
+            tsify::__macro_support::inform_char('i');
+            tsify::__macro_support::inform_char('m');
+            tsify::__macro_support::inform_char('e');
+        }
+    }
+    #[automatically_derived]
     impl<'a: 'b, 'b> WasmDescribe for GenericLifetime<'a, 'b> {
         #[inline]
         fn describe() {
@@ -1963,6 +2079,28 @@ const _: () = {
             hashmap_as_object: false,
             large_number_types_as_bigints: false,
         };
+    }
+    #[automatically_derived]
+    impl<
+        const N: usize,
+        const __TSIFY_CONFIG: u8,
+    > tsify::__macro_support::TsName<__TSIFY_CONFIG> for GenericConst<N> {
+        const NAME_LEN: u32 = 12u32;
+        #[inline]
+        fn describe_name() {
+            tsify::__macro_support::inform_char('G');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('i');
+            tsify::__macro_support::inform_char('c');
+            tsify::__macro_support::inform_char('C');
+            tsify::__macro_support::inform_char('o');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('s');
+            tsify::__macro_support::inform_char('t');
+        }
     }
     #[automatically_derived]
     impl<const N: usize> WasmDescribe for GenericConst<N> {

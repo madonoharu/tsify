@@ -237,6 +237,37 @@ const _: () = {
         };
     }
     #[automatically_derived]
+    impl<T, U, const __TSIFY_CONFIG: u8> tsify::__macro_support::TsName<__TSIFY_CONFIG>
+    for GenericEnum<T, U>
+    where
+        T: tsify::__macro_support::TsName<__TSIFY_CONFIG>,
+        U: tsify::__macro_support::TsName<__TSIFY_CONFIG>,
+    {
+        const NAME_LEN: u32 = 15u32
+            + <T as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::NAME_LEN
+            + <U as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::NAME_LEN;
+        #[inline]
+        fn describe_name() {
+            tsify::__macro_support::inform_char('G');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('e');
+            tsify::__macro_support::inform_char('r');
+            tsify::__macro_support::inform_char('i');
+            tsify::__macro_support::inform_char('c');
+            tsify::__macro_support::inform_char('E');
+            tsify::__macro_support::inform_char('n');
+            tsify::__macro_support::inform_char('u');
+            tsify::__macro_support::inform_char('m');
+            tsify::__macro_support::inform_char('<');
+            <T as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::describe_name();
+            tsify::__macro_support::inform_char(',');
+            tsify::__macro_support::inform_char(' ');
+            <U as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::describe_name();
+            tsify::__macro_support::inform_char('>');
+        }
+    }
+    #[automatically_derived]
     impl<T, U> WasmDescribe for GenericEnum<T, U> {
         #[inline]
         fn describe() {

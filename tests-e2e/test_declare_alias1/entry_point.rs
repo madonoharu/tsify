@@ -42,3 +42,13 @@ pub type C = Vec<u32>;
 // Fixed: an alias body can be overridden the way a field's type can.
 #[declare(type = "string")]
 pub type D = u32;
+
+// The affix reaches the types an alias refers to, so both sides have to carry it
+// or the reference names a type that was never declared (#94). This is the case
+// the `## Type Aliases` section of the README prints.
+#[declare(type_prefix = "Ts")]
+#[derive(Serialize, Deserialize)]
+pub struct Foo<T>(T);
+
+#[declare(type_prefix = "Ts")]
+pub type Baz = Vec<Foo<i32>>;

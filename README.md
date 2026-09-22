@@ -256,9 +256,6 @@ struct Foo<T>(T);
 #[declare(rename = "Renamed")]
 type Bar = Foo<i32>;
 
-#[declare(type_prefix = "Ts")]
-type Baz = Vec<Foo<i32>>;
-
 #[declare(type = "string")]
 type Quux = u32;
 ```
@@ -266,11 +263,28 @@ type Quux = u32;
 ```ts
 export type Foo<T> = T;
 export type Renamed = Foo<number>;
-export type TsBaz = TsFoo<number>[];
 export type Quux = string;
 ```
 
-An affix renames the alias and reaches the references inside it, which is why either one has to be applied crate-wide ([#94](https://github.com/madonoharu/tsify/issues/94)). What an alias refuses is what describes a container rather than a declaration: `namespace`, `type_params`, and the deprecated `into_wasm_abi` and `from_wasm_abi` — an alias is not a type, so it has no ABI of its own to implement. A reference to a renamed alias from another type still emits the Rust name ([#103](https://github.com/madonoharu/tsify/issues/103)), so point it at the new name with `#[tsify(type = "Renamed")]` at the site that uses it.
+An affix renames the alias *and* the types it refers to, so the generated name of a referenced type is only right when the referring type and the referenced one carry the same affix — which is why either one has to be applied crate-wide ([#94](https://github.com/madonoharu/tsify/issues/94)). Here `TsFoo` is declared as well as referenced:
+
+```rust
+use tsify::{declare, Tsify};
+
+#[derive(Tsify)]
+#[tsify(type_prefix = "Ts")]
+struct Foo<T>(T);
+
+#[declare(type_prefix = "Ts")]
+type Baz = Vec<Foo<i32>>;
+```
+
+```ts
+export type TsFoo<T> = T;
+export type TsBaz = TsFoo<number>[];
+```
+
+What an alias refuses is what describes a container rather than a declaration: `namespace`, `type_params`, and the deprecated `into_wasm_abi` and `from_wasm_abi` — an alias is not a type, so it has no ABI of its own to implement. A reference to a renamed alias from another type still emits the Rust name ([#103](https://github.com/madonoharu/tsify/issues/103)), so point it at the new name with `#[tsify(type = "Renamed")]` at the site that uses it.
 
 ## Why are the `wasm_abi` attributes deprecated?
 

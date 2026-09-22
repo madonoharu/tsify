@@ -13,3 +13,7 @@ export type PreB = number[];
 export type RenamedAlias = number[];
 
 export type RenamedEnum = { V: number };
+
+export type TsBaz = TsFoo<number>[];
+
+export type TsFoo<T> = T;

@@ -23,6 +23,13 @@ pub use tsify_macros::*;
 /// Rust, so a type that has to cross the wasm ABI still needs a container of
 /// its own.
 ///
+/// The arguments are the ones `#[tsify(...)]` takes, and they mean the same
+/// thing here: `rename` names the declaration, `type` replaces its body, and
+/// `type_prefix` and `type_suffix` affix the alias along with the types it
+/// refers to. What describes a container rather than a declaration —
+/// `namespace`, `type_params`, `into_wasm_abi`, `from_wasm_abi` — is reported
+/// rather than accepted and dropped.
+///
 /// ## Examples
 ///
 /// ```

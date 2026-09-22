@@ -2,6 +2,21 @@ use proc_macro2::Span;
 use serde_derive_internals::ast::Field;
 use syn::spanned::Spanned;
 
+/// The kind of item a `#[tsify(...)]` attribute list was written on.
+///
+/// `#[declare(...)]` forwards its arguments as a `#[tsify(...)]` attribute, so the
+/// same grammar has to answer for aliases as well as containers. It differs where
+/// an attribute describes something an alias does not have.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttrTarget {
+    /// A `struct`, whether from `#[derive(Tsify)]` or `#[declare]`.
+    Struct,
+    /// An `enum`, whether from `#[derive(Tsify)]` or `#[declare]`.
+    Enum,
+    /// A `type = ...` alias from `#[declare]`.
+    TypeAlias,
+}
+
 /// Attributes that can be applied to a type decorated with `#[derive(Tsify)]`.
 /// E.g., through `#[tsify(into_wasm_abi)]`.
 #[derive(Debug, Default)]
@@ -52,6 +67,20 @@ impl TypeGenerationConfig {
 
 impl TsifyContainerAttrs {
     pub fn from_derive_input(input: &syn::DeriveInput) -> syn::Result<Self> {
+        let target = match input.data {
+            syn::Data::Enum(_) => AttrTarget::Enum,
+            _ => AttrTarget::Struct,
+        };
+
+        Self::from_attrs(&input.attrs, target)
+    }
+
+    /// Parse the `#[tsify(...)]` attributes written on an item of kind `target`.
+    ///
+    /// Both entry points run through here: `#[derive(Tsify)]` reads the attributes
+    /// off the item, and `#[declare(...)]` forwards its arguments as one. One
+    /// grammar means an alias cannot silently accept an argument and drop it.
+    pub fn from_attrs(attrs_in: &[syn::Attribute], target: AttrTarget) -> syn::Result<Self> {
         let mut rename_span = None;
         let mut attrs = Self {
             type_override: None,
@@ -65,7 +94,7 @@ impl TsifyContainerAttrs {
             ty_config: TypeGenerationConfig::default(),
         };
 
-        for attr in &input.attrs {
+        for attr in attrs_in {
             if !attr.path().is_ident("tsify") {
                 continue;
             }
@@ -81,6 +110,11 @@ impl TsifyContainerAttrs {
                 }
 
                 if meta.path.is_ident("type_params") {
+                    if target == AttrTarget::TypeAlias {
+                        // The alias body is rendered with the declared parameter names, so
+                        // overriding the list would leave those references dangling (#113).
+                        return Err(meta.error("`type_params` cannot be applied to a type alias"));
+                    }
                     if attrs.type_params.is_some() {
                         return Err(meta.error("duplicate attribute"));
                     }
@@ -107,6 +141,11 @@ impl TsifyContainerAttrs {
                 }
 
                 if meta.path.is_ident("into_wasm_abi") {
+                    if target == AttrTarget::TypeAlias {
+                        return Err(meta.error(
+                            "`into_wasm_abi` cannot be applied to a type alias, which is not a type",
+                        ));
+                    }
                     if attrs.into_wasm_abi {
                         return Err(meta.error("duplicate attribute"));
                     }
@@ -116,6 +155,11 @@ impl TsifyContainerAttrs {
                 }
 
                 if meta.path.is_ident("from_wasm_abi") {
+                    if target == AttrTarget::TypeAlias {
+                        return Err(meta.error(
+                            "`from_wasm_abi` cannot be applied to a type alias, which is not a type",
+                        ));
+                    }
                     if attrs.from_wasm_abi {
                         return Err(meta.error("duplicate attribute"));
                     }
@@ -125,7 +169,12 @@ impl TsifyContainerAttrs {
                 }
 
                 if meta.path.is_ident("namespace") {
-                    if !matches!(input.data, syn::Data::Enum(_)) {
+                    if target == AttrTarget::TypeAlias {
+                        return Err(meta.error(
+                            "`namespace` cannot be applied to a type alias, which has no variants",
+                        ));
+                    }
+                    if target != AttrTarget::Enum {
                         return Err(meta.error("#[tsify(namespace)] can only be used on enums"));
                     }
                     if attrs.namespace {

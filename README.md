@@ -73,13 +73,13 @@ This is the behavior due to [`typescript_custom_section`](https://wasm-bindgen.g
 
 ## Attributes
 
-These are the options that modify a `#[derive(Tsify)]` container. A type alias is not a container and takes none of them — it needs [`#[declare]`](#type-aliases) instead, or its name is emitted without ever being declared.
+These are the options that modify a `#[derive(Tsify)]` container. `#[declare(...)]` takes the same list, and an alias accepts the part of it that describes a declaration; what an alias cannot carry is marked below. Naming an alias at all still needs [`#[declare]`](#type-aliases), or its name is emitted without ever being declared.
 
 Tsify container attributes
 
--   `namespace` generates a namespace for the enum variants.
+-   `namespace` generates a namespace for the enum variants. An alias has no variants, so `#[declare(namespace)]` is an error.
 -   `type` overrides at the container level.
--   `type_params` overrides params at the container level.
+-   `type_params` overrides params at the container level. Rejected on an alias, whose body is already rendered with the parameters it declares ([#113](https://github.com/madonoharu/tsify/issues/113)).
 -   `type_prefix = "Pre"` and `type_suffix = "Suf"` add a universal affix to the names of generated types. Apply them crate-wide: a reference takes the affix of the type doing the referencing, so applying either to only some of your types emits references to names that were never declared ([#94](https://github.com/madonoharu/tsify/issues/94)).
 -   `rename = "NewName"` changes the name of the generated TypeScript declaration. References are unaffected — point them at the new name with `#[tsify(type = "NewName")]` where another type refers to this one ([#103](https://github.com/madonoharu/tsify/issues/103) covers what it would take for references to follow). Cannot be combined with `type_prefix` or `type_suffix`.
 
@@ -244,6 +244,33 @@ Generated type:
 export type Foo<T> = T;
 export type Bar = Foo<number>;
 ```
+
+`#[declare(...)]` takes the same arguments as `#[tsify(...)]`, and they mean the same thing for an alias:
+
+```rust
+use tsify::{declare, Tsify};
+
+#[derive(Tsify)]
+struct Foo<T>(T);
+
+#[declare(rename = "Renamed")]
+type Bar = Foo<i32>;
+
+#[declare(type_prefix = "Ts")]
+type Baz = Vec<Foo<i32>>;
+
+#[declare(type = "string")]
+type Quux = u32;
+```
+
+```ts
+export type Foo<T> = T;
+export type Renamed = Foo<number>;
+export type TsBaz = TsFoo<number>[];
+export type Quux = string;
+```
+
+An affix renames the alias and reaches the references inside it, which is why either one has to be applied crate-wide ([#94](https://github.com/madonoharu/tsify/issues/94)). What an alias refuses is what describes a container rather than a declaration: `namespace`, `type_params`, and the deprecated `into_wasm_abi` and `from_wasm_abi` — an alias is not a type, so it has no ABI of its own to implement. A reference to a renamed alias from another type still emits the Rust name ([#103](https://github.com/madonoharu/tsify/issues/103)), so point it at the new name with `#[tsify(type = "Renamed")]` at the site that uses it.
 
 ## Why are the `wasm_abi` attributes deprecated?
 

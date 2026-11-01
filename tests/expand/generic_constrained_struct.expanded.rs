@@ -32,6 +32,7 @@ const _: () = {
         use wasm_bindgen::convert::TryFromJsValue;
         use wasm_bindgen::convert::{IntoWasmAbi, FromWasmAbi};
         use wasm_bindgen::convert::{OptionIntoWasmAbi, OptionFromWasmAbi};
+        use wasm_bindgen::convert::{NullableIntoWasmAbi, NullableFromWasmAbi};
         use wasm_bindgen::convert::{RefFromWasmAbi, LongRefFromWasmAbi};
         use wasm_bindgen::describe::WasmDescribe;
         use wasm_bindgen::{JsValue, JsCast};
@@ -80,6 +81,20 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableIntoWasmAbi for JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
+        impl<'__wbg_ref> NullableIntoWasmAbi for &'__wbg_ref JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <&'__wbg_ref JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
         impl FromWasmAbi for JsType {
             type Abi = <JsValue as FromWasmAbi>::Abi;
             #[inline]
@@ -97,6 +112,13 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableFromWasmAbi for JsType {
+            #[inline]
+            fn is_null(abi: &Self::MaybeAbi) -> bool {
+                <JsValue as NullableFromWasmAbi>::is_null(abi)
+            }
+        }
+        #[automatically_derived]
         impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
             type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
@@ -104,6 +126,15 @@ const _: () = {
                 (&self.obj).into_abi()
             }
         }
+        #[automatically_derived]
+        impl wasm_bindgen::convert::VectorRefIntoWasmAbi for JsType {
+            #[inline]
+            fn slice_into_abi(slice: &[Self]) -> wasm_bindgen::convert::WasmSlice {
+                wasm_bindgen::convert::WasmSlice::borrow(slice)
+            }
+        }
+        #[automatically_derived]
+        impl wasm_bindgen::__rt::marker::VectorRefIntoWasmAbiSealed for JsType {}
         #[automatically_derived]
         impl RefFromWasmAbi for JsType {
             type Abi = <JsValue as RefFromWasmAbi>::Abi;
@@ -173,7 +204,7 @@ const _: () = {
         #[automatically_derived]
         impl JsCast for JsType {
             fn instanceof(val: &JsValue) -> bool {
-                unsafe fn __wbg_instanceof_JsType_07a4c56f90e9a47b(_: u32) -> u32 {
+                unsafe fn __wbg_instanceof_JsType_dacf37ccefe665db(_: u32) -> u32 {
                     {
                         ::core::panicking::panic_fmt(
                             format_args!("cannot check instanceof on non-wasm targets"),
@@ -182,7 +213,7 @@ const _: () = {
                 }
                 unsafe {
                     let idx = val.into_abi();
-                    __wbg_instanceof_JsType_07a4c56f90e9a47b(idx) != 0
+                    __wbg_instanceof_JsType_dacf37ccefe665db(idx) != 0
                 }
             }
             #[inline]
@@ -218,6 +249,18 @@ const _: () = {
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType>
     for wasm_bindgen::sys::JsNullable<wasm_bindgen::JsValue> {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::__rt::core::option::Option<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::Nullable<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType> for JsType {}
     #[automatically_derived]
@@ -462,6 +505,7 @@ const _: () = {
         use wasm_bindgen::convert::TryFromJsValue;
         use wasm_bindgen::convert::{IntoWasmAbi, FromWasmAbi};
         use wasm_bindgen::convert::{OptionIntoWasmAbi, OptionFromWasmAbi};
+        use wasm_bindgen::convert::{NullableIntoWasmAbi, NullableFromWasmAbi};
         use wasm_bindgen::convert::{RefFromWasmAbi, LongRefFromWasmAbi};
         use wasm_bindgen::describe::WasmDescribe;
         use wasm_bindgen::{JsValue, JsCast};
@@ -511,6 +555,20 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableIntoWasmAbi for JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
+        impl<'__wbg_ref> NullableIntoWasmAbi for &'__wbg_ref JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <&'__wbg_ref JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
         impl FromWasmAbi for JsType {
             type Abi = <JsValue as FromWasmAbi>::Abi;
             #[inline]
@@ -528,6 +586,13 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableFromWasmAbi for JsType {
+            #[inline]
+            fn is_null(abi: &Self::MaybeAbi) -> bool {
+                <JsValue as NullableFromWasmAbi>::is_null(abi)
+            }
+        }
+        #[automatically_derived]
         impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
             type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
@@ -535,6 +600,15 @@ const _: () = {
                 (&self.obj).into_abi()
             }
         }
+        #[automatically_derived]
+        impl wasm_bindgen::convert::VectorRefIntoWasmAbi for JsType {
+            #[inline]
+            fn slice_into_abi(slice: &[Self]) -> wasm_bindgen::convert::WasmSlice {
+                wasm_bindgen::convert::WasmSlice::borrow(slice)
+            }
+        }
+        #[automatically_derived]
+        impl wasm_bindgen::__rt::marker::VectorRefIntoWasmAbiSealed for JsType {}
         #[automatically_derived]
         impl RefFromWasmAbi for JsType {
             type Abi = <JsValue as RefFromWasmAbi>::Abi;
@@ -604,7 +678,7 @@ const _: () = {
         #[automatically_derived]
         impl JsCast for JsType {
             fn instanceof(val: &JsValue) -> bool {
-                unsafe fn __wbg_instanceof_JsType_07a4c56f90e9a47b(_: u32) -> u32 {
+                unsafe fn __wbg_instanceof_JsType_dacf37ccefe665db(_: u32) -> u32 {
                     {
                         ::core::panicking::panic_fmt(
                             format_args!("cannot check instanceof on non-wasm targets"),
@@ -613,7 +687,7 @@ const _: () = {
                 }
                 unsafe {
                     let idx = val.into_abi();
-                    __wbg_instanceof_JsType_07a4c56f90e9a47b(idx) != 0
+                    __wbg_instanceof_JsType_dacf37ccefe665db(idx) != 0
                 }
             }
             #[inline]
@@ -649,6 +723,18 @@ const _: () = {
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType>
     for wasm_bindgen::sys::JsNullable<wasm_bindgen::JsValue> {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::__rt::core::option::Option<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::Nullable<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType> for JsType {}
     #[automatically_derived]
@@ -895,6 +981,7 @@ const _: () = {
         use wasm_bindgen::convert::TryFromJsValue;
         use wasm_bindgen::convert::{IntoWasmAbi, FromWasmAbi};
         use wasm_bindgen::convert::{OptionIntoWasmAbi, OptionFromWasmAbi};
+        use wasm_bindgen::convert::{NullableIntoWasmAbi, NullableFromWasmAbi};
         use wasm_bindgen::convert::{RefFromWasmAbi, LongRefFromWasmAbi};
         use wasm_bindgen::describe::WasmDescribe;
         use wasm_bindgen::{JsValue, JsCast};
@@ -942,6 +1029,20 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableIntoWasmAbi for JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
+        impl<'__wbg_ref> NullableIntoWasmAbi for &'__wbg_ref JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <&'__wbg_ref JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
         impl FromWasmAbi for JsType {
             type Abi = <JsValue as FromWasmAbi>::Abi;
             #[inline]
@@ -959,6 +1060,13 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableFromWasmAbi for JsType {
+            #[inline]
+            fn is_null(abi: &Self::MaybeAbi) -> bool {
+                <JsValue as NullableFromWasmAbi>::is_null(abi)
+            }
+        }
+        #[automatically_derived]
         impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
             type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
@@ -966,6 +1074,15 @@ const _: () = {
                 (&self.obj).into_abi()
             }
         }
+        #[automatically_derived]
+        impl wasm_bindgen::convert::VectorRefIntoWasmAbi for JsType {
+            #[inline]
+            fn slice_into_abi(slice: &[Self]) -> wasm_bindgen::convert::WasmSlice {
+                wasm_bindgen::convert::WasmSlice::borrow(slice)
+            }
+        }
+        #[automatically_derived]
+        impl wasm_bindgen::__rt::marker::VectorRefIntoWasmAbiSealed for JsType {}
         #[automatically_derived]
         impl RefFromWasmAbi for JsType {
             type Abi = <JsValue as RefFromWasmAbi>::Abi;
@@ -1035,7 +1152,7 @@ const _: () = {
         #[automatically_derived]
         impl JsCast for JsType {
             fn instanceof(val: &JsValue) -> bool {
-                unsafe fn __wbg_instanceof_JsType_07a4c56f90e9a47b(_: u32) -> u32 {
+                unsafe fn __wbg_instanceof_JsType_dacf37ccefe665db(_: u32) -> u32 {
                     {
                         ::core::panicking::panic_fmt(
                             format_args!("cannot check instanceof on non-wasm targets"),
@@ -1044,7 +1161,7 @@ const _: () = {
                 }
                 unsafe {
                     let idx = val.into_abi();
-                    __wbg_instanceof_JsType_07a4c56f90e9a47b(idx) != 0
+                    __wbg_instanceof_JsType_dacf37ccefe665db(idx) != 0
                 }
             }
             #[inline]
@@ -1080,6 +1197,18 @@ const _: () = {
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType>
     for wasm_bindgen::sys::JsNullable<wasm_bindgen::JsValue> {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::__rt::core::option::Option<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::Nullable<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType> for JsType {}
     #[automatically_derived]
@@ -1327,6 +1456,7 @@ const _: () = {
         use wasm_bindgen::convert::TryFromJsValue;
         use wasm_bindgen::convert::{IntoWasmAbi, FromWasmAbi};
         use wasm_bindgen::convert::{OptionIntoWasmAbi, OptionFromWasmAbi};
+        use wasm_bindgen::convert::{NullableIntoWasmAbi, NullableFromWasmAbi};
         use wasm_bindgen::convert::{RefFromWasmAbi, LongRefFromWasmAbi};
         use wasm_bindgen::describe::WasmDescribe;
         use wasm_bindgen::{JsValue, JsCast};
@@ -1377,6 +1507,20 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableIntoWasmAbi for JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
+        impl<'__wbg_ref> NullableIntoWasmAbi for &'__wbg_ref JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <&'__wbg_ref JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
         impl FromWasmAbi for JsType {
             type Abi = <JsValue as FromWasmAbi>::Abi;
             #[inline]
@@ -1394,6 +1538,13 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableFromWasmAbi for JsType {
+            #[inline]
+            fn is_null(abi: &Self::MaybeAbi) -> bool {
+                <JsValue as NullableFromWasmAbi>::is_null(abi)
+            }
+        }
+        #[automatically_derived]
         impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
             type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
@@ -1401,6 +1552,15 @@ const _: () = {
                 (&self.obj).into_abi()
             }
         }
+        #[automatically_derived]
+        impl wasm_bindgen::convert::VectorRefIntoWasmAbi for JsType {
+            #[inline]
+            fn slice_into_abi(slice: &[Self]) -> wasm_bindgen::convert::WasmSlice {
+                wasm_bindgen::convert::WasmSlice::borrow(slice)
+            }
+        }
+        #[automatically_derived]
+        impl wasm_bindgen::__rt::marker::VectorRefIntoWasmAbiSealed for JsType {}
         #[automatically_derived]
         impl RefFromWasmAbi for JsType {
             type Abi = <JsValue as RefFromWasmAbi>::Abi;
@@ -1470,7 +1630,7 @@ const _: () = {
         #[automatically_derived]
         impl JsCast for JsType {
             fn instanceof(val: &JsValue) -> bool {
-                unsafe fn __wbg_instanceof_JsType_07a4c56f90e9a47b(_: u32) -> u32 {
+                unsafe fn __wbg_instanceof_JsType_dacf37ccefe665db(_: u32) -> u32 {
                     {
                         ::core::panicking::panic_fmt(
                             format_args!("cannot check instanceof on non-wasm targets"),
@@ -1479,7 +1639,7 @@ const _: () = {
                 }
                 unsafe {
                     let idx = val.into_abi();
-                    __wbg_instanceof_JsType_07a4c56f90e9a47b(idx) != 0
+                    __wbg_instanceof_JsType_dacf37ccefe665db(idx) != 0
                 }
             }
             #[inline]
@@ -1515,6 +1675,18 @@ const _: () = {
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType>
     for wasm_bindgen::sys::JsNullable<wasm_bindgen::JsValue> {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::__rt::core::option::Option<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::Nullable<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType> for JsType {}
     #[automatically_derived]
@@ -1761,6 +1933,7 @@ const _: () = {
         use wasm_bindgen::convert::TryFromJsValue;
         use wasm_bindgen::convert::{IntoWasmAbi, FromWasmAbi};
         use wasm_bindgen::convert::{OptionIntoWasmAbi, OptionFromWasmAbi};
+        use wasm_bindgen::convert::{NullableIntoWasmAbi, NullableFromWasmAbi};
         use wasm_bindgen::convert::{RefFromWasmAbi, LongRefFromWasmAbi};
         use wasm_bindgen::describe::WasmDescribe;
         use wasm_bindgen::{JsValue, JsCast};
@@ -1808,6 +1981,20 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableIntoWasmAbi for JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
+        impl<'__wbg_ref> NullableIntoWasmAbi for &'__wbg_ref JsType {
+            #[inline]
+            fn null() -> Self::MaybeAbi {
+                <&'__wbg_ref JsValue as NullableIntoWasmAbi>::null()
+            }
+        }
+        #[automatically_derived]
         impl FromWasmAbi for JsType {
             type Abi = <JsValue as FromWasmAbi>::Abi;
             #[inline]
@@ -1825,6 +2012,13 @@ const _: () = {
             }
         }
         #[automatically_derived]
+        impl NullableFromWasmAbi for JsType {
+            #[inline]
+            fn is_null(abi: &Self::MaybeAbi) -> bool {
+                <JsValue as NullableFromWasmAbi>::is_null(abi)
+            }
+        }
+        #[automatically_derived]
         impl<'__wbg_ref> IntoWasmAbi for &'__wbg_ref JsType {
             type Abi = <&'__wbg_ref JsValue as IntoWasmAbi>::Abi;
             #[inline]
@@ -1832,6 +2026,15 @@ const _: () = {
                 (&self.obj).into_abi()
             }
         }
+        #[automatically_derived]
+        impl wasm_bindgen::convert::VectorRefIntoWasmAbi for JsType {
+            #[inline]
+            fn slice_into_abi(slice: &[Self]) -> wasm_bindgen::convert::WasmSlice {
+                wasm_bindgen::convert::WasmSlice::borrow(slice)
+            }
+        }
+        #[automatically_derived]
+        impl wasm_bindgen::__rt::marker::VectorRefIntoWasmAbiSealed for JsType {}
         #[automatically_derived]
         impl RefFromWasmAbi for JsType {
             type Abi = <JsValue as RefFromWasmAbi>::Abi;
@@ -1901,7 +2104,7 @@ const _: () = {
         #[automatically_derived]
         impl JsCast for JsType {
             fn instanceof(val: &JsValue) -> bool {
-                unsafe fn __wbg_instanceof_JsType_07a4c56f90e9a47b(_: u32) -> u32 {
+                unsafe fn __wbg_instanceof_JsType_dacf37ccefe665db(_: u32) -> u32 {
                     {
                         ::core::panicking::panic_fmt(
                             format_args!("cannot check instanceof on non-wasm targets"),
@@ -1910,7 +2113,7 @@ const _: () = {
                 }
                 unsafe {
                     let idx = val.into_abi();
-                    __wbg_instanceof_JsType_07a4c56f90e9a47b(idx) != 0
+                    __wbg_instanceof_JsType_dacf37ccefe665db(idx) != 0
                 }
             }
             #[inline]
@@ -1946,6 +2149,18 @@ const _: () = {
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType>
     for wasm_bindgen::sys::JsNullable<wasm_bindgen::JsValue> {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::__rt::core::option::Option<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
+    #[automatically_derived]
+    impl<__UpcastWrapTarget> wasm_bindgen::convert::UpcastFrom<JsType>
+    for wasm_bindgen::Nullable<__UpcastWrapTarget>
+    where
+        __UpcastWrapTarget: wasm_bindgen::convert::UpcastFrom<JsType>,
+    {}
     #[automatically_derived]
     impl wasm_bindgen::convert::UpcastFrom<JsType> for JsType {}
     #[automatically_derived]

@@ -312,6 +312,16 @@ impl Decl {
             Decl::TsEnum(decl) => &decl.id,
         }
     }
+
+    /// The parameters the declaration takes, which is not every parameter the
+    /// Rust type takes: one that no field mentions has nothing to declare.
+    pub fn type_params(&self) -> &[String] {
+        match self {
+            Decl::TsTypeAlias(decl) => &decl.type_params,
+            Decl::TsInterface(decl) => &decl.type_params,
+            Decl::TsEnum(decl) => &decl.type_params,
+        }
+    }
 }
 
 impl Display for Decl {

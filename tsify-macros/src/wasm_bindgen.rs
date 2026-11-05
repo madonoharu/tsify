@@ -25,6 +25,8 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
     let generics = cont.generics_without_defaults();
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
+    let ts_name = expand_ts_name(cont, &decl);
+
     let typescript_custom_section = quote! {
         #[wasm_bindgen(typescript_custom_section)]
         const TS_APPEND_CONTENT: &'static str = #decl_str;
@@ -104,12 +106,113 @@ pub fn expand(cont: &Container, decl: Decl) -> TokenStream {
                 };
             }
 
+            #ts_name
             #typescript_custom_section
             #wasm_describe
             #into_wasm_abi
             #from_wasm_abi
             #maybe_deprecated
         };
+    }
+}
+
+/// The declaration's parameters, resolved back to the Rust type parameters they
+/// name.
+///
+/// `None` when one of them names no Rust parameter — `#[tsify(type_params)]`
+/// can say anything — which leaves nothing to compose that argument's name
+/// from, so the type keeps naming itself by its bare id.
+fn name_type_params(cont: &Container, decl: &Decl) -> Option<Vec<syn::Ident>> {
+    decl.type_params()
+        .iter()
+        .map(|declared| {
+            cont.generics()
+                .type_params()
+                .find(|param| param.ident == *declared)
+                .map(|param| param.ident.clone())
+        })
+        .collect()
+}
+
+/// Spells out the type's TypeScript name for `TsName`, one `char` at a time,
+/// deferring to each argument's own impl for the arguments.
+///
+/// Unrolled rather than read from `DECL` because wasm-bindgen interprets the
+/// descriptor without the module's data segments loaded, so a character that
+/// comes from memory reaches it as a NUL.
+///
+/// The impl is generic over the config it is asked for and passes it down
+/// unchanged. One serializer, built from the root type's attributes, writes the
+/// whole value; a name that switched to this type's own attributes partway down
+/// would describe a shape that is never produced (#125).
+fn expand_ts_name(cont: &Container, decl: &Decl) -> TokenStream {
+    let ident = cont.ident();
+    let name_params = name_type_params(cont, decl).unwrap_or_default();
+
+    let mut generics = cont.generics_without_defaults();
+    if !name_params.is_empty() {
+        let where_clause = generics.make_where_clause();
+        for param in &name_params {
+            where_clause
+                .predicates
+                .push(parse_quote!(#param: tsify::__macro_support::TsName<__TSIFY_CONFIG>));
+        }
+    }
+
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let impl_params = generics.params.iter();
+
+    let id_chars = decl.id().chars().collect::<Vec<_>>();
+    let id_len = id_chars.len() as u32;
+    let id = quote!(#(tsify::__macro_support::inform_char(#id_chars);)*);
+
+    let (name_len, describe_name) = if name_params.is_empty() {
+        (quote!(#id_len), id)
+    } else {
+        // The id, `<`, `>`, and `, ` between each pair of arguments.
+        let punctuation = id_len + 2 + 2 * (name_params.len() as u32 - 1);
+
+        let args = name_params.iter().enumerate().map(|(i, param)| {
+            let separator = (i > 0).then(|| {
+                quote! {
+                    tsify::__macro_support::inform_char(',');
+                    tsify::__macro_support::inform_char(' ');
+                }
+            });
+
+            quote! {
+                #separator
+                <#param as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::describe_name();
+            }
+        });
+
+        (
+            quote! {
+                #punctuation
+                #(+ <#name_params as tsify::__macro_support::TsName<__TSIFY_CONFIG>>::NAME_LEN)*
+            },
+            quote! {
+                #id
+                tsify::__macro_support::inform_char('<');
+                #(#args)*
+                tsify::__macro_support::inform_char('>');
+            },
+        )
+    };
+
+    quote! {
+        #[automatically_derived]
+        impl<#(#impl_params,)* const __TSIFY_CONFIG: u8>
+            tsify::__macro_support::TsName<__TSIFY_CONFIG> for #ident #ty_generics
+            #where_clause
+        {
+            const NAME_LEN: u32 = #name_len;
+
+            #[inline]
+            fn describe_name() {
+                #describe_name
+            }
+        }
     }
 }
 

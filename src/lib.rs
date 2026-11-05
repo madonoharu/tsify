@@ -10,6 +10,13 @@ mod ts;
 pub use ts::Ts;
 mod error;
 pub use error::Error;
+/// Not a public API. Generated code needs a path it can name across the
+/// proc-macro boundary; nothing here is meant to be referred to by hand, and
+/// its shape is free to change.
+#[cfg(feature = "wasm-bindgen")]
+#[doc(hidden)]
+#[path = "macro_support.rs"]
+pub mod __macro_support;
 
 #[cfg(all(feature = "json", not(feature = "js")))]
 pub use gloo_utils::format::JsValueSerdeExt;

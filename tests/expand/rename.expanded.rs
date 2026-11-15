@@ -19,7 +19,7 @@ const _: () = {
     #[automatically_derived]
     impl ::core::clone::Clone for JsType {
         #[inline]
-        fn clone(&self) -> JsType {
+        fn clone(&self) -> Self {
             JsType {
                 obj: ::core::clone::Clone::clone(&self.obj),
             }

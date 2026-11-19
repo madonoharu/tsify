@@ -354,7 +354,7 @@ impl TsType {
         set
     }
 
-    pub fn prefix_type_refs(self, prefix: &String, exceptions: &Vec<String>) -> Self {
+    pub fn prefix_type_refs(self, prefix: &String, exceptions: &[String]) -> Self {
         match self {
             TsType::Array(t) => TsType::Array(Box::new(t.prefix_type_refs(prefix, exceptions))),
             TsType::Tuple(tv) => TsType::Tuple(

@@ -220,6 +220,42 @@ fn invalid_rename_attributes_fail_to_compile() {
             line: 4,
             message: "`rename` cannot be combined with `type_prefix` or `type_suffix`",
         },
+        // `#[declare(...)]` forwards its arguments to the same parser, so an alias
+        // reports both the attributes it cannot carry (#116) and the conflicts
+        // every container does.
+        CompileFailCase {
+            module: "alias_abi_attribute",
+            source: indoc! {r#"
+                use tsify::declare;
+
+                #[declare(into_wasm_abi)]
+                pub type AliasAbiAttribute = u32;
+            "#},
+            line: 3,
+            message: "`into_wasm_abi` cannot be applied to a type alias",
+        },
+        CompileFailCase {
+            module: "alias_type_params",
+            source: indoc! {r#"
+                use tsify::declare;
+
+                #[declare(type_params = "T")]
+                pub type AliasTypeParams<T> = Vec<T>;
+            "#},
+            line: 3,
+            message: "`type_params` cannot be applied to a type alias",
+        },
+        CompileFailCase {
+            module: "alias_rename_then_prefix",
+            source: indoc! {r#"
+                use tsify::declare;
+
+                #[declare(rename = "Renamed", type_prefix = "Prefix")]
+                pub type AliasRenameThenPrefix = u32;
+            "#},
+            line: 3,
+            message: "`rename` cannot be combined with `type_prefix` or `type_suffix`",
+        },
     ];
     let modules = cases
         .iter()
